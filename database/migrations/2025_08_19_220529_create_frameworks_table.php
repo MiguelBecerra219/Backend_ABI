@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name', 1000);
             $table->text('description');
-            $table->year('start_year');
-            $table->year('end_year');
+            $table->integer('start_year');
+            $table->integer('end_year');
             $table->timestamps();
         });
     }
