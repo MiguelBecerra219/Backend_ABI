@@ -3,69 +3,68 @@
 namespace App\Http\Controllers;
 
 use App\Models\Framework;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\Http\Requests\FrameworkRequest;
 
 class FrameworkController extends Controller
 {
-    public function index(): View
+    public function index(Request $request)
     {
-        $frameworks = Framework::all();
+        $search   = (string) $request->input('search', '');
+        $yearFrom = $request->filled('year_from') ? (int)$request->input('year_from') : null;
+        $yearTo   = $request->filled('year_to')   ? (int)$request->input('year_to')   : null;
+        $perPage  = (int) $request->input('per_page', 10);
+
+        $q = Framework::query();
+
+        if ($search !== '') {
+            $like = "%{$search}%";
+            $q->where(fn($w) => $w->where('name','like',$like)->orWhere('description','like',$like));
+        }
+        if (!is_null($yearFrom)) $q->where('start_year','>=',$yearFrom);
+        if (!is_null($yearTo))   $q->where('end_year','<=',$yearTo);
+
+        $frameworks = $q->latest('updated_at')->paginate($perPage)->withQueryString();
+
         return view('frameworks.index', compact('frameworks'));
     }
 
-    public function create(): View
+    public function store(FrameworkRequest $request)
     {
-        return view('frameworks.create');
+        Framework::create($request->validated());
+        return back()->with('ok','Framework creado');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function show(Framework $framework)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_year' => 'required|integer',
-            'end_year' => 'required|integer|gte:start_year',
-        ]);
-
-        $framework = Framework::create($data);
-
-        return redirect()->route('frameworks.show', $framework)
-            ->with('ok', 'Framework created successfully');
-    }
-
-    public function show(Framework $framework): View
-    {
-        $framework->load('contentFrameworks');
+        $framework->load(['contents' => fn($q) => $q->latest('due_at')]);
         return view('frameworks.show', compact('framework'));
     }
 
-    public function edit(Framework $framework): View
+    public function update(FrameworkRequest $request, Framework $framework)
     {
-        return view('frameworks.edit', compact('framework'));
+        $framework->update($request->validated());
+        return back()->with('ok','Framework actualizado');
     }
 
-    public function update(Request $request, Framework $framework): RedirectResponse
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_year' => 'required|integer',
-            'end_year' => 'required|integer|gte:start_year',
-        ]);
-
-        $framework->update($data);
-
-        return redirect()->route('frameworks.show', $framework)
-            ->with('ok', 'Framework updated successfully');
-    }
-
-    public function destroy(Framework $framework): RedirectResponse
+    public function destroy(Framework $framework)
     {
         $framework->delete();
-
-        return redirect()->route('frameworks.index')
-            ->with('ok', 'Framework deleted successfully');
+        return to_route('frameworks.index')->with('ok','Framework eliminado');
     }
+
+    public function create()
+{
+    // Muestra el formulario de creación
+    return view('frameworks.create');
+}
+
+public function edit(\App\Models\Framework $framework)
+{
+    // Muestra el formulario de edición
+    return view('frameworks.edit', compact('framework'));
+}
+
+
+
 }

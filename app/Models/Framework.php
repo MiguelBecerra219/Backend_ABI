@@ -3,23 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\ContentFramework;
 
 class Framework extends Model
 {
-    protected $fillable = [
-        'name',
-        'description',
-        'start_year',
-        'end_year',
-    ];
+    protected $fillable = ['name','description','start_year','end_year'];
 
-    /**
-     * Get the content frameworks for the framework.
-     */
-    public function contentFrameworks(): HasMany
+    // <<< ESTA ES LA QUE FALTA
+    public function contents()
     {
-        return $this->hasMany(ContentFramework::class);
+        // Modelo y FK correctos
+        return $this->hasMany(ContentFramework::class, 'framework_id');
     }
+
+    // Si ya tenías otra relación con otro nombre (p. ej. contentFrameworks),
+    // puedes dejar ambas o renombrar en el controlador/blade:
+    // public function contentFrameworks() { return $this->hasMany(ContentFramework::class, 'framework_id'); }
 }
