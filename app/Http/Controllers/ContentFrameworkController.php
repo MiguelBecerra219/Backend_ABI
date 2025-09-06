@@ -2,69 +2,38 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ContentFramework;
 use App\Models\Framework;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\Models\ContentFramework;
+use App\Http\Requests\ContentFrameworkRequest;
 
 class ContentFrameworkController extends Controller
 {
-    public function index(Framework $framework): View
+    public function store(ContentFrameworkRequest $request, Framework $framework)
     {
-        $contents = $framework->contentFrameworks;
-        return view('contents.index', compact('framework', 'contents'));
+        $data = $request->safe()->only(['name','description']);
+        // Importante: la columna no es nullable
+        if (!isset($data['description']) || $data['description'] === null) {
+            $data['description'] = '';
+        }
+
+        $framework->contents()->create($data);
+        return back()->with('ok','Contenido agregado');
     }
 
-    public function create(Framework $framework): View
+    public function update(ContentFrameworkRequest $request, ContentFramework $content)
     {
-        return view('contents.create', compact('framework'));
-    }
-
-    public function store(Request $request, Framework $framework): RedirectResponse
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-        $data['framework_id'] = $framework->id;
-
-        $content = ContentFramework::create($data);
-
-        return redirect()->route('contents.show', $content)
-            ->with('ok', 'Content created successfully');
-    }
-
-    public function show(ContentFramework $content): View
-    {
-        return view('contents.show', compact('content'));
-    }
-
-    public function edit(ContentFramework $content): View
-    {
-        return view('contents.edit', compact('content'));
-    }
-
-    public function update(Request $request, ContentFramework $content): RedirectResponse
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'framework_id' => 'required|exists:frameworks,id',
-        ]);
+        $data = $request->safe()->only(['name','description']);
+        if (!isset($data['description']) || $data['description'] === null) {
+            $data['description'] = '';
+        }
 
         $content->update($data);
-
-        return redirect()->route('contents.show', $content)
-            ->with('ok', 'Content updated successfully');
+        return back()->with('ok','Contenido actualizado');
     }
 
-    public function destroy(ContentFramework $content): RedirectResponse
+    public function destroy(ContentFramework $content)
     {
-        $frameworkId = $content->framework_id;
         $content->delete();
-
-        return redirect()->route('frameworks.contents.index', $frameworkId)
-            ->with('ok', 'Content deleted successfully');
+        return back()->with('ok','Contenido eliminado');
     }
 }
