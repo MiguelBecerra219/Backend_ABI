@@ -1,3 +1,6 @@
+
+<!--
+
 <footer class="footer footer-transparent d-print-none">
     <div class="container-xl">
         <div class="row text-center align-items-center flex-row-reverse">
@@ -8,7 +11,7 @@
                     <li class="list-inline-item">
                         <a href="https://www.buymeacoffee.com/takielias" target="_blank" class="link-secondary"
                            rel="noopener">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/heart -->
+                             Download SVG icon from http://tabler-icons.io/i/heart 
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="icon text-pink icon-filled icon-inline" width="24" height="24"
                                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -40,3 +43,4 @@
         </div>
     </div>
 </footer>
+-->

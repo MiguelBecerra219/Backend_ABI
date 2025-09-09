@@ -3,23 +3,53 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\ContentFramework;
 
+/**
+ * Class Framework
+ *
+ * @property $id
+ * @property $name
+ * @property $description
+ * @property $start_year
+ * @property $end_year
+ * @property $created_at
+ * @property $updated_at
+ *
+ * @package App
+ * @mixin \Illuminate\Database\Eloquent\Builder
+ */
 class Framework extends Model
 {
-    protected $fillable = [
-        'name',
-        'description',
-        'start_year',
-        'end_year',
+    
+    static $rules = [
+        'name' => 'required|unique:frameworks,name',
+        'description' => 'required|min:10',
+        'start_year' => 'required|integer|min:1900',
+        'end_year' => 'nullable|integer|after_or_equal:start_year',
     ];
 
+    protected $perPage = 20;
+
     /**
-     * Get the content frameworks for the framework.
+     * Attributes that should be mass-assignable.
+     *
+     * @var array
      */
-    public function contentFrameworks(): HasMany
+    protected $fillable = ['name','description','start_year','end_year'];
+
+    /**
+     * Get validation rules for updating a framework
+     *
+     * @param int $id
+     * @return array
+     */
+    public static function updateRules($id)
     {
-        return $this->hasMany(ContentFramework::class);
+        return [
+            'name' => 'required|unique:frameworks,name,' . $id,
+            'description' => 'required|min:10',
+            'start_year' => 'required|integer|min:1900',
+            'end_year' => 'nullable|integer|after_or_equal:start_year',
+        ];
     }
 }

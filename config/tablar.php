@@ -1,4 +1,5 @@
 <?php
+use Illuminate\Support\Facades\Auth;
 
 return [
 
@@ -10,11 +11,11 @@ return [
     |
     */
 
-    'title' => 'Tablar',
+    'title' => 'ABI',
     'title_prefix' => '',
     'title_postfix' => '',
-    'bottom_title' => 'Tablar',
-    'current_version' => 'v4.8',
+    'bottom_title' => 'ABI',
+    'current_version' => 'v1.0',
 
 
     /*
@@ -67,7 +68,7 @@ return [
     |
     */
 
-    'layout' => 'horizontal',
+    'layout' => 'combo',
     //boxed, combo, condensed, fluid, fluid-vertical, horizontal, navbar-overlap, navbar-sticky, rtl, vertical, vertical-right, vertical-transparent
 
     'layout_light_sidebar' => null,
@@ -141,58 +142,31 @@ return [
     | For detailed instructions you can look here:
     |
     */
+'menu' => [
 
-    'menu' => [
-        // Navbar items:
-        [
-            'text' => 'Home',
-            'icon' => 'ti ti-home',
-            'url' => 'home'
-        ],
-
-        [
-            'text' => 'Support 1',
-            'url' => '#',
-            'icon' => 'ti ti-help',
-            'active' => ['support1'],
-            'submenu' => [
-                [
-                    'text' => 'Ticket',
-                    'url' => 'support1',
-                    'icon' => 'ti ti-article',
-                ]
-            ],
-        ],
-
-        [
-            'text' => 'Support 2',
-            'url' => '#',
-            'icon' => 'ti ti-help',
-            'active' => ['support2'],
-            'submenu' => [
-                [
-                    'text' => 'Ticket',
-                    'url' => 'support2',
-                    'icon' => 'ti ti-article',
-                ]
-            ],
-        ],
-
-        [
-            'text' => 'Support 3',
-            'url' => '#',
-            'icon' => 'ti ti-help',
-            'active' => ['support3'],
-            'submenu' => [
-                [
-                    'text' => 'Ticket',
-                    'url' => 'support3',
-                    'icon' => 'ti ti-article',
-                ]
-            ],
-        ],
-
+    // Menú para todos los usuarios con roles configurados
+    [
+        'text' => 'Home',
+        'icon' => 'ti ti-home',
+        'url' => '/home',
+        'hasRole' => 'admin', // Solo accesible para el rol 'admin'
     ],
+    [
+        'text' => 'Frameworks',
+        'icon' => 'ti ti-code',
+        'url' => '/framework',
+        'hasRole' => 'admin', // Solo accesible para el rol 'admin'
+    ],
+    [
+        'text' => 'Content Framework Projects',
+        'icon' => 'ti ti-project',
+        'url' => '/content-framework-projects',
+        'hasRole' => 'admin', // Solo accesible para el rol 'admin'
+    ],
+
+
+],
+
 
     /*
     |--------------------------------------------------------------------------
@@ -205,7 +179,7 @@ return [
     |
     */
 
-    'filters' => [
+    'filters'=> [
         TakiElias\Tablar\Menu\Filters\GateFilter::class,
         TakiElias\Tablar\Menu\Filters\HrefFilter::class,
         TakiElias\Tablar\Menu\Filters\SearchFilter::class,
@@ -213,7 +187,11 @@ return [
         TakiElias\Tablar\Menu\Filters\ClassesFilter::class,
         TakiElias\Tablar\Menu\Filters\LangFilter::class,
         TakiElias\Tablar\Menu\Filters\DataFilter::class,
+
+        \App\Filters\RolePermissionMenuFilter::class
     ],
+
+    
 
     /*
     |--------------------------------------------------------------------------
@@ -228,4 +206,5 @@ return [
     */
 
     'vite' => true,
+
 ];

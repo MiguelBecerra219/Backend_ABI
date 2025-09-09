@@ -1,4 +1,4 @@
-<form action="" method="get" autocomplete="off" novalidate>
+<form action="" method="get" autocomplete="true" novalidate>
     <div class="input-icon">
                     <span class="input-icon-addon">
                       <!-- Download SVG icon from http://tabler-icons.io/i/search -->
