@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ContentFrameworkProject extends Model
 {
+    protected $table = 'content_framework_project';
     
     static $rules = [
 		'content_framework_id' => 'required',
