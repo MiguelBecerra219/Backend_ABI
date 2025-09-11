@@ -8,7 +8,6 @@
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <!-- Navegación breadcrumb -->
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
@@ -16,7 +15,6 @@
                             <li class="breadcrumb-item active" aria-current="page">Editar Framework</li>
                         </ol>
                     </nav>
-                    <!-- Título principal -->
                     <h2 class="page-title d-flex align-items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg me-2 text-success" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/>
@@ -29,7 +27,6 @@
                     <p class="text-muted">Modifica los detalles del framework "{{ $framework->name }}"</p>
                 </div>
                 
-                <!-- Botones de acción -->
                 <div class="col-12 col-md-auto ms-auto d-print-none">
                     <div class="btn-list">
                         <a href="{{ route('frameworks.show', $framework->id) }}" class="btn btn-outline-info">
@@ -61,7 +58,7 @@
             
             <div class="row">
                 <div class="col-12">
-                    <!-- Información del framework actual -->
+                    <!-- Card info -->
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="row align-items-center">
@@ -93,7 +90,6 @@
                                         $isCurrent = $framework->start_year <= $currentYear && ($framework->end_year === null || $framework->end_year >= $currentYear);
                                         $isFuture = $framework->start_year > $currentYear;
                                     @endphp
-                                    
                                     @if($isCurrent)
                                         <span class="badge bg-success-lt fs-6">Vigente</span>
                                     @elseif($isFuture)
@@ -138,43 +134,27 @@
     @push('js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Validación en tiempo real para el año de inicio
             const startYearInput = document.getElementById('start_year');
             const endYearInput = document.getElementById('end_year');
-            
             if (startYearInput && endYearInput) {
                 startYearInput.addEventListener('change', function() {
                     const startYear = parseInt(this.value);
                     if (startYear) {
                         endYearInput.min = startYear;
-                        
-                        // Si el año de fin es menor que el de inicio, limpiarlo
                         const endYear = parseInt(endYearInput.value);
-                        if (endYear && endYear < startYear) {
-                            endYearInput.value = '';
-                        }
+                        if (endYear && endYear < startYear) endYearInput.value = '';
                     }
                 });
             }
-            
-            // Confirmación antes de cancelar si hay cambios
             const form = document.getElementById('frameworkForm');
             const cancelBtn = document.querySelector('.btn-cancel');
             let formChanged = false;
-            
             if (form) {
-                // Detectar cambios en el formulario
-                form.addEventListener('change', function() {
-                    formChanged = true;
-                });
-                
-                // Confirmar antes de cancelar si hay cambios
+                form.addEventListener('change', () => formChanged = true);
                 if (cancelBtn) {
                     cancelBtn.addEventListener('click', function(e) {
-                        if (formChanged) {
-                            if (!confirm('¿Estás seguro de que quieres cancelar? Los cambios no guardados se perderán.')) {
-                                e.preventDefault();
-                            }
+                        if (formChanged && !confirm('¿Estás seguro de que quieres cancelar? Los cambios no guardados se perderán.')) {
+                            e.preventDefault();
                         }
                     });
                 }
@@ -185,29 +165,11 @@
 
     @push('css')
     <style>
-        .form-label.required::after {
-            content: " *";
-            color: #d63384;
-        }
-        
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: box-shadow 0.15s ease-in-out;
-        }
-        
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        
-        .form-control:focus {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-        }
-        
-        .badge.fs-6 {
-            font-size: 0.875rem !important;
-            padding: 0.375rem 0.75rem;
-        }
+        .form-label.required::after { content:" *"; color:#d63384; }
+        .card { box-shadow:0 .125rem .25rem rgba(0,0,0,.075); transition:box-shadow .15s; }
+        .card:hover { box-shadow:0 .5rem 1rem rgba(0,0,0,.15); }
+        .form-control:focus { border-color:#0d6efd; box-shadow:0 0 0 .2rem rgba(13,110,253,.25); }
+        .badge.fs-6 { font-size:.875rem!important; padding:.375rem .75rem; }
     </style>
     @endpush
 @endsection
