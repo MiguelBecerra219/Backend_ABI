@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    <!-- Cuerpo -->
+    <!-- Cuerpo  hola -->
     <div class="page-body">
         <div class="container-xl">
             @if(config('tablar','display_alert'))
