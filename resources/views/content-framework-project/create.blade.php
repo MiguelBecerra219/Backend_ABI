@@ -1,57 +1,81 @@
 @extends('tablar::page')
 
-@section('title', 'Create Content Framework Project')
+@section('title', 'Crear Contenido del Framework')
 
 @section('content')
-    <!-- Page header -->
+    <!-- Encabezado -->
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <!-- Page pre-title -->
-                    <div class="page-pretitle">
-                        Create
-                    </div>
-                    <h2 class="page-title">
-                        {{ __('Content Framework Project ') }}
+                    <!-- Migas -->
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="#">Inicio</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('frameworks.index') }}">Frameworks</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-framework-projects.index') }}">Contenidos del Framework</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Crear</li>
+                        </ol>
+                    </nav>
+
+                    <h2 class="page-title d-flex align-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg me-2 text-primary" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        Crear Contenido del Framework
                     </h2>
+                    <p class="text-muted">Registra un nuevo contenido y relaciónalo con un framework.</p>
                 </div>
-                <!-- Page title actions -->
+
                 <div class="col-12 col-md-auto ms-auto d-print-none">
                     <div class="btn-list">
-                        <a href="{{ route('content-framework-projects.index') }}" class="btn btn-primary d-none d-sm-inline-block">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                 stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
+                        <a href="{{ route('content-framework-projects.index') }}" class="btn btn-outline-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 6 9 12 15 18"/>
                             </svg>
-                            Content Framework Project List
+                            Volver a la Lista
                         </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Page body -->
+
+    <!-- Cuerpo  hola -->
     <div class="page-body">
         <div class="container-xl">
             @if(config('tablar','display_alert'))
                 @include('tablar::common.alert')
             @endif
-            <div class="row row-deck row-cards">
+
+            <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Content Framework Project Details</h3>
+                            <h3 class="card-title d-flex align-items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-primary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                </svg>
+                                Detalles del Contenido
+                            </h3>
+                            <div class="card-actions">
+                                <small class="text-muted">Los campos marcados con * son obligatorios</small>
+                            </div>
                         </div>
+
                         <div class="card-body">
-                            <form method="POST" action="{{ route('content-framework-projects.store') }}" id="ajaxForm" role="form"
-                                  enctype="multipart/form-data">
+                            <form method="POST" action="{{ route('content-framework-projects.store') }}" id="cfpForm" role="form">
                                 @csrf
-                                @include('content-framework-project.form')
+                                @php
+                                    // Para preseleccionar framework cuando se llega desde /frameworks/{id}
+                                    $prefw = request('framework_id'); // ?framework_id=XX
+                                @endphp
+                                @include('content-framework-project.form', [
+                                    'contentFrameworkProject' => $contentFrameworkProject ?? null,
+                                    'prefw' => $prefw
+                                ])
                             </form>
                         </div>
                     </div>
@@ -59,5 +83,13 @@
             </div>
         </div>
     </div>
-@endsection
 
+    @push('css')
+    <style>
+        .form-label.required::after { content:" *"; color:#d63384; }
+        .card { box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075); transition: box-shadow .15s; }
+        .card:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); }
+        .form-control:focus { border-color:#0d6efd; box-shadow:0 0 0 .2rem rgba(13,110,253,.25); }
+    </style>
+    @endpush
+@endsection
