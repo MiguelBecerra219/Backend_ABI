@@ -122,7 +122,32 @@
                             <form method="POST" action="{{ route('frameworks.update', $framework->id) }}" id="frameworkForm" role="form" enctype="multipart/form-data">
                                 {{ method_field('PATCH') }}
                                 @csrf
+
                                 @include('framework.form')
+
+                                <!-- Footer del formulario con acciones -->
+                                <div class="form-footer mt-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{{ route('frameworks.index') }}" class="btn btn-outline-secondary btn-cancel">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                                <line x1="6" y1="6" x2="18" y2="18"/>
+                                            </svg>
+                                            Cancelar
+                                        </a>
+
+                                        <button type="submit" class="btn btn-primary">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z"/>
+                                                <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-16a2 2 0 0 1 2 -2"/>
+                                                <circle cx="12" cy="14" r="2"/>
+                                                <polyline points="14 4 14 8 8 8 8 4"/>
+                                            </svg>
+                                            Guardar cambios
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- /Footer -->
                             </form>
                         </div>
                     </div>
