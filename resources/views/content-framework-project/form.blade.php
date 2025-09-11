@@ -39,9 +39,11 @@
             <small class="form-hint">Es el título corto y descriptivo del contenido.</small>
         </div>
 
-        <!-- Descripción -->
-        <div class="mb-3">
-            <label for="description" class="form-label required">
+       <!-- Descripción centrada -->
+<div class="row">
+    <div class="col-12 d-flex justify-content-center">
+        <div class="mb-3 flex-grow-1" style="max-width: 700px; width: 100%;">
+            <label for="description" class="form-label required text-center w-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-primary" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z"/>
                     <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
@@ -54,15 +56,26 @@
                 name="description"
                 rows="4"
                 maxlength="1000"
-                class="form-control {{ $errors->has('description') ? 'is-invalid' : '' }}"
+                class="form-control text-center {{ $errors->has('description') ? 'is-invalid' : '' }}"
                 placeholder="Describe el objetivo, alcance y características del contenido…"
                 required
             >{{ old('description', $contentFrameworkProject->description ?? '') }}</textarea>
             @if($errors->has('description'))
                 <div class="invalid-feedback">{{ $errors->first('description') }}</div>
-            @endif>
-            <small class="form-hint">Mínimo 10 caracteres.</small>
+            @endif
+            <small class="form-hint text-center w-100">Mínimo 10 caracteres.</small>
         </div>
+    </div>
+</div>
+
+@push('css')
+<style>
+    /* Centrar placeholder del textarea */
+    #description::placeholder {
+        text-align: center;
+    }
+</style>
+@endpush
     </div>
 
     <div class="col-lg-5">
@@ -151,3 +164,12 @@
         </button>
     </div>
 </div>
+
+@push('css')
+<style>
+    /* Centrar placeholder del textarea */
+    #description::placeholder {
+        text-align: center;
+    }
+</style>
+@endpush
