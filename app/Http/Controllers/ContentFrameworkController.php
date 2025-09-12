@@ -2,38 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Framework;
 use App\Models\ContentFramework;
 use App\Http\Requests\ContentFrameworkRequest;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class ContentFrameworkController extends Controller
 {
-    public function store(ContentFrameworkRequest $request, Framework $framework)
+    public function index(): View
     {
-        $data = $request->safe()->only(['name','description']);
-        // Importante: la columna no es nullable
-        if (!isset($data['description']) || $data['description'] === null) {
-            $data['description'] = '';
-        }
-
-        $framework->contents()->create($data);
-        return back()->with('ok','Contenido agregado');
+        $frameworks = ContentFramework::all();
+        return view('content_frameworks.index', compact('frameworks'));
     }
 
-    public function update(ContentFrameworkRequest $request, ContentFramework $content)
+    public function create(): View
     {
-        $data = $request->safe()->only(['name','description']);
-        if (!isset($data['description']) || $data['description'] === null) {
-            $data['description'] = '';
-        }
-
-        $content->update($data);
-        return back()->with('ok','Contenido actualizado');
+        return view('content_frameworks.create');
     }
 
-    public function destroy(ContentFramework $content)
+    public function store(ContentFrameworkRequest $request): RedirectResponse
     {
-        $content->delete();
-        return back()->with('ok','Contenido eliminado');
+        ContentFramework::create([
+            'name' => $request->name,
+            'description' => $request->description ?? '',
+        ]);
+
+        return redirect()->route('content_frameworks.index');
+    }
+
+    public function edit(ContentFramework $contentFramework): View
+    {
+        return view('content_frameworks.edit', compact('contentFramework'));
+    }
+
+    public function update(ContentFrameworkRequest $request, ContentFramework $contentFramework): RedirectResponse
+    {
+        $contentFramework->update([
+            'name' => $request->name,
+            'description' => $request->description ?? '',
+        ]);
+
+        return redirect()->route('content_frameworks.index');
+    }
+
+    public function destroy(ContentFramework $contentFramework): RedirectResponse
+    {
+        $contentFramework->delete();
+        return redirect()->route('content_frameworks.index');
     }
 }
