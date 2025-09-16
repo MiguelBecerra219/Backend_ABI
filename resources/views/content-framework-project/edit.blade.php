@@ -91,7 +91,7 @@
                                         <a class="badge bg-azure-lt text-decoration-none" href="{{ route('frameworks.show', $contentFrameworkProject->framework_id) }}">
                                             Framework: {{ Str::limit($contentFrameworkProject->framework->name, 28) }}
                                         </a>
-                                    @endif
+                                                                        @endif
                                 </div>
                             </div>
                         </div>
@@ -116,7 +116,8 @@
                                 @csrf
                                 @include('content-framework-project.form', [
                                     'contentFrameworkProject' => $contentFrameworkProject,
-                                    'prefw' => null
+                                    'prefw' => null,
+                                    'frameworks' => $frameworks ?? null
                                 ])
                             </form>
                         </div>

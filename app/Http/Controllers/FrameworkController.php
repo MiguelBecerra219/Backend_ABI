@@ -89,6 +89,8 @@ class FrameworkController extends Controller
                 'name.unique' => 'Ya existe un framework con este nombre.',
                 'description.required' => 'La descripción es obligatoria.',
                 'description.min' => 'La descripción debe tener al menos 10 caracteres.',
+                'link.url' => 'El enlace debe ser una URL válida.',
+                'link.max' => 'El enlace no puede superar los 200 caracteres.',
                 'start_year.required' => 'El año de inicio es obligatorio.',
                 'start_year.integer' => 'El año de inicio debe ser un número.',
                 'start_year.min' => 'El año de inicio no puede ser menor a 1900.',
@@ -97,6 +99,8 @@ class FrameworkController extends Controller
 
             DB::beginTransaction();
             
+            $validatedData['link'] = $validatedData['link'] ?? '';
+
             $framework = Framework::create($validatedData);
             
             DB::commit();
@@ -144,6 +148,7 @@ class FrameworkController extends Controller
             $rules = [
                 'name' => 'required|unique:frameworks,name,' . $framework->id,
                 'description' => 'required|min:10',
+                'link' => 'nullable|url|max:200',
                 'start_year' => 'required|integer|min:1900',
                 'end_year' => 'nullable|integer|after_or_equal:start_year',
             ];
@@ -153,6 +158,8 @@ class FrameworkController extends Controller
                 'name.unique' => 'Ya existe otro framework con este nombre.',
                 'description.required' => 'La descripción es obligatoria.',
                 'description.min' => 'La descripción debe tener al menos 10 caracteres.',
+                'link.url' => 'El enlace debe ser una URL válida.',
+                'link.max' => 'El enlace no puede superar los 200 caracteres.',
                 'start_year.required' => 'El año de inicio es obligatorio.',
                 'start_year.integer' => 'El año de inicio debe ser un número.',
                 'start_year.min' => 'El año de inicio no puede ser menor a 1900.',
@@ -161,6 +168,8 @@ class FrameworkController extends Controller
 
             DB::beginTransaction();
             
+            $validatedData['link'] = $validatedData['link'] ?? '';
+
             $framework->update($validatedData);
             
             DB::commit();
