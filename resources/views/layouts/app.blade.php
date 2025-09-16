@@ -5,8 +5,13 @@
   <meta charset="utf-8">
   <title>@yield('title','ABI')</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {{-- Tabler CSS (CDN simple) --}}
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  {{-- Tabler CSS (CDN) --}}
   <link href="https://unpkg.com/@tabler/core@1.0.0-beta19/dist/css/tabler.min.css" rel="stylesheet"/>
+
+  {{-- Vite (opción A, sin Tailwind) --}}
+  @vite(['resources/css/app.css','resources/js/app.js'])
 </head>
 <body>
   <div class="page">
@@ -30,19 +35,19 @@
     </div>
   </div>
 
-  {{-- Tabler JS --}}
+  {{-- Tabler JS (CDN) --}}
   <script src="https://unpkg.com/@tabler/core@1.0.0-beta19/dist/js/tabler.min.js"></script>
 
   {{-- Doble confirmación reutilizable --}}
   <script>
-    // data-action="#formId" -> botón se arma tras 1.2s y luego hace submit
+    // Botón con data-confirm y data-action="#formId"
     document.addEventListener('click', (e) => {
       const b = e.target.closest('[data-confirm]');
       if(!b) return;
       e.preventDefault();
       const wrap = b.parentElement;
       let confirmBtn = wrap.querySelector('.btn-confirm');
-      if (confirmBtn) return; // ya mostrado
+      if (confirmBtn) return;
 
       confirmBtn = document.createElement('button');
       confirmBtn.className = 'btn btn-danger btn-confirm';
@@ -65,6 +70,7 @@
       wrap.appendChild(cancel);
     });
   </script>
+
   @stack('scripts')
 </body>
 </html>

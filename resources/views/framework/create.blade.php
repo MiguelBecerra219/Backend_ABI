@@ -92,8 +92,6 @@
                     const startYear = parseInt(this.value);
                     if (startYear) {
                         endYearInput.min = startYear;
-                        
-                        // Si el año de fin es menor que el de inicio, limpiarlo
                         const endYear = parseInt(endYearInput.value);
                         if (endYear && endYear < startYear) {
                             endYearInput.value = '';
@@ -102,35 +100,18 @@
                 });
             }
             
-            // Auto-focus en el primer campo
             const nameInput = document.getElementById('name');
-            if (nameInput) {
-                nameInput.focus();
-            }
+            if (nameInput) nameInput.focus();
         });
     </script>
     @endpush
 
     @push('css')
     <style>
-        .form-label.required::after {
-            content: " *";
-            color: #d63384;
-        }
-        
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: box-shadow 0.15s ease-in-out;
-        }
-        
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        
-        .form-control:focus {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-        }
+        .form-label.required::after { content: " *"; color: #d63384; }
+        .card { box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075); transition: box-shadow .15s; }
+        .card:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); }
+        .form-control:focus { border-color:#0d6efd; box-shadow:0 0 0 .2rem rgba(13,110,253,.25);}
     </style>
     @endpush
 @endsection
