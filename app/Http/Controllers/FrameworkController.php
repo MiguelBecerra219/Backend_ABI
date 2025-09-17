@@ -23,7 +23,12 @@ class FrameworkController extends Controller
         // Obtener parámetros de filtrado y búsqueda
         $search = $request->get('search');
         $year = $request->get('year');
-        $perPage = $request->get('per_page', 10);
+        $perPageOptions = [10, 20, 30];
+        $perPage = (int) $request->get('per_page', $perPageOptions[0]);
+
+        if (! in_array($perPage, $perPageOptions, true)) {
+            $perPage = $perPageOptions[0];
+        }
 
         // Query base
         $query = Framework::query();
@@ -31,10 +36,10 @@ class FrameworkController extends Controller
         // Aplicar filtros
         if ($search) {
             // Búsqueda por nombre, descripción o ID
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('description', 'like', '%' . $search . '%');
-                
+                    ->orWhere('description', 'like', '%' . $search . '%');
+
                 // Si la búsqueda es numérica, también buscar por ID
                 if (is_numeric($search)) {
                     $q->orWhere('id', $search);
@@ -43,30 +48,32 @@ class FrameworkController extends Controller
         }
 
         if ($year) {
-            $query->where(function($q) use ($year) {
+            $query->where(function ($q) use ($year) {
                 $q->where('start_year', '<=', $year)
-                  ->where(function($subQ) use ($year) {
-                      $subQ->whereNull('end_year')
-                           ->orWhere('end_year', '>=', $year);
-                  });
+                    ->where(function ($subQ) use ($year) {
+                        $subQ->whereNull('end_year')
+                            ->orWhere('end_year', '>=', $year);
+                    });
             });
         }
 
         // Ordenamiento por defecto
         $query->orderBy('start_year', 'desc')
-              ->orderBy('name', 'asc');
+            ->orderBy('name', 'asc');
 
         $frameworks = $query->paginate($perPage);
 
         // Mantener parámetros en paginación
         $frameworks->appends($request->query());
 
-        return view('framework.index', compact('frameworks'))
-            ->with('i', ($frameworks->currentPage() - 1) * $frameworks->perPage())
-            ->with('search', $search)
-            ->with('year', $year)
-            ->with('perPage', $perPage)
-            ->with('status', null); // Add status as null since we removed status functionality
+        return view('framework.index', [
+            'frameworks' => $frameworks,
+            'search' => $search,
+            'year' => $year,
+            'perPage' => $perPage,
+            'perPageOptions' => $perPageOptions,
+            'i' => ($frameworks->currentPage() - 1) * $frameworks->perPage(),
+        ]);
     }
 
     /**
@@ -204,10 +211,10 @@ class FrameworkController extends Controller
             }
 
             DB::beginTransaction();
-            
+
             $frameworkName = $framework->name;
             $framework->delete();
-            
+
             DB::commit();
 
             return redirect()->route('frameworks.index')
@@ -216,9 +223,10 @@ class FrameworkController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error deleting framework: ' . $e->getMessage());
-            
+
             return redirect()->route('frameworks.index')
                 ->with('error', 'Ocurrió un error al eliminar el framework. Por favor, intente nuevamente.');
         }
     }
+
 }

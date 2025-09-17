@@ -91,7 +91,8 @@
                                         <a class="badge bg-azure-lt text-decoration-none" href="{{ route('frameworks.show', $contentFrameworkProject->framework_id) }}">
                                             Framework: {{ Str::limit($contentFrameworkProject->framework->name, 28) }}
                                         </a>
-                                                                        @endif
+
+                                    @endif
                                 </div>
                             </div>
                         </div>

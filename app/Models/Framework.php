@@ -40,6 +40,11 @@ class Framework extends Model
      */
     protected $fillable = ['name','description','link','start_year','end_year'];
 
+    protected $casts = [
+        'start_year' => 'integer',
+        'end_year' => 'integer',
+    ];
+
     /**
      * Get validation rules for updating a framework
      *
