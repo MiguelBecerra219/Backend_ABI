@@ -9,6 +9,10 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\FrameworkController;
 use App\Http\Controllers\ContentFrameworkProjectController;
+use App\Http\Controllers\InvestigationLineController;
+use App\Http\Controllers\ProgramController;
+use App\Http\Controllers\ResearchGroupController;
+use App\Http\Controllers\ThematicAreaController;
 
 
 Route::get('/', function () {
@@ -41,6 +45,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     
     // Formularios
     Route::resource('/formulario', FormularioController::class);
+
+    // Estructura académica avanzada
+    Route::resource('research-groups', ResearchGroupController::class);
+    Route::resource('programs', ProgramController::class);
+    Route::resource('investigation-lines', InvestigationLineController::class);
+    Route::resource('thematic-areas', ThematicAreaController::class);
 });
 
 // Rutas públicas para departamentos y ciudades (si las necesitas sin autenticación)
