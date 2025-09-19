@@ -6,7 +6,7 @@ export $(grep -v '^#' .env | xargs)
 
 # Paso 1: Ejecutar migraciones
 echo "==> Ejecutando migraciones y seeders..."
-php artisan migrate 
+php artisan migrate --seed
 
 # Paso 2: Leer y procesar el archivo SQL
 echo "==> Creando roles..."
@@ -14,6 +14,7 @@ sql_content=$(cat database/sql/roles.sql)
 
 # Reemplazar placeholders
 sql_content=${sql_content//'{{DB_DATABASE}}'/$DB_DATABASE}
+sql_content=${sql_content//'{{DB_USER_PASS}}}'/$DB_USER_PASS}
 sql_content=${sql_content//'{{DB_STUDENT_PASS}}'/$DB_STUDENT_PASS}
 sql_content=${sql_content//'{{DB_PROFESSOR_PASS}}'/$DB_PROFESSOR_PASS}
 sql_content=${sql_content//'{{DB_RESEARCH_PASS}}'/$DB_RESEARCH_PASS}
