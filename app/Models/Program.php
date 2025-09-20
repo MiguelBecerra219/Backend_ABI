@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class Program extends Model
 {
-protected $fillable = [
+    protected $fillable = [
         'code',
         'name',
         'research_group_id',
@@ -40,5 +40,10 @@ protected $fillable = [
         $this->attributes['name'] = is_null($value)
             ? null
             : Str::of($value)->squish()->title()->toString();
+    }
+
+    public function cities()
+    {
+        return $this->belongsToMany(City::class, 'city_program');
     }
 }
