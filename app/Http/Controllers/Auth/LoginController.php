@@ -57,8 +57,8 @@ class LoginController extends Controller
         } catch (\Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
 
-            // return redirect()->back()->withErrors(['db_error' => 'Inténtelo más tarde.']);
-            dd($e->getMessage()); #ELIMINAR DESPUES DE PRUEBAS
+            return redirect()->back()->withErrors(['db_error' => 'Inténtelo más tarde.']);
+            // dd($e->getMessage()); #ELIMINAR DESPUES DE PRUEBAS
         }
     }
 
