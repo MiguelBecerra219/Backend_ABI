@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 /**
  * Class Framework
  *
@@ -24,6 +26,7 @@ class Framework extends Model
     static $rules = [
         'name' => 'required|unique:frameworks,name',
         'description' => 'required|min:10',
+        'link' => 'nullable|url|max:200',
         'start_year' => 'required|integer|min:1900',
         'end_year' => 'nullable|integer|after_or_equal:start_year',
     ];
@@ -35,7 +38,12 @@ class Framework extends Model
      *
      * @var array
      */
-    protected $fillable = ['name','description','start_year','end_year'];
+    protected $fillable = ['name','description','link','start_year','end_year'];
+
+    protected $casts = [
+        'start_year' => 'integer',
+        'end_year' => 'integer',
+    ];
 
     /**
      * Get validation rules for updating a framework
@@ -48,8 +56,14 @@ class Framework extends Model
         return [
             'name' => 'required|unique:frameworks,name,' . $id,
             'description' => 'required|min:10',
+            'link' => 'nullable|url|max:200',
             'start_year' => 'required|integer|min:1900',
             'end_year' => 'nullable|integer|after_or_equal:start_year',
         ];
+    }
+
+    public function contentFrameworks(): HasMany
+    {
+        return $this->hasMany(ContentFramework::class, 'framework_id');
     }
 }

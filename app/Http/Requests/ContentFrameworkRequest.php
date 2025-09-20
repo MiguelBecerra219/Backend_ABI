@@ -6,12 +6,17 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ContentFrameworkRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [
-            'name'        => ['required','string','max:255'],
-            // BD no admite null ⇒ aceptamos nullable pero lo convertimos a '' en el controlador
-            'description' => ['nullable','string'],
+            'name'         => ['required', 'string', 'max:255'],
+            'description'  => ['required', 'string', 'min:10'],
+            'framework_id' => ['required', 'exists:frameworks,id'],
         ];
     }
 }

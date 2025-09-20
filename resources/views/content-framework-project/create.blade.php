@@ -45,7 +45,7 @@
 
     <!-- Cuerpo  hola -->
     <div class="page-body">
-        <div class="container-xl">
+                <div class="container-xl">
             @if(config('tablar','display_alert'))
                 @include('tablar::common.alert')
             @endif
@@ -70,11 +70,12 @@
                                 @csrf
                                 @php
                                     // Para preseleccionar framework cuando se llega desde /frameworks/{id}
-                                    $prefw = request('framework_id'); // ?framework_id=XX
+                                    $prefw = $prefw ?? request('framework_id'); // ?framework_id=XX
                                 @endphp
                                 @include('content-framework-project.form', [
                                     'contentFrameworkProject' => $contentFrameworkProject ?? null,
-                                    'prefw' => $prefw
+                                    'prefw' => $prefw,
+                                    'frameworks' => $frameworks ?? null
                                 ])
                             </form>
                         </div>

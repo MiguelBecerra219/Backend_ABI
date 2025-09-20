@@ -1,3 +1,8 @@
+
+@php
+    $showSubmit = $showSubmit ?? (!isset($framework) || !$framework?->exists);
+@endphp
+
 <!-- Nombre del Framework -->
 <div class="row mb-4">
     <div class="col-12">
@@ -166,3 +171,25 @@
 </div>
 
 {{-- (El resto del archivo permanece igual) --}}
+@if($showSubmit)
+    <hr class="mt-4 mb-3">
+    <div class="form-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <a href="{{ route('frameworks.index') }}" class="btn btn-outline-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Cancelar
+        </a>
+
+        <button type="submit" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-16a2 2 0 0 1 2 -2"/>
+                <circle cx="12" cy="14" r="2"/>
+                <polyline points="14 4 14 8 8 8 8 4"/>
+            </svg>
+            Guardar Framework
+        </button>
+    </div>
+@endif
