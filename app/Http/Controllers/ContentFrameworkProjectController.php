@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ContentFrameworkProject;
+use App\Http\Requests\ContentFrameworkRequest;
+use App\Models\ContentFramework;
+use App\Models\Framework;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 /**
  * Class ContentFrameworkProjectController
@@ -13,97 +17,104 @@ class ContentFrameworkProjectController extends Controller
 {
     /**
      * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request): View
     {
-        $contentFrameworkProjects = ContentFrameworkProject::paginate(10);
+        $search = trim((string) $request->get('search', ''));
+        if ($search === '') {
+            $search = null;
+        }
 
-        return view('content-framework-project.index', compact('contentFrameworkProjects'))
-            ->with('i', (request()->input('page', 1) - 1) * $contentFrameworkProjects->perPage());
+        $frameworkId = $request->get('framework_id');
+
+        $query = ContentFramework::with('framework')
+            ->orderByDesc('created_at');
+
+        if ($search !== null) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+
+                if (is_numeric($search)) {
+                    $q->orWhere('id', (int) $search);
+                }
+            });
+        }
+
+        if (!empty($frameworkId)) {
+            $query->where('framework_id', $frameworkId);
+        }
+
+        $contentFrameworkProjects = $query->paginate(10)->withQueryString();
+
+        $frameworkOptions = Framework::orderBy('name')->pluck('name', 'id');
+
+        return view('content-framework-project.index', compact('contentFrameworkProjects', 'frameworkOptions'))
+            ->with('search', $search)
+            ->with('framework_id', $frameworkId);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(Request $request): View
     {
-        $contentFrameworkProject = new ContentFrameworkProject();
-        return view('content-framework-project.create', compact('contentFrameworkProject'));
+        $contentFrameworkProject = new ContentFramework();
+        $frameworks = Framework::orderBy('name')->pluck('name', 'id');
+        $prefw = $request->get('framework_id');
+
+        return view('content-framework-project.create', compact('contentFrameworkProject', 'frameworks', 'prefw'));
     }
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ContentFrameworkRequest $request): RedirectResponse
     {
-        request()->validate(ContentFrameworkProject::$rules);
-
-        $contentFrameworkProject = ContentFrameworkProject::create($request->all());
+        $contentFrameworkProject = ContentFramework::create($request->validated());
 
         return redirect()->route('content-framework-projects.index')
-            ->with('success', 'ContentFrameworkProject created successfully.');
+            ->with('success', "Contenido '{$contentFrameworkProject->name}' creado correctamente.");
     }
 
     /**
      * Display the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(ContentFramework $contentFrameworkProject): View
     {
-        $contentFrameworkProject = ContentFrameworkProject::find($id);
-
         return view('content-framework-project.show', compact('contentFrameworkProject'));
     }
 
     /**
      * Show the form for editing the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(ContentFramework $contentFrameworkProject): View
     {
-        $contentFrameworkProject = ContentFrameworkProject::find($id);
+        $frameworks = Framework::orderBy('name')->pluck('name', 'id');
 
-        return view('content-framework-project.edit', compact('contentFrameworkProject'));
+        return view('content-framework-project.edit', compact('contentFrameworkProject', 'frameworks'));
     }
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @param  ContentFrameworkProject $contentFrameworkProject
-     * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, ContentFrameworkProject $contentFrameworkProject)
+    public function update(ContentFrameworkRequest $request, ContentFramework $contentFrameworkProject): RedirectResponse
     {
-        request()->validate(ContentFrameworkProject::$rules);
-
-        $contentFrameworkProject->update($request->all());
+        $contentFrameworkProject->update($request->validated());
 
         return redirect()->route('content-framework-projects.index')
-            ->with('success', 'ContentFrameworkProject updated successfully');
+            ->with('success', "Contenido '{$contentFrameworkProject->name}' actualizado correctamente.");
     }
 
     /**
-     * @param int $id
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Exception
+     * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(ContentFramework $contentFrameworkProject): RedirectResponse
     {
-        $contentFrameworkProject = ContentFrameworkProject::find($id)->delete();
+        $nombre = $contentFrameworkProject->name;
+        $contentFrameworkProject->delete();
 
         return redirect()->route('content-framework-projects.index')
-            ->with('success', 'ContentFrameworkProject deleted successfully');
+            ->with('success', "Contenido '{$nombre}' eliminado correctamente.");
     }
 }

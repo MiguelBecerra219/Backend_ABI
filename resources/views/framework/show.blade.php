@@ -8,7 +8,6 @@
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <!-- Navegación breadcrumb -->
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
@@ -16,7 +15,6 @@
                             <li class="breadcrumb-item active" aria-current="page">{{ $framework->name }}</li>
                         </ol>
                     </nav>
-                    <!-- Título principal -->
                     <h2 class="page-title d-flex align-items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg me-2 text-info" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="2"/>
@@ -28,7 +26,6 @@
                     <p class="text-muted">Información completa del framework "{{ $framework->name }}"</p>
                 </div>
                 
-                <!-- Botones de acción -->
                 <div class="col-12 col-md-auto ms-auto d-print-none">
                     <div class="btn-list">
                         <a href="{{ route('frameworks.edit', $framework->id) }}" class="btn btn-outline-success">
@@ -79,30 +76,19 @@
                                     $isCurrent = $framework->start_year <= $currentYear && ($framework->end_year === null || $framework->end_year >= $currentYear);
                                     $isFuture = $framework->start_year > $currentYear;
                                 @endphp
-                                
                                 @if($isCurrent)
                                     <span class="badge bg-success-lt fs-6">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="9"/>
-                                            <path d="M9 12l2 2l4 -4"/>
-                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg>
                                         Vigente
                                     </span>
                                 @elseif($isFuture)
                                     <span class="badge bg-info-lt fs-6">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="9"/>
-                                            <polyline points="12 7 12 12 15 15"/>
-                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
                                         Programado
                                     </span>
                                 @else
                                     <span class="badge bg-yellow-lt fs-6">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="9"/>
-                                            <path d="M12 8v4"/>
-                                            <path d="M12 16h.01"/>
-                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
                                         Finalizado
                                     </span>
                                 @endif
@@ -116,6 +102,26 @@
                                         <div class="fs-5 text-dark">{{ $framework->description }}</div>
                                     </div>
                                 </div>
+
+                                @if(!empty($framework->link))
+                                <div class="col-12">
+                                    <div class="mb-2">
+                                        <label class="form-label text-muted small">ENLACE</label>
+                                        <div class="d-flex align-items-center">
+                                            <a href="{{ $framework->link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-azure">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 1 0 -5 -5l-.5 .5"/>
+                                                    <path d="M14 10a3.5 3.5 0 0 0 -5 0l-3 3a3.5 3.5 0 1 0 5 5l.5 -.5"/>
+                                                </svg>
+                                                Abrir enlace
+                                            </a>
+                                            <span class="ms-2 text-muted text-truncate" style="max-width: 70%;">
+                                                {{ $framework->link }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -134,6 +140,14 @@
                             </h3>
                         </div>
                         <div class="card-body">
+                            {{-- (igual que tu archivo) --}}
+                            @php
+                                $startYear = $framework->start_year;
+                                $endYear = $framework->end_year ?? $currentYear + 5;
+                                $totalYears = $endYear - $startYear + 1;
+                                $elapsedYears = min($currentYear - $startYear + 1, $totalYears);
+                                $progress = $totalYears > 0 ? ($elapsedYears / $totalYears) * 100 : 0;
+                            @endphp
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -160,27 +174,16 @@
                                 </div>
                             </div>
 
-                            <!-- Línea de tiempo visual -->
                             <div class="mt-4">
                                 <label class="form-label text-muted small">LÍNEA DE TIEMPO</label>
-                                @php
-                                    $startYear = $framework->start_year;
-                                    $endYear = $framework->end_year ?? $currentYear + 5;
-                                    $totalYears = $endYear - $startYear + 1;
-                                    $elapsedYears = min($currentYear - $startYear + 1, $totalYears);
-                                    $progress = $totalYears > 0 ? ($elapsedYears / $totalYears) * 100 : 0;
-                                @endphp
-                                
                                 <div class="progress progress-lg mb-2">
                                     <div class="progress-bar bg-primary" style="width: {{ min($progress, 100) }}%" role="progressbar"></div>
                                 </div>
-                                
                                 <div class="d-flex justify-content-between text-muted small">
                                     <span>{{ $startYear }}</span>
                                     <span class="fw-bold text-primary">{{ $currentYear }} (Actual)</span>
                                     <span>{{ $framework->end_year ?? 'Indefinido' }}</span>
                                 </div>
-                                
                                 <div class="mt-2 text-center">
                                     @if($framework->end_year)
                                         @php
@@ -204,9 +207,8 @@
                     </div>
                 </div>
 
-                <!-- Panel lateral de información -->
+                <!-- Panel lateral -->
                 <div class="col-lg-4">
-                    <!-- Información del sistema -->
                     <div class="card mb-4">
                         <div class="card-header">
                             <h3 class="card-title d-flex align-items-center">
@@ -227,6 +229,15 @@
                                     </div>
                                     <span class="badge bg-blue-lt">{{ str_pad($framework->id, 3, '0', STR_PAD_LEFT) }}</span>
                                 </div>
+
+                                @if(!empty($framework->link))
+                                <div class="list-group-item px-0">
+                                    <div class="text-muted small mb-1">Enlace</div>
+                                    <a href="{{ $framework->link }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                                        {{ $framework->link }}
+                                    </a>
+                                </div>
+                                @endif
                                 
                                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                     <div>
@@ -251,7 +262,7 @@
                         </div>
                     </div>
 
-                    <!-- Estadísticas rápidas -->
+                    <!-- Estadísticas rápidas (igual que tu archivo) -->
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title d-flex align-items-center">
@@ -323,7 +334,6 @@
                                         Eliminar Framework
                                     </button>
                                     
-                                    <!-- Formulario oculto para eliminación -->
                                     <form id="delete-form-{{ $framework->id }}" action="{{ route('frameworks.destroy', $framework->id) }}" method="POST" style="display: none;">
                                         @csrf
                                         @method('DELETE')
@@ -355,16 +365,12 @@
 
     @push('js')
     <script>
-        // Función para confirmar eliminación
         function confirmDelete(id, name) {
             const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
             document.getElementById('frameworkName').textContent = name;
-            
-            // Configurar botón de confirmación
             document.getElementById('confirmDeleteBtn').onclick = function() {
                 document.getElementById('delete-form-' + id).submit();
             };
-            
             modal.show();
         }
     </script>
@@ -372,27 +378,11 @@
 
     @push('css')
     <style>
-        .badge.fs-6 {
-            font-size: 0.875rem !important;
-            padding: 0.375rem 0.75rem;
-        }
-        
-        .progress-lg {
-            height: 1rem;
-        }
-        
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: box-shadow 0.15s ease-in-out;
-        }
-        
-        .list-group-flush .list-group-item {
-            border-width: 0 0 1px;
-        }
-        
-        .list-group-flush .list-group-item:last-child {
-            border-bottom-width: 0;
-        }
+        .badge.fs-6 { font-size:.875rem!important; padding:.375rem .75rem; }
+        .progress-lg { height:1rem; }
+        .card { box-shadow:0 .125rem .25rem rgba(0,0,0,.075); transition:box-shadow .15s; }
+        .list-group-flush .list-group-item { border-width:0 0 1px; }
+        .list-group-flush .list-group-item:last-child { border-bottom-width:0; }
     </style>
     @endpush
 @endsection
