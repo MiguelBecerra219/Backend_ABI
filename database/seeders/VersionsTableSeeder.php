@@ -7,6 +7,12 @@ use JeroenZwart\CsvSeeder\CsvSeeder;
 
 class VersionsTableSeeder extends CsvSeeder
 {
+    public function __construct()
+    {
+        $this->file = '/database/seeders/csvs/versions.csv';
+        $this->delimiter = ',';
+        $this->truncate = false; // ⬅️ Evita el TRUNCATE
+    }
     /**
      * Run the database seeds.
      */
