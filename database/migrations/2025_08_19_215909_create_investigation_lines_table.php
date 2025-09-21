@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('investigation_lines', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100);
+            $table->string('name', 200);
             $table->text('description');
             $table->foreignId('research_group_id')
                 ->constrained('research_groups')
