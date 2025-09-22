@@ -15,7 +15,6 @@ class Student extends Model
         'last_name',
         'phone',
         'semester',
-        'user_id',
         'city_program_id',
     ];
 

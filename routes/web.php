@@ -5,7 +5,6 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FormularioController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\FrameworkController;
 use App\Http\Controllers\ContentFrameworkProjectController;
@@ -21,15 +20,23 @@ Route::get('/', function () {
 
 Route::get('/home', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Auth::routes();
+// Auth::routes();
+// Rutas de autenticación básicas (login, logout, etc.)
+Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
+Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
-Route::middleware(['auth', 'role:user'])->group(function () {
+Route::middleware(['auth', ' :user'])->group(function () {
     // Rutas para obtener ciudades por departamento
     Route::get('obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
     Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);
 });
 
 Route::middleware(['auth', 'role:research_staff'])->group(function () {
+    // Registro de nuevos usuarios
+    Route::get('register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('register', [App\Http\Controllers\Auth\RegisterController::class, 'register']);
+
     // Perfil
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');

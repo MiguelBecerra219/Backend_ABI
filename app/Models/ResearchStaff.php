@@ -13,7 +13,7 @@ class ResearchStaff extends Model
         'card_id',
         'name',
         'last_name',
-        'phone',
+        'phone'
     ];
 
     public function user()

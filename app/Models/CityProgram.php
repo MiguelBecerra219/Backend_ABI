@@ -13,6 +13,8 @@ class CityProgram extends Model
         'program_id',
     ];
 
+    protected $table = 'city_program';
+
     public function city()
     {
         return $this->belongsTo(City::class);
