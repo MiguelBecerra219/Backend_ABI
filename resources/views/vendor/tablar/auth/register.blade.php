@@ -164,14 +164,6 @@
                     </div>
                 </div>
 
-                <!-- Terms agreement -->
-                <div class="mb-3">
-                    <label class="form-check">
-                        <input type="checkbox" class="form-check-input" required/>
-                        <span class="form-check-label">Agree to the terms and policy.</span>
-                    </label>
-                </div>
-
                 <!-- Submit button -->
                 <div class="form-footer">
                     <button type="submit" class="btn btn-primary w-100">Create new account</button>
@@ -179,10 +171,6 @@
             </div>
         </form>
 
-        <!-- Sign in link -->
-        <div class="text-center text-muted mt-3">
-            Already have account? <a href="{{ route('login') }}" tabindex="-1">Sign in</a>
-        </div>
     </div>
 
     <!-- JavaScript para mostrar/ocultar campos segÃºn el rol -->

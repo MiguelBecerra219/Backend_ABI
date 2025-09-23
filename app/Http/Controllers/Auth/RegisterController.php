@@ -72,24 +72,11 @@ class RegisterController extends Controller
 
         // Validación adicional según el rol
         if (in_array($data['role'], ['student', 'professor', 'committee_leader'])) {
-            $rules['city_program_id'] = ['required', 'exists:city_programs,id'];
+            $rules['city_program_id'] = ['required', 'exists:city_program,id'];
         }
 
         if ($data['role'] === 'student') {
-            $rules = [
-                'semester' => 'required', 'integer', 'min:1', 'max:10'
-            ];
-        }
-
-        if (in_array($data['role'], ['professor', 'committee_leader'])) {
-            $rules = [
-                'committee_leader' => 'required', 'in:0,1'
-            ];
-            
-            // Si es committee_leader, asegurar que committee_leader = 1
-            if ($data['role'] === 'committee_leader' && ($data['committee_leader'] ?? '0') !== '1') {
-                $rules['committee_leader'] = ['in:1'];
-            }
+            $rules['semester'] = ['required', 'integer', 'min:1', 'max:10'];
         }
 
         return Validator::make($data, $rules);
