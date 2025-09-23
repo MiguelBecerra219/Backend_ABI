@@ -30,13 +30,13 @@
 
                 <!-- Role Selection -->
                 <div class="mb-3">
-                    <label class="form-label">User Role</label>
+                    <label class="form-label">Rol del usuario</label>
                     <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" required>
-                        <option value="">-- Select Role --</option>
-                        <option value="student" {{ old('role') == 'student' ? 'selected' : '' }}>Student</option>
-                        <option value="professor" {{ old('role') == 'professor' ? 'selected' : '' }}>Professor</option>
-                        <option value="committee_leader" {{ old('role') == 'committee_leader' ? 'selected' : '' }}>Committee Leader</option>
-                        <option value="research_staff" {{ old('role') == 'research_staff' ? 'selected' : '' }}>Research Staff</option>
+                        <option value="">-- Seleccione el rol --</option>
+                        <option value="student" {{ old('role') == 'student' ? 'selected' : '' }}>Estudiante</option>
+                        <option value="professor" {{ old('role') == 'professor' ? 'selected' : '' }}>Docente</option>
+                        <option value="committee_leader" {{ old('role') == 'committee_leader' ? 'selected' : '' }}>Líder de Comité</option>
+                        <option value="research_staff" {{ old('role') == 'research_staff' ? 'selected' : '' }}>Personal de Investigación</option>
                     </select>
                     @error('role')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -45,36 +45,36 @@
 
                 <!-- Personal Information (all required) -->
                 <div class="mb-3">
-                    <label class="form-label">Card ID</label>
+                    <label class="form-label">Número de identificación</label>
                     <input type="text" name="card_id" class="form-control @error('card_id') is-invalid @enderror"
-                           placeholder="Enter identification number" value="{{ old('card_id') }}" required>
+                           placeholder="Ingrese el número de identificación" value="{{ old('card_id') }}" required>
                     @error('card_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">First Name</label>
+                    <label class="form-label">Nombre</label>
                     <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
-                           placeholder="Enter first name" value="{{ old('name') }}" required>
+                           placeholder="Ingrese el nombre" value="{{ old('name') }}" required>
                     @error('name')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Last Name</label>
+                    <label class="form-label">Apellido</label>
                     <input type="text" name="last_name" class="form-control @error('last_name') is-invalid @enderror"
-                           placeholder="Enter last name" value="{{ old('last_name') }}" required>
+                           placeholder="Ingrese el apellido" value="{{ old('last_name') }}" required>
                     @error('last_name')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Phone</label>
+                    <label class="form-label">Teléfono</label>
                     <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror"
-                           placeholder="Enter phone number" value="{{ old('phone') }}" required>
+                           placeholder="Ingrese el número de teléfono" value="{{ old('phone') }}" required>
                     @error('phone')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -83,9 +83,9 @@
                 <!-- Student specific fields -->
                 <div id="student-fields" class="role-fields" style="display: none;">
                     <div class="mb-3">
-                        <label class="form-label">Semester</label>
+                        <label class="form-label">Semestre</label>
                         <input type="number" name="semester" class="form-control @error('semester') is-invalid @enderror"
-                               placeholder="Enter semester (1-10)" min="1" max="10" value="{{ old('semester') }}" required>
+                               placeholder="Ingrese el semestre (1-10)" min="1" max="10" value="{{ old('semester') }}" required>
                         @error('semester')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -95,9 +95,9 @@
                 <!-- Common fields for professors, committee leaders and students -->
                 <div id="program-fields" class="role-fields" style="display: none;">
                     <div class="mb-3">
-                        <label class="form-label">City Program</label>
+                        <label class="form-label">Programa y ciudad</label>
                         <select name="city_program_id" class="form-select @error('city_program_id') is-invalid @enderror" required>
-                            <option value="">-- Select Program --</option>
+                            <option value="">-- Seleccionar Programa --</option>
                             @foreach($cityPrograms as $program)
                                 <option value="{{ $program->id }}" {{ old('city_program_id') == $program->id ? 'selected' : '' }}>
                                     {{ $program->full_name }}
@@ -112,19 +112,19 @@
 
                 <!-- Email and Password -->
                 <div class="mb-3">
-                    <label class="form-label">Email address</label>
+                    <label class="form-label">Dirección de correo electrónico</label>
                     <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                           placeholder="Enter email" value="{{ old('email') }}" required>
+                           placeholder="Ingrese el correo electrónico" value="{{ old('email') }}" required>
                     @error('email')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
+                    <label class="form-label">Contraseña</label>
                     <div class="input-group input-group-flat">
                         <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                               placeholder="Password" autocomplete="off" required>
+                               placeholder="Contraseña" autocomplete="off" required>
                         <span class="input-group-text">
                             <a href="#" class="link-secondary" title="Show password" data-bs-toggle="tooltip">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
@@ -143,10 +143,10 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Confirm Password</label>
+                    <label class="form-label">Confirmar contraseña</label>
                     <div class="input-group input-group-flat">
                         <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror"
-                               placeholder="Confirm Password" autocomplete="off" required>
+                               placeholder="Confirmar contraseña" autocomplete="off" required>
                         <span class="input-group-text">
                             <a href="#" class="link-secondary" title="Show password" data-bs-toggle="tooltip">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
@@ -166,7 +166,7 @@
 
                 <!-- Submit button -->
                 <div class="form-footer">
-                    <button type="submit" class="btn btn-primary w-100">Create new account</button>
+                    <button type="submit" class="btn btn-primary w-100">Crear nuevo usuario</button>
                 </div>
             </div>
         </form>
