@@ -3,24 +3,21 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\CityProgram;
-use App\Models\Professor;
-use App\Models\ResearchStaff;
-use App\Models\Student;
-use App\Models\User;
+use App\Models\ResearchStaff\ResearchStaffCityProgram;
+use App\Models\ResearchStaff\ResearchStaffProfessor;
+use App\Models\ResearchStaff\ResearchStaffResearchStaff;
+use App\Models\ResearchStaff\ResearchStaffStudent;
+use App\Models\ResearchStaff\ResearchStaffUser;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class RegisterController extends Controller
 {
     use RegistersUsers;
-
-    //protected $redirectTo = '/register';
 
     public function __construct()
     {
@@ -36,7 +33,7 @@ class RegisterController extends Controller
     public function showRegistrationForm()
     {
         // Cargar programas para la vista
-        $cityPrograms = CityProgram::all();
+        $cityPrograms = ResearchStaffCityProgram::all();
         foreach ($cityPrograms as $program) {
             $program->full_name = $program->program->name . ' - ' . $program->city->name;
         }
@@ -46,6 +43,44 @@ class RegisterController extends Controller
 
     protected function validator(array $data)
     {
+    $messages = [
+        'name.required' => 'El nombre es obligatorio.',
+        'name.string' => 'El nombre debe ser un texto válido.',
+        'name.max' => 'El nombre no debe exceder 255 caracteres.',
+        
+        'last_name.required' => 'El apellido es obligatorio.',
+        'last_name.string' => 'El apellido debe ser un texto válido.',
+        'last_name.max' => 'El apellido no debe exceder 255 caracteres.',
+        
+        'phone.required' => 'El teléfono es obligatorio.',
+        'phone.string' => 'El teléfono debe ser un texto válido.',
+        'phone.max' => 'El teléfono no debe exceder 20 caracteres.',
+        
+        'password.required' => 'La contraseña es obligatoria.',
+        'password.string' => 'La contraseña debe ser un texto válido.',
+        'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+        'password.confirmed' => 'Las contraseñas no coinciden.',
+        
+        'role.required' => 'El rol es obligatorio.',
+        'role.in' => 'El rol seleccionado no es válido.',
+        
+        'card_id.required' => 'La cédula es obligatoria.',
+        'card_id.string' => 'La cédula debe ser un texto válido.',
+        'card_id.max' => 'La cédula no debe exceder 20 caracteres.',
+        
+        'email.required' => 'El correo electrónico es obligatorio.',
+        'email.email' => 'Debe ingresar un correo electrónico válido.',
+        'email.unique' => 'Este correo electrónico ya está registrado.',
+        
+        'city_program_id.required' => 'El programa es obligatorio.',
+        'city_program_id.exists' => 'El programa seleccionado no existe.',
+        
+        'semester.required' => 'El semestre es obligatorio.',
+        'semester.integer' => 'El semestre debe ser un número entero.',
+        'semester.min' => 'El semestre mínimo es 1.',
+        'semester.max' => 'El semestre máximo es 10.',
+    ];
+
         // Validación básica común
         $rules = [
             'name' => ['required', 'string', 'max:255'],
@@ -58,12 +93,12 @@ class RegisterController extends Controller
                 'string',
                 'max:20',
                 function ($attribute, $value, $fail) {
-                    $exists = \App\Models\Student::where('card_id', $value)->exists() ||
-                            \App\Models\Professor::where('card_id', $value)->exists() ||
-                            \App\Models\ResearchStaff::where('card_id', $value)->exists();
+                    $exists = \App\Models\ResearchStaff\ResearchStaffStudent::where('card_id', $value)->exists() ||
+                            \App\Models\ResearchStaff\ResearchStaffProfessor::where('card_id', $value)->exists() ||
+                            \App\Models\ResearchStaff\ResearchStaffResearchStaff::where('card_id', $value)->exists();
 
                     if ($exists) {
-                        $fail("The {$attribute} has already been taken.");
+                        $fail("El número de identificación ya ha sido registrado.");
                     }
                 },
             ],
@@ -79,13 +114,13 @@ class RegisterController extends Controller
             $rules['semester'] = ['required', 'integer', 'min:1', 'max:10'];
         }
 
-        return Validator::make($data, $rules);
+        return Validator::make($data, $rules, $messages);
     }
 
     protected function create(array $data)
     {
         // Crear el usuario
-        $user = User::create([
+        $user = ResearchStaffUser::create([
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role']
@@ -94,7 +129,7 @@ class RegisterController extends Controller
         // Crear registro en la tabla correspondiente según el rol
         switch ($data['role']) {
             case 'student':
-                $student = new Student();
+                $student = new ResearchStaffStudent();
                 $student-> card_id = $data['card_id'];
                 $student-> name = $data['name'];
                 $student-> last_name = $data['last_name'];
@@ -107,7 +142,7 @@ class RegisterController extends Controller
                 
             case 'professor':
             case 'committee_leader':
-                $professor = new Professor();
+                $professor = new ResearchStaffProfessor();
                 $professor-> card_id = $data['card_id'];
                 $professor-> name = $data['name'];
                 $professor-> last_name = $data['last_name'];
@@ -119,7 +154,7 @@ class RegisterController extends Controller
                 break;
                 
             case 'research_staff':
-                $research_staff = new ResearchStaff();
+                $research_staff = new ResearchStaffResearchStaff();
                 $research_staff-> card_id = $data['card_id'];
                 $research_staff-> name = $data['name'];
                 $research_staff-> last_name = $data['last_name'];
