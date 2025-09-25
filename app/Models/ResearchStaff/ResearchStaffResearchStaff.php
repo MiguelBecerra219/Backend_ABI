@@ -6,7 +6,7 @@ use App\Models\ResearchStaff;
 
 class ResearchStaffResearchStaff extends ResearchStaff
 {
-    protected $table = 'research_staffs';
+    protected $table = 'research_staff';
 
     protected $connection = 'mysql_research_staff';
 }
