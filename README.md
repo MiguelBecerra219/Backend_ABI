@@ -144,9 +144,14 @@ El proyecto sigue el patrón **MVC (Model-View-Controller)** de Laravel:
    php artisan key:generate
    ```
 
-6. **Ejecutar migraciones**
+6. **Levantamiento de la base de datos**
    ```bash
-   php artisan migrate
+   # En Windows powershell desde la raíz del proyecto
+   .\scripts\set-db-roles.ps1
+
+   # En linux desde la raíz del proyecto
+   bash scripts/set-db-roles.sh
+   ./scripts/set-db-roles.sh
    ```
 
 7. **Compilar assets del frontend**
