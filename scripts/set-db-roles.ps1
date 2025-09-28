@@ -1,33 +1,33 @@
-# Cargar variables del archivo .env
+# Load environment variables from the .env file
 $envContent = Get-Content .env -Raw | ConvertFrom-StringData
 
-# Paso 1: Ejecutar migraciones
+# Step 1: Run database migrations and seeders
 Write-Host "==> Ejecutando migraciones y seeders..."
 php artisan migrate --seed
 
-# Paso 2: Leer y procesar el archivo SQL
+# Step 2: Read and process the SQL file for role creation
 Write-Host "==> Creando roles..."
 $sqlContent = Get-Content "database/sql/roles.sql" -Raw
 
-# Reemplazar placeholders
+# Replace placeholders with values from the .env file
 $sqlContent = $sqlContent -replace "{{DB_USER_PASS}}", $envContent.DB_USER_PASS
 $sqlContent = $sqlContent -replace "{{DB_DATABASE}}", $envContent.DB_DATABASE
 $sqlContent = $sqlContent -replace "{{DB_STUDENT_PASS}}", $envContent.DB_STUDENT_PASS
 $sqlContent = $sqlContent -replace "{{DB_PROFESSOR_PASS}}", $envContent.DB_PROFESSOR_PASS
 $sqlContent = $sqlContent -replace "{{DB_RESEARCH_PASS}}", $envContent.DB_RESEARCH_PASS
 
-# Guardar temporalmente
+# Save the processed SQL to a temporary file
 $tempFile = "temp_roles.sql"
 $sqlContent | Out-File $tempFile -Encoding UTF8
 
-# Ejecutar con MySQL
+# Execute the SQL script using MySQL
 $mysqlPath = "C:\xampp\mysql\bin\mysql.exe"
 $mysqlArgs = "-u$($envContent.DB_USERNAME) -p$($envContent.DB_PASSWORD) -h$($envContent.DB_HOST) -P$($envContent.DB_PORT) $($envContent.DB_DATABASE) -e `"source $tempFile`""
 
 Write-Host "Ejecutando: $mysqlPath $mysqlArgs"
 Start-Process -FilePath $mysqlPath -ArgumentList $mysqlArgs -Wait -NoNewWindow
 
-# Limpiar archivo temporal
+# Clean up temporary file
 Remove-Item $tempFile -ErrorAction SilentlyContinue
 
 Write-Host "==> Base de datos inicializada correctamente 🎉"
