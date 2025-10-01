@@ -170,6 +170,16 @@
                 </div>
             </div>
         </form>
+        <!-- Button to return to the user index -->
+        <div class="text-center text-muted mt-3">
+            <a href="{{ route('users.index') }}" class="btn btn-outline-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Volver al listado de usuarios
+            </a>
+        </div>
 
     </div>
 

@@ -36,12 +36,17 @@ Route::middleware(['auth', ' :user'])->group(function () {
 
 // Protected routes for research_staff role
 Route::middleware(['auth', 'role:research_staff'])->group(function () {
+    // Users
     // New user registration
     Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
     Route::post('register', [RegisterController::class, 'register']);
 
-    // Users update
-    Route::get('update-user', [UserController::class, 'index']);
+    Route::get('user/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::put('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
 
     // Profile
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
