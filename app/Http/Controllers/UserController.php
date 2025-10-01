@@ -22,7 +22,7 @@ class UserController extends Controller
      */
     public function index(Request $request): View
     {
-        // Obtener parámetros de filtrado y búsqueda
+        // Get filter and search parameters
         $search = $request->get('search');
         $role = $request->get('role');
         $state = $request->get('state');
@@ -37,7 +37,7 @@ class UserController extends Controller
         // Query base
         $query = ResearchStaffUser::query();
 
-        // Aplicar filtros
+        // Apply filters
         if ($role) {
             $query->where('role', $role);
         }
@@ -87,15 +87,15 @@ class UserController extends Controller
             });
         }
 
-        // ⚠️ CORRECCIÓN AQUÍ: Eliminar el orderBy('name')
-        // Solo ordenar por created_at en la consulta SQL
+        
+        // Only order by created_at in the SQL query
         $query->orderBy('created_at', 'desc');
 
-        // Obtener los usuarios paginados
+        // Get paginated users
         $users = $query->paginate($perPage);
         $users->appends($request->query());
 
-        // ✅ ORDENAR POR NOMBRE EN PHP (después de obtener los resultados)
+        // SORT BY NAME IN PHP (after getting the results)
         $usersCollection = $users->getCollection()->sortBy(function ($user) {
             switch ($user->role) {
                 case 'student':
@@ -110,10 +110,10 @@ class UserController extends Controller
             }
         });
 
-        // Reemplazar la colección paginada con la colección ordenada
+        // Replace paginated collection with sorted collection
         $users->setCollection($usersCollection);
 
-        // Cargar detalles de usuarios
+        // Upload user details
         $userIds = collect($users->items())->pluck('id')->toArray();
         $studentIds = [];
         $professorIds = [];
@@ -153,7 +153,7 @@ class UserController extends Controller
             }
         }
 
-        // Cargar programas
+        // Load programs
         $cityPrograms = ResearchStaffCityProgram::all();
         foreach ($cityPrograms as $program) {
             $program->full_name = $program->program->name . ' - ' . $program->city->name;
@@ -178,12 +178,12 @@ class UserController extends Controller
     public function show(ResearchStaffUser $user): View
     {
         
-        // Cargar los datos adicionales según el rol
+        // Load additional data according to the role
         $details = null;
         
         switch ($user->role) {
             case 'student':
-                // Cargar relaciones necesarias para city_program
+                // Load relationships needed for city_program
                 $details = ResearchStaffStudent::with([
                     'cityProgram' => function($query) {
                         $query->with(['city', 'program']);
@@ -193,7 +193,7 @@ class UserController extends Controller
                 
             case 'professor':
             case 'committee_leader':
-                // Cargar relaciones necesarias para city_program
+                // Load relationships needed for city_program
                 $details = ResearchStaffProfessor::with([
                     'cityProgram' => function($query) {
                         $query->with(['city', 'program']);
@@ -206,7 +206,7 @@ class UserController extends Controller
                 break;
         }
         
-        // Pasar tanto el usuario como sus detalles a la vista
+        // Pass both the user and their details to the view
         return view('users.show', compact('user', 'details'));
     }
 
@@ -215,7 +215,7 @@ class UserController extends Controller
      */
     public function edit(ResearchStaffUser $user): \Illuminate\View\View
     {
-        // Cargar los datos adicionales según el rol
+        // Load additional data according to the role
         $details = null;
         $cityPrograms = ResearchStaffCityProgram::all();
         
@@ -250,7 +250,7 @@ class UserController extends Controller
      */
     public function update(\Illuminate\Http\Request $request, ResearchStaffUser $user): RedirectResponse
     {
-        // Validar campos comunes
+        // Validate common fields
         $validated = $request->validate([
             'email' => [
                 'required',
@@ -265,16 +265,16 @@ class UserController extends Controller
         $newRole = $request->role;
         $oldRole = $user->role;
         
-        // Si hay cambio de rol, validamos los campos del nuevo rol
+        // If there is a role change, we validate the fields of the new role
         if ($newRole !== $oldRole) {
             $additional = $this->validateRoleFields($request, $newRole);
         } 
-        // Si el rol no cambia, validamos los campos del rol actual
+        // If the role does not change, we validate the fields of the current role
         else {
             $additional = $this->validateRoleFields($request, $newRole);
         }
 
-        // Actualizar el usuario
+        // Update the user
         $user->update([
             'email' => $validated['email'],
             'state' => $validated['state'],
@@ -282,15 +282,15 @@ class UserController extends Controller
             'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
         ]);
 
-        // Si hay cambio de rol, necesitamos manejar la información de las tablas de rol
+        // If there is a role change, we need to manage the information from the role tables
         if ($newRole !== $oldRole) {
-            // Eliminar (soft delete) el registro de la tabla anterior
+            // Delete (soft delete) the record from the previous table
             $this->deleteOldRoleRecord($user, $oldRole);
             
-            // Crear un nuevo registro en la tabla del nuevo rol
+            // Create a new record in the new role's table
             $this->createNewRoleRecord($user, $newRole, $additional);
         } 
-        // Si el rol no cambia, actualizamos el registro existente
+        // If the role does not change, we update the existing record
         else {
             $this->updateExistingRoleRecord($user, $newRole, $additional);
         }
@@ -301,7 +301,7 @@ class UserController extends Controller
     }
 
     /**
-     * Valida los campos específicos según el rol
+     * Validates specific fields based on role
      */
     private function validateRoleFields(\Illuminate\Http\Request $request, string $role): array
     {
@@ -326,8 +326,7 @@ class UserController extends Controller
                     'city_program_id' => 'required|exists:city_programs,id',
                 ]);
                 
-                // ✅ ESTO ES LO MÁS IMPORTANTE:
-                // Ignoramos lo que el cliente envió y establecemos basado en el rol
+                // We ignore what the client sent and set based on the role
                 $validated['committee_leader'] = ($role === 'committee_leader') ? 1 : 0;
                 
             case 'research_staff':
@@ -344,7 +343,7 @@ class UserController extends Controller
     }
 
     /**
-     * Elimina el registro de la tabla del rol anterior
+     * Deletes the record from the table of the previous role
      */
     private function deleteOldRoleRecord(ResearchStaffUser $user, string $role): void
     {
@@ -365,7 +364,7 @@ class UserController extends Controller
     }
 
     /**
-     * Crea un nuevo registro en la tabla del nuevo rol
+     * Create a new record in the new role's table
      */
     private function createNewRoleRecord(ResearchStaffUser $user, string $role, array $data): void
     {
@@ -408,7 +407,7 @@ class UserController extends Controller
     }
 
     /**
-     * Actualiza el registro existente en la tabla del rol
+     * Updates the existing record in the role table
      */
     private function updateExistingRoleRecord(ResearchStaffUser $user, string $role, array $data): void
     {
@@ -461,17 +460,17 @@ class UserController extends Controller
      */
     public function destroy(ResearchStaffUser $user): RedirectResponse
     {
-        // Iniciar transacción para mantener consistencia
+        // Start transaction to maintain consistency
         DB::transaction(function () use ($user) {
-            // 1. Cambiar estado del usuario a inactivo (0)
+            // Change user status to inactive (0)
             $user->update(['state' => '0']);
             
-            // 2. Aplicar soft delete en la tabla relacionada según el rol
+            // Apply soft delete on the related table according to the role
             switch ($user->role) {
                 case 'student':
                     $student = ResearchStaffStudent::where('user_id', $user->id)->first();
                     if ($student) {
-                        $student->delete(); // Esto llama a soft delete si el modelo usa SoftDeletes
+                        $student->delete();
                     }
                     break;
                     
@@ -479,14 +478,14 @@ class UserController extends Controller
                 case 'committee_leader':
                     $professor = ResearchStaffProfessor::where('user_id', $user->id)->first();
                     if ($professor) {
-                        $professor->delete(); // Esto llama a soft delete si el modelo usa SoftDeletes
+                        $professor->delete();
                     }
                     break;
                     
                 case 'research_staff':
                     $researchStaff = ResearchStaffResearchStaff::where('user_id', $user->id)->first();
                     if ($researchStaff) {
-                        $researchStaff->delete(); // Esto llama a soft delete si el modelo usa SoftDeletes
+                        $researchStaff->delete();
                     }
                     break;
             }
@@ -503,7 +502,7 @@ class UserController extends Controller
     public function activate(ResearchStaffUser $user): RedirectResponse
     {
         DB::transaction(function () use ($user) {
-            // 1. Primero restaurar los registros relacionados
+            // First restore the related records
             $restored = false;
             
             switch ($user->role) {
@@ -542,13 +541,13 @@ class UserController extends Controller
                     break;
             }
             
-            // 2. Solo actualizar el estado si se restauró algún registro relacionado
-            // Esto es importante para evitar inconsistencias
+            // Only update the status if a related record was restored
+            // This is important to avoid inconsistencies
             if ($restored) {
                 $user->update(['state' => '1']);
             } else {
-                // Si no había registros relacionados eliminados, podría ser un error
-                // Podrías lanzar una excepción o registrar un log
+                // If there were no deleted related records, it could be an error
+                // You could throw an exception or log a log
                 // \log::warning("Intento de activar usuario {$user->id} pero no se encontraron registros relacionados eliminados");
             }
         });

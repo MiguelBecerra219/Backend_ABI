@@ -202,7 +202,7 @@
                                             </svg>
                                         </a>
                                         @if($user->state == '1')
-                                            <!-- Botón para desactivar usuario -->
+                                            <!-- Button to deactivate user -->
                                             <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas desactivar el usuario {{ $user->email }}?');">
                                                 @csrf
                                                 @method('DELETE')
@@ -219,7 +219,7 @@
                                                 </button>
                                             </form>
                                         @else
-                                            <!-- Botón para activar usuario -->
+                                            <!-- Button to activate user -->
                                             <form action="{{ route('users.activate', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas activar el usuario {{ $user->email }}?');">
                                                 @csrf
                                                 @method('PUT')

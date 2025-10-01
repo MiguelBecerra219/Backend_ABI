@@ -11,7 +11,7 @@
         <form class="card card-md" action="{{ route('register') }}" method="post" autocomplete="off" novalidate>
             @csrf
             <div class="card-body">
-                <!-- Mensajes de Ã©xito/error -->
+                <!-- Success/error messages -->
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('success') }}
@@ -183,7 +183,7 @@
 
     </div>
 
-    <!-- JavaScript para mostrar/ocultar campos segÃºn el rol -->
+    <!-- JavaScript to show/hide fields based on role -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const roleSelect = document.getElementById('role');
@@ -193,11 +193,11 @@
             function toggleFields() {
                 const role = roleSelect.value;
 
-                // Ocultar todos los campos dinÃ¡micos
+                // Hide all dynamic fields
                 studentFields.style.display = 'none';
                 programFields.style.display = 'none';
 
-                // Mostrar los campos relevantes
+                // Show relevant fields
                 if (role === 'student') {
                     studentFields.style.display = 'block';
                     programFields.style.display = 'block';
@@ -206,10 +206,10 @@
                 }
             }
 
-            // Ejecutar al cargar
+            // Run on load
             toggleFields();
 
-            // Escuchar cambios
+            // Listen to changes
             roleSelect.addEventListener('change', toggleFields);
         });
     </script>

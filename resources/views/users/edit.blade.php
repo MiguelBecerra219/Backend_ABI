@@ -161,7 +161,7 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Campos específicos para estudiantes -->
+                                <!-- Specific fields for students -->
                                 <div id="student-fields" class="role-fields" style="{{ in_array(old('role', $user->role), ['student']) ? '' : 'display: none;' }}">
                                     <div class="row">
                                         <div class="col-md-6">
@@ -194,7 +194,7 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Campos específicos para profesores -->
+                                <!-- Specific fields for teachers -->
                                 <div id="professor-fields" class="role-fields" style="{{ in_array(old('role', $user->role), ['professor', 'committee_leader']) ? '' : 'display: none;' }}">
                                     <div class="row">
                                         <div class="col-md-6">
@@ -256,19 +256,19 @@
             function toggleRoleFields() {
                 const role = roleSelect.value;
                 
-                // Ocultar todos los campos específicos
+                // Hide all specific fields
                 studentFields.style.display = 'none';
                 professorFields.style.display = 'none';
                 
-                // Mostrar los campos según el rol
+                // Display fields by role
                 if (role === 'student') {
                     studentFields.style.display = 'block';
-                    // Para estudiantes, aseguramos que committee_leader sea 0 (aunque no aplica)
+                    // For students, we ensure that committee_leader is 0 (although this is not applicable)
                     committeeLeaderInput.value = '0';
                 } else if (role === 'professor' || role === 'committee_leader') {
                     professorFields.style.display = 'block';
                     
-                    // Actualizar automáticamente el valor de committee_leader
+                    // Automatically update the value of committee_leader
                     if (role === 'committee_leader') {
                         committeeLeaderInput.value = '1';
                     } else {
@@ -277,10 +277,10 @@
                 }
             }
             
-            // Inicializar
+            // Initialize
             toggleRoleFields();
             
-            // Escuchar cambios
+            // Listen to changes
             roleSelect.addEventListener('change', toggleRoleFields);
         });
     </script>
