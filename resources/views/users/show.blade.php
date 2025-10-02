@@ -84,7 +84,7 @@
 
                                 <dt class="col-sm-3">Estado</dt>
                                 <dd class="col-sm-9">
-                                    @if($user->state === 'active')
+                                    @if($user->state === 1)
                                         <span class="badge bg-success-lt">Activo</span>
                                     @else
                                         <span class="badge bg-danger-lt">Inactivo</span>

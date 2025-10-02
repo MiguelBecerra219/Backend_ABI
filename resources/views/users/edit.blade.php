@@ -42,12 +42,23 @@
                 @include('tablar::common.alert')
             @endif
 
+            <!-- Mensajes de error generales -->
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Información de cuenta</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('users.update', $user) }}">
+                    <form method="POST" action="{{ route('users.update', $user) }}" id="user-form">
                         @csrf
                         @method('PUT')
                         
@@ -67,8 +78,8 @@
                                 <div class="mb-3">
                                     <label for="state" class="form-label required">Estado</label>
                                     <select id="state" name="state" class="form-select @error('state') is-invalid @enderror" required>
-                                        <option value="active" {{ old('state', $user->state) == 'active' ? 'selected' : '' }}>Activo</option>
-                                        <option value="inactive" {{ old('state', $user->state) == 'inactive' ? 'selected' : '' }}>Inactivo</option>
+                                        <option value="1" {{ old('state', $user->state) == '1' ? 'selected' : '' }}>Activo</option>
+                                        <option value="0" {{ old('state', $user->state) == '0' ? 'selected' : '' }}>Inactivo</option>
                                     </select>
                                     @error('state')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -103,6 +114,28 @@
                                     @enderror
                                     <small class="form-hint">Deja en blanco para mantener la contraseña actual</small>
                                 </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Confirmar contraseña</label>
+                                    <div class="input-group input-group-flat">
+                                        <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror"
+                                            placeholder="Confirmar contraseña" autocomplete="off">
+                                        <span class="input-group-text">
+                                            <a href="#" class="link-secondary" title="Show password" data-bs-toggle="tooltip">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                                                    stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                                                    stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <circle cx="12" cy="12" r="2"/>
+                                                    <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/>
+                                                </svg>
+                                            </a>
+                                        </span>
+                                        @error('password_confirmation')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -117,8 +150,13 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="card_id" class="form-label required">Cédula</label>
-                                            <input type="text" id="card_id" name="card_id" class="form-control @error('card_id') is-invalid @enderror" 
-                                                   value="{{ old('card_id', $details->card_id ?? '') }}" required>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" 
+                                                    value="{{ old('card_id', $details->card_id ?? '') }}" 
+                                                    readonly>
+                                                <input type="hidden" id="card_id" name="card_id" 
+                                                    value="{{ old('card_id', $details->card_id ?? '') }}">
+                                            </div>
                                             @error('card_id')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
@@ -168,7 +206,7 @@
                                             <div class="mb-3">
                                                 <label for="semester" class="form-label required">Semestre</label>
                                                 <input type="number" id="semester" name="semester" class="form-control @error('semester') is-invalid @enderror" 
-                                                       min="1" max="10" value="{{ old('semester', $details->semester ?? '') }}" required>
+                                                       min="1" max="10" value="{{ old('semester', $details->semester ?? '') }}">
                                                 @error('semester')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
@@ -177,8 +215,8 @@
                                         
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label for="city_program_id" class="form-label required">Programa</label>
-                                                <select id="city_program_id" name="city_program_id" class="form-select @error('city_program_id') is-invalid @enderror" required>
+                                                <label for="student_city_program_id" class="form-label required">Programa</label>
+                                                <select id="student_city_program_id" name="city_program_id" class="form-select @error('city_program_id') is-invalid @enderror">
                                                     <option value="">Selecciona un programa…</option>
                                                     @foreach($cityPrograms as $program)
                                                         <option value="{{ $program->id }}" {{ old('city_program_id', $details->city_program_id ?? '') == $program->id ? 'selected' : '' }}>
@@ -199,8 +237,8 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label for="city_program_id" class="form-label required">Programa</label>
-                                                <select id="city_program_id" name="city_program_id" class="form-select @error('city_program_id') is-invalid @enderror" required>
+                                                <label for="professor_city_program_id" class="form-label required">Programa</label>
+                                                <select id="professor_city_program_id" name="city_program_id" class="form-select @error('city_program_id') is-invalid @enderror">
                                                     <option value="">Selecciona un programa…</option>
                                                     @foreach($cityPrograms as $program)
                                                         <option value="{{ $program->id }}" {{ old('city_program_id', $details->city_program_id ?? '') == $program->id ? 'selected' : '' }}>
@@ -252,23 +290,33 @@
             const committeeLeaderInput = document.getElementById('committee_leader');
             const studentFields = document.getElementById('student-fields');
             const professorFields = document.getElementById('professor-fields');
+            const semesterField = document.getElementById('semester');
+            const studentCityProgramField = document.getElementById('student_city_program_id');
+            const professorCityProgramField = document.getElementById('professor_city_program_id');
             
             function toggleRoleFields() {
                 const role = roleSelect.value;
                 
-                // Hide all specific fields
-                studentFields.style.display = 'none';
-                professorFields.style.display = 'none';
+                // Ocultar todos los campos específicos
+                if (studentFields) studentFields.style.display = 'none';
+                if (professorFields) professorFields.style.display = 'none';
                 
-                // Display fields by role
+                // Remover el atributo required de todos los campos relevantes
+                if (semesterField) semesterField.removeAttribute('required');
+                if (studentCityProgramField) studentCityProgramField.removeAttribute('required');
+                if (professorCityProgramField) professorCityProgramField.removeAttribute('required');
+                
+                // Mostrar los campos según el rol y agregar required
                 if (role === 'student') {
-                    studentFields.style.display = 'block';
-                    // For students, we ensure that committee_leader is 0 (although this is not applicable)
+                    if (studentFields) studentFields.style.display = 'block';
+                    if (semesterField) semesterField.required = true;
+                    if (studentCityProgramField) studentCityProgramField.required = true;
                     committeeLeaderInput.value = '0';
                 } else if (role === 'professor' || role === 'committee_leader') {
-                    professorFields.style.display = 'block';
+                    if (professorFields) professorFields.style.display = 'block';
+                    if (professorCityProgramField) professorCityProgramField.required = true;
                     
-                    // Automatically update the value of committee_leader
+                    // Actualizar automáticamente el valor de committee_leader
                     if (role === 'committee_leader') {
                         committeeLeaderInput.value = '1';
                     } else {
@@ -277,11 +325,13 @@
                 }
             }
             
-            // Initialize
+            // Inicializar
             toggleRoleFields();
             
-            // Listen to changes
-            roleSelect.addEventListener('change', toggleRoleFields);
+            // Escuchar cambios
+            if (roleSelect) {
+                roleSelect.addEventListener('change', toggleRoleFields);
+            }
         });
     </script>
 @endsection

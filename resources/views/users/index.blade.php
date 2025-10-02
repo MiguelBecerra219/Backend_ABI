@@ -71,15 +71,15 @@
                                 <option value="student" {{ (string)($role ?? '') === 'student' ? 'selected' : '' }}>Estudiante</option>
                                 <option value="professor" {{ (string)($role ?? '') === 'professor' ? 'selected' : '' }}>Profesor</option>
                                 <option value="committee_leader" {{ (string)($role ?? '') === 'committee_leader' ? 'selected' : '' }}>Líder de Comité</option>
-                                <option value="research_staff" {{ (string)($role ?? '') === 'research_staff' ? 'selected' : '' }}>Staff de Investigación</option>
+                                <option value="research_staff" {{ (string)($role ?? '') === 'research_staff' ? 'selected' : '' }}>Personal de Investigación</option>
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label for="state" class="form-label">Estado</label>
                             <select name="state" id="state" class="form-select" onchange="this.form.submit()">
                                 <option value="">Todos</option>
-                                <option value="1" {{ ($state ?? '') == '1' ? 'selected' : '' }}>Activo</option>
-                                <option value="0" {{ ($state ?? '') == '0' ? 'selected' : '' }}>Inactivo</option>
+                                <option value="1" {{ ($state ?? '') == 1 ? 'selected' : '' }}>Activo</option>
+                                <option value="0" {{ ($state ?? '') == 0 ? 'selected' : '' }}>Inactivo</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -148,7 +148,7 @@
                                             <span class="badge bg-warning-lt">Líder de Comité</span>
                                             @break
                                         @case('research_staff')
-                                            <span class="badge bg-success-lt">Staff de Investigación</span>
+                                            <span class="badge bg-success-lt">Personal de Investigación</span>
                                             @break
                                         @default
                                             <span class="badge bg-secondary-lt">{{ $user->role }}</span>
@@ -201,7 +201,7 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
-                                        @if($user->state == '1')
+                                        @if($user->state == 1)
                                             <!-- Button to deactivate user -->
                                             <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas desactivar el usuario {{ $user->email }}?');">
                                                 @csrf

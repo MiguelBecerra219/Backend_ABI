@@ -26,6 +26,7 @@ class Student extends Model
         'phone',
         'semester',
         'city_program_id',
+        'user_id',
     ];
 
     /**

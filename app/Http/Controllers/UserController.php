@@ -26,6 +26,9 @@ class UserController extends Controller
         $search = $request->get('search');
         $role = $request->get('role');
         $state = $request->get('state');
+        if ($state !== null) {
+            $state = (int)$state;
+        }
         $cityProgramId = $request->get('city_program_id');
         $perPageOptions = [10, 20, 30];
         $perPage = (int) $request->get('per_page', $perPageOptions[0]);
@@ -42,7 +45,7 @@ class UserController extends Controller
             $query->where('role', $role);
         }
 
-        if ($state) {
+        if ($state !== null) {
             $query->where('state', $state);
         }
 
@@ -257,7 +260,7 @@ class UserController extends Controller
                 'email',
                 Rule::unique('users')->ignore($user->id)
             ],
-            'state' => 'required|in:active,inactive',
+            'state' => 'required|in:1,0',
             'role' => 'required|in:student,professor,committee_leader,research_staff',
             'password' => 'nullable|min:8|confirmed',
         ]);
@@ -313,7 +316,7 @@ class UserController extends Controller
                     'last_name' => 'required|string|max:255',
                     'phone' => 'required|string|max:20',
                     'semester' => 'required|integer|min:1|max:10',
-                    'city_program_id' => 'required|exists:city_programs,id',
+                    'city_program_id' => 'required|exists:city_program,id',
                 ]);
                 
             case 'professor':
@@ -323,12 +326,12 @@ class UserController extends Controller
                     'name' => 'required|string|max:255',
                     'last_name' => 'required|string|max:255',
                     'phone' => 'required|string|max:20',
-                    'city_program_id' => 'required|exists:city_programs,id',
+                    'city_program_id' => 'required|exists:city_program,id',
                 ]);
                 
                 // We ignore what the client sent and set based on the role
                 $validated['committee_leader'] = ($role === 'committee_leader') ? 1 : 0;
-                
+                return $validated;
             case 'research_staff':
                 return $request->validate([
                     'card_id' => 'required|string|max:20',
@@ -364,44 +367,157 @@ class UserController extends Controller
     }
 
     /**
-     * Create a new record in the new role's table
+     * Create a new record in the new role's table or restore an existing one
      */
     private function createNewRoleRecord(ResearchStaffUser $user, string $role, array $data): void
     {
         switch ($role) {
             case 'student':
-                ResearchStaffStudent::create([
-                    'card_id' => $data['card_id'],
-                    'name' => $data['name'],
-                    'last_name' => $data['last_name'],
-                    'phone' => $data['phone'],
-                    'semester' => $data['semester'],
-                    'city_program_id' => $data['city_program_id'],
-                    'user_id' => $user->id,
-                ]);
+                // Check if a student with this ID already exists
+                $existingStudent = ResearchStaffStudent::withTrashed()
+                    ->where('card_id', $data['card_id'])
+                    ->first();
+                
+                if ($existingStudent) {
+                    // If it exists and is deleted, restore it and update
+                    if ($existingStudent->trashed()) {
+                        $existingStudent->restore();
+                        $existingStudent->update([
+                            'name' => $data['name'],
+                            'last_name' => $data['last_name'],
+                            'phone' => $data['phone'],
+                            'semester' => $data['semester'],
+                            'city_program_id' => $data['city_program_id'],
+                            'user_id' => $user->id
+                        ]);
+                    } 
+                    // If it exists and is not deleted, check if it is the same user
+                    else {
+                        // If it is the same user (same user_id), just update
+                        if ($existingStudent->user_id == $user->id) {
+                            $existingStudent->update([
+                                'name' => $data['name'],
+                                'last_name' => $data['last_name'],
+                                'phone' => $data['phone'],
+                                'semester' => $data['semester'],
+                                'city_program_id' => $data['city_program_id']
+                            ]);
+                        } 
+                        // If it is a different user, throw an exception (duplicate ID)
+                        else {
+                            throw new \Exception('Ya existe un estudiante con esta cédula');
+                        }
+                    }
+                } 
+                // If it doesn't exist, create a new one
+                else {
+                    ResearchStaffStudent::create([
+                        'card_id' => $data['card_id'],
+                        'name' => $data['name'],
+                        'last_name' => $data['last_name'],
+                        'phone' => $data['phone'],
+                        'semester' => $data['semester'],
+                        'city_program_id' => $data['city_program_id'],
+                        'user_id' => $user->id,
+                    ]);
+                }
                 break;
                 
             case 'professor':
             case 'committee_leader':
-                ResearchStaffProfessor::create([
-                    'card_id' => $data['card_id'],
-                    'name' => $data['name'],
-                    'last_name' => $data['last_name'],
-                    'phone' => $data['phone'],
-                    'committee_leader' => $data['committee_leader'],
-                    'city_program_id' => $data['city_program_id'],
-                    'user_id' => $user->id,
-                ]);
+                // Check if a teacher with this ID already exists
+                $existingProfessor = ResearchStaffProfessor::withTrashed()
+                    ->where('card_id', $data['card_id'])
+                    ->first();
+                
+                if ($existingProfessor) {
+                    // If it exists and is deleted, restore it and update
+                    if ($existingProfessor->trashed()) {
+                        $existingProfessor->restore();
+                        $existingProfessor->update([
+                            'name' => $data['name'],
+                            'last_name' => $data['last_name'],
+                            'phone' => $data['phone'],
+                            'committee_leader' => $data['committee_leader'] ?? ($role === 'committee_leader' ? 1 : 0),
+                            'city_program_id' => $data['city_program_id'],
+                            'user_id' => $user->id
+                        ]);
+                    } 
+                    // If it exists and is not deleted, check if it is the same user
+                    else {
+                        // If it is the same user (same user_id), just update
+                        if ($existingProfessor->user_id == $user->id) {
+                            $existingProfessor->update([
+                                'name' => $data['name'],
+                                'last_name' => $data['last_name'],
+                                'phone' => $data['phone'],
+                                'committee_leader' => $data['committee_leader'] ?? ($role === 'committee_leader' ? 1 : 0),
+                                'city_program_id' => $data['city_program_id']
+                            ]);
+                        } 
+                        // If it is a different user, throw an exception (duplicate ID)
+                        else {
+                            throw new \Exception('Ya existe un profesor con esta cédula');
+                        }
+                    }
+                } 
+                // If it doesn't exist, create a new one
+                else {
+                    ResearchStaffProfessor::create([
+                        'card_id' => $data['card_id'],
+                        'name' => $data['name'],
+                        'last_name' => $data['last_name'],
+                        'phone' => $data['phone'],
+                        'committee_leader' => $data['committee_leader'] ?? ($role === 'committee_leader' ? 1 : 0),
+                        'city_program_id' => $data['city_program_id'],
+                        'user_id' => $user->id,
+                    ]);
+                }
                 break;
                 
             case 'research_staff':
-                ResearchStaffResearchStaff::create([
-                    'card_id' => $data['card_id'],
-                    'name' => $data['name'],
-                    'last_name' => $data['last_name'],
-                    'phone' => $data['phone'],
-                    'user_id' => $user->id,
-                ]);
+                // Check if a staff member with this ID already exists
+                $existingResearchStaff = ResearchStaffResearchStaff::withTrashed()
+                    ->where('card_id', $data['card_id'])
+                    ->first();
+                
+                if ($existingResearchStaff) {
+                    // If it exists and is deleted, restore it and update
+                    if ($existingResearchStaff->trashed()) {
+                        $existingResearchStaff->restore();
+                        $existingResearchStaff->update([
+                            'name' => $data['name'],
+                            'last_name' => $data['last_name'],
+                            'phone' => $data['phone'],
+                            'user_id' => $user->id
+                        ]);
+                    } 
+                    // If it exists and is not deleted, check if it is the same user
+                    else {
+                        // If it is the same user (same user_id), just update
+                        if ($existingResearchStaff->user_id == $user->id) {
+                            $existingResearchStaff->update([
+                                'name' => $data['name'],
+                                'last_name' => $data['last_name'],
+                                'phone' => $data['phone']
+                            ]);
+                        } 
+                        // If it is a different user, throw an exception (duplicate ID)
+                        else {
+                            throw new \Exception('Ya existe un miembro de staff con esta cédula');
+                        }
+                    }
+                } 
+                // If it doesn't exist, create a new one
+                else {
+                    ResearchStaffResearchStaff::create([
+                        'card_id' => $data['card_id'],
+                        'name' => $data['name'],
+                        'last_name' => $data['last_name'],
+                        'phone' => $data['phone'],
+                        'user_id' => $user->id,
+                    ]);
+                }
                 break;
         }
     }
@@ -435,7 +551,7 @@ class UserController extends Controller
                         'name' => $data['name'],
                         'last_name' => $data['last_name'],
                         'phone' => $data['phone'],
-                        'committee_leader' => ($role === 'committee_leader') ? 1 : 0,
+                        'committee_leader' => $data['committee_leader'] ?? ($role === 'committee_leader' ? 1 : 0),
                         'city_program_id' => $data['city_program_id'],
                     ]);
                 }
@@ -460,36 +576,8 @@ class UserController extends Controller
      */
     public function destroy(ResearchStaffUser $user): RedirectResponse
     {
-        // Start transaction to maintain consistency
-        DB::transaction(function () use ($user) {
-            // Change user status to inactive (0)
-            $user->update(['state' => '0']);
-            
-            // Apply soft delete on the related table according to the role
-            switch ($user->role) {
-                case 'student':
-                    $student = ResearchStaffStudent::where('user_id', $user->id)->first();
-                    if ($student) {
-                        $student->delete();
-                    }
-                    break;
-                    
-                case 'professor':
-                case 'committee_leader':
-                    $professor = ResearchStaffProfessor::where('user_id', $user->id)->first();
-                    if ($professor) {
-                        $professor->delete();
-                    }
-                    break;
-                    
-                case 'research_staff':
-                    $researchStaff = ResearchStaffResearchStaff::where('user_id', $user->id)->first();
-                    if ($researchStaff) {
-                        $researchStaff->delete();
-                    }
-                    break;
-            }
-        });
+        $user->state = 0;
+        $user->save();
 
         return redirect()
             ->route('users.index')
@@ -501,56 +589,8 @@ class UserController extends Controller
      */
     public function activate(ResearchStaffUser $user): RedirectResponse
     {
-        DB::transaction(function () use ($user) {
-            // First restore the related records
-            $restored = false;
-            
-            switch ($user->role) {
-                case 'student':
-                    $student = ResearchStaffStudent::withTrashed()
-                        ->where('user_id', $user->id)
-                        ->first();
-                        
-                    if ($student && $student->trashed()) {
-                        $student->restore();
-                        $restored = true;
-                    }
-                    break;
-                    
-                case 'professor':
-                case 'committee_leader':
-                    $professor = ResearchStaffProfessor::withTrashed()
-                        ->where('user_id', $user->id)
-                        ->first();
-                        
-                    if ($professor && $professor->trashed()) {
-                        $professor->restore();
-                        $restored = true;
-                    }
-                    break;
-                    
-                case 'research_staff':
-                    $researchStaff = ResearchStaffResearchStaff::withTrashed()
-                        ->where('user_id', $user->id)
-                        ->first();
-                        
-                    if ($researchStaff && $researchStaff->trashed()) {
-                        $researchStaff->restore();
-                        $restored = true;
-                    }
-                    break;
-            }
-            
-            // Only update the status if a related record was restored
-            // This is important to avoid inconsistencies
-            if ($restored) {
-                $user->update(['state' => '1']);
-            } else {
-                // If there were no deleted related records, it could be an error
-                // You could throw an exception or log a log
-                // \log::warning("Intento de activar usuario {$user->id} pero no se encontraron registros relacionados eliminados");
-            }
-        });
+        $user->state = 1;
+        $user->save();
 
         return redirect()
             ->route('users.index')
