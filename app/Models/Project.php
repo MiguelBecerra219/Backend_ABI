@@ -8,11 +8,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+/**
+ * project table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
+ */
 class Project extends Model
 {
     use HasFactory;
 
     /**
+     * The attributes that are mass assignable.
+     *
      * @var array<int, string>
      */
     protected $fillable = [
@@ -23,6 +30,8 @@ class Project extends Model
     ];
 
     /**
+     * The attributes that should be cast to native types.
+     *
      * @var array<string, string>
      */
     protected $casts = [
@@ -31,7 +40,13 @@ class Project extends Model
     ];
 
     /**
-     * Normaliza el título del proyecto.
+     * Set the title attribute with proper formatting.
+     *
+     * Formats the title by removing extra whitespace and applying title case.
+     * If the value is null, it remains null.
+     *
+     * @param string|null $value The title value to set
+     * @return void
      */
     public function setTitleAttribute($value): void
     {
@@ -41,7 +56,7 @@ class Project extends Model
     }
 
     /**
-     * Relación con el estado del proyecto.
+     * Get the status associated with the project.
      */
     public function status(): BelongsTo
     {
@@ -49,7 +64,7 @@ class Project extends Model
     }
 
     /**
-     * Relación con el área temática.
+     * Get the thematic area associated with the project.
      */
     public function thematicArea(): BelongsTo
     {
@@ -57,7 +72,7 @@ class Project extends Model
     }
 
     /**
-     * Versiones registradas del proyecto.
+     * Get all versions registered for this project.
      */
     public function versions(): HasMany
     {

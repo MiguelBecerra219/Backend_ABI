@@ -8,6 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * user table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -43,26 +48,47 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    /**
+     * Professor profile associated with the user.
+     */
     public function professor()
     {
         return $this->hasOne(Professor::class);
     }
 
+    /**
+     * Student profile associated with the user.
+     */
     public function student()
     {
         return $this->hasOne(Student::class);
     }
 
+    /**
+     * Research staff profile associated with the user.
+     */
     public function researchstaff()
     {
         return $this->hasOne(ResearchStaff::class);
     }
 
+    /**
+     * Check if the user has a specific role.
+     *
+     * @param string $role The role to check
+     * @return bool True if user has the specified role
+     */
     public function hasRole($role)
     {
         return $this->role === $role;
     }
 
+    /**
+     * Check if the user has any of the specified roles.
+     *
+     * @param array|string $roles Single role or array of roles to check
+     * @return bool True if user has any of the specified roles
+     */
     public function hasAnyRole($roles)
     {
         return in_array($this->role, (array)$roles);

@@ -15,13 +15,28 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
+/**
+ * Registration controller for research staff user.
+ *
+ * Handles user registration for different roles (student, professor, committee leader, research_staff)
+ * within the research staff system. Each role is associated with a specific profile model.
+ * 
+ * This controller uses Laravel's RegistersUsers trait but customizes validation, creation,
+ * and post-registration behavior to fit the application's requirements.
+ */
 class RegisterController extends Controller
 {
     use RegistersUsers;
 
+    /**
+     * Create a new controller instance.
+     *
+     * Applies middleware to ensure only authenticated users with 'research_staff' role
+     * can access registration functionality.
+     */
     public function __construct()
     {
-        // El middleware se maneja en las rutas
+        // The middleware is handled in routes, but this inline closure ensures authorization
         $this->middleware(function ($request, $next) {
             if (auth()->check() && auth()->user()->role !== 'research_staff') {
                 return redirect('/home')->with('error', 'Unauthorized access');
@@ -30,9 +45,15 @@ class RegisterController extends Controller
         });
     }
 
+    /**
+     * Show the registration form.
+     *
+     * Loads all city-program combinations and formats them for display in the dropdown.
+     * Each program is displayed as "Program Name - City Name".
+     */
     public function showRegistrationForm()
     {
-        // Cargar programas para la vista
+        // Load programs for the view
         $cityPrograms = ResearchStaffCityProgram::all();
         foreach ($cityPrograms as $program) {
             $program->full_name = $program->program->name . ' - ' . $program->city->name;
@@ -41,6 +62,16 @@ class RegisterController extends Controller
         return view('auth.register', compact('cityPrograms'));
     }
 
+    /**
+     * Get a validator instance for the incoming registration request.
+     *
+     * Validates common fields for all roles and adds role-specific rules:
+     * - All roles: name, last_name, phone, password, role, card_id, email
+     * - Student/Professor/Committee: city_program_id
+     * - Student: semester (1-10)
+     *
+     * Custom validation ensures card_id is unique across all user types.
+     */
     protected function validator(array $data)
     {
     $messages = [
@@ -81,7 +112,7 @@ class RegisterController extends Controller
         'semester.max' => 'El semestre máximo es 10.',
     ];
 
-        // Validación básica común
+        // Base validation rules common to all roles
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -105,7 +136,7 @@ class RegisterController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
         ];
 
-        // Validación adicional según el rol
+        // Additional validation based on role
         if (in_array($data['role'], ['student', 'professor', 'committee_leader'])) {
             $rules['city_program_id'] = ['required', 'exists:city_program,id'];
         }
@@ -117,16 +148,25 @@ class RegisterController extends Controller
         return Validator::make($data, $rules, $messages);
     }
 
+    /**
+     * Create a new user instance after a valid registration.
+     *
+     * Creates a base user record and then creates a profile record in the appropriate
+     * table based on the selected role:
+     * - student: ResearchStaffStudent
+     * - professor/committee_leader: ResearchStaffProfessor 
+     * - research_staff: ResearchStaffResearchStaff
+     */
     protected function create(array $data)
     {
-        // Crear el usuario
+        // Create the base user
         $user = ResearchStaffUser::create([
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role']
         ]);
 
-        // Crear registro en la tabla correspondiente según el rol
+        // Create role-specific profile
         switch ($data['role']) {
             case 'student':
                 $student = new ResearchStaffStudent();
@@ -167,30 +207,40 @@ class RegisterController extends Controller
         return $user;
     }
 
+    /**
+     * Handle a registration request for the application.
+     *
+     * Overrides the default register method to maintain full control over the process.
+     * Validates input, creates user and profile, fires Registered event, and handles
+     * redirection through the registered() method.
+     */
     public function register(Request $request)
     {
-        // Validar los datos
+        // Validate the data
         $this->validator($request->all())->validate();
 
-        // Crear el usuario (sin loguearlo)
+        // Create the user (without logging in)
         $user = $this->create($request->all());
 
-        // Disparar evento de registro (opcional, para mantener consistencia)
+        // Fire registration event (optional, for consistency)
         event(new Registered($user));
 
-        // Llamar a tu método registered() que maneja la redirección y el mensaje
+        // Handle post-registration logic and redirection
         if ($response = $this->registered($request, $user)) {
             return $response;
         }
 
-        // Fallback (esto no debería ejecutarse si registered() devuelve una respuesta)
+        // Fallback (should not execute if registered() returns a response)
         return $request->wantsJson()
             ? new JsonResponse([], 201)
             : redirect($this->redirectPath());
     }
 
     /**
-     * Sobrescribe el comportamiento después del registro
+     * Override the post-registration redirect behavior.
+     *
+     * Instead of redirecting to home, redirects back to the registration form
+     * with a success message showing the created user's name.
      */
     protected function registered(Request $request, $user)
     {

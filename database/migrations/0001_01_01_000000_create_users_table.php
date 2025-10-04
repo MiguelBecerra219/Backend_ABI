@@ -4,6 +4,29 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Migration to create authentication-related tables.
+ *
+ * This migration defines the base structure for user management in the application:
+ *
+ * - users: Stores registered users with basic authentication fields.
+ *   - Includes email verification timestamp and remember token.
+ *
+ * - password_reset_tokens: Handles password recovery by storing reset tokens.
+ *   - Uses email as the primary key.
+ *
+ * - sessions: Persists user sessions for authentication.
+ *   - Includes IP address, user agent, payload and last activity timestamp.
+ *
+ * Key details:
+ * - All tables follow Laravel's default authentication scaffolding.
+ * - The 'users' table uses unique email constraint to avoid duplicates.
+ * - The 'sessions' table links to users via foreign key (user_id).
+ *
+ * Note: If authentication requirements change (e.g. new roles or fields),
+ * the 'users' table should be extended in a new migration.
+ */
+
 return new class extends Migration
 {
     /**

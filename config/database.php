@@ -23,13 +23,17 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here are each of the database connections setup for your application.
-    | Of course, examples of configuring each database platform that is
-    | supported by Laravel is shown below to make development simple.
+    | Laravel supports multiple database systems out of the box, and examples
+    | are provided below to make development simple.
     |
+    | In this project, besides the default connections (sqlite, mysql), we also
+    | define role-based MySQL connections (mysql_user, mysql_research_staff,
+    | mysql_professor, mysql_student). These connections ensure that each role
+    | interacts with the database using its own credentials and permissions.
     |
-    | All database work in Laravel is done through the PHP PDO facilities
-    | so make sure you have the driver for your particular database of
-    | choice installed on your machine before you begin development.
+    | All database work in Laravel is done through the PHP PDO facilities,
+    | so make sure you have the driver for your particular database installed
+    | on your machine before starting development.
     |
     */
 
@@ -90,7 +94,7 @@ return [
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => 'db_research_staff',
-            'password' => env('DB_RESEARCH_STAFF_PASS', ''),
+            'password' => env('DB_RESEARCH_PASS', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',

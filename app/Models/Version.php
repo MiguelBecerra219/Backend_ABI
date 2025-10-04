@@ -8,11 +8,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * version table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
+ */
 class Version extends Model
 {
     use HasFactory;
 
     /**
+     * The attributes that are mass assignable.
+     *
      * @var array<int, string>
      */
     protected $fillable = [
@@ -20,6 +27,8 @@ class Version extends Model
     ];
 
     /**
+     * The attributes that should be cast to native types.
+     *
      * @var array<string, string>
      */
     protected $casts = [
@@ -27,7 +36,7 @@ class Version extends Model
     ];
 
     /**
-     * Proyecto asociado a la versión.
+     * Parent project of the version.
      */
     public function project(): BelongsTo
     {
@@ -35,7 +44,7 @@ class Version extends Model
     }
 
     /**
-     * Relación directa con los contenidos diligenciados.
+     * Direct relationship with the completed content.
      */
     public function contentVersions(): HasMany
     {
@@ -43,7 +52,7 @@ class Version extends Model
     }
 
     /**
-     * Contenidos asociados a la versión a través del pivote.
+     * Contents associated with the version through the pivot.
      */
     public function contents(): BelongsToMany
     {

@@ -5,10 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * students table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
+ */
 class Student extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'card_id',
         'name',
@@ -16,18 +26,28 @@ class Student extends Model
         'phone',
         'semester',
         'city_program_id',
+        'user_id',
     ];
 
+    /**
+     * Get the user associated with the student.
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get the city program that the student belongs to.
+     */
     public function cityProgram()
     {
         return $this->belongsTo(CityProgram::class);
     }
 
+    /**
+     * Get the projects assigned to the student.
+     */
     public function projects()
     {
         return $this->hasMany(Project::class);

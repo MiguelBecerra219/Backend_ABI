@@ -7,22 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Class Framework
- *
- * @property $id
- * @property $name
- * @property $description
- * @property $start_year
- * @property $end_year
- * @property $created_at
- * @property $updated_at
- *
- * @package App
- * @mixin \Illuminate\Database\Eloquent\Builder
+ * framework table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
  */
 class Framework extends Model
 {
-    
+    /**
+     * Validation rules for creating a new framework.
+     *
+     * @var array<string, string>
+     */
     static $rules = [
         'name' => 'required|unique:frameworks,name',
         'description' => 'required|min:10',
@@ -31,6 +26,11 @@ class Framework extends Model
         'end_year' => 'nullable|integer|after_or_equal:start_year',
     ];
 
+    /**
+     * Number of records to display per page in pagination.
+     *
+     * @var int
+     */
     protected $perPage = 20;
 
     /**
@@ -40,16 +40,23 @@ class Framework extends Model
      */
     protected $fillable = ['name','description','link','start_year','end_year'];
 
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'start_year' => 'integer',
         'end_year' => 'integer',
     ];
 
     /**
-     * Get validation rules for updating a framework
+     * Get validation rules for updating a framework instance.
      *
-     * @param int $id
-     * @return array
+     * The name uniqueness rule excludes the current framework (by ID).
+     *
+     * @param int $id The ID of the framework being updated
+     * @return array<string, string> The validation rules
      */
     public static function updateRules($id)
     {
@@ -62,6 +69,9 @@ class Framework extends Model
         ];
     }
 
+    /**
+     * Get all content frameworks associated with this framework.
+     */
     public function contentFrameworks(): HasMany
     {
         return $this->hasMany(ContentFramework::class, 'framework_id');

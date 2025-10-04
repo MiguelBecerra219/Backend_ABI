@@ -4,24 +4,40 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * city table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
+ */
 class City extends Model
 {
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'cities';
 
-    protected $table = 'cities'; // Especifica el nombre de la tabla en la base de datos
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = ['name'];
 
-    protected $primaryKey = 'id'; // Especifica el nombre de la clave primaria en la tabla
-
-    protected $fillable = ['name']; // Especifica los campos que se pueden asignar de forma masiva
-
-
-
-    
-    // Relación con el modelo Departamento
+    /**
+     * Get the department that owns the city.
+     */
     public function department()
     {
-        return $this->belongsTo(Department::class, 'id'); // Indica el nombre del modelo Departamento y el nombre de la clave externa
+        return $this->belongsTo(Department::class);
     }
 
+    /**
+     * Get the programs offered in this city.
+     *
+     * This relationship goes through the 'city_program' pivot table.
+     */
     public function programs()
     {
         return $this->belongsToMany(Program::class, 'city_program');

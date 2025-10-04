@@ -5,35 +5,58 @@ namespace App\Models;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * departments table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
+ */
 class Department extends Model
 {
-    protected $table = 'departments'; // Especifica el nombre de la tabla en la base de datos
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'departments';
 
-    protected $primaryKey = 'id'; // Especifica el nombre de la clave primaria en la tabla
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = ['name'];
 
-    protected $fillable = ['name']; // Especifica los campos que se pueden asignar de forma masiva
-
-    // Relación con el modelo Ciudad
-    public function cities()
-    {
-        return $this->hasMany(City::class, 'id'); // Indica el nombre del modelo Ciudad y el nombre de la clave externa
-    }
-
-    // Método para obtener las ciudades por departamento
+    /**
+     * Get cities by department via HTTP request.
+     *
+     * This method is intended to be used as a controller endpoint.
+     * It validates the input and returns a JSON response with cities.
+     *
+     * @param Request $request The incoming HTTP request containing the department ID
+     * @return JsonResponse A JSON response with city data
+     */
     public function ciudadesPorDepartamento(Request $request)
     {
-        // Validar que se haya proporcionado un ID de departamento
+        // Validate that a department ID has been provided
         $request->validate([
             'id' => 'required|exists:departamento,id'
         ]);
 
-        // Obtener el ID del departamento enviado desde la solicitud
+        // Get the department ID sent from the request
         $departamentoId = $request->input('id');
 
-        // Obtener las ciudades relacionadas con el departamento
+        // Get the cities related to the department
         $ciudades = City::where('id', $departamentoId)->pluck('city', 'id')->toArray();
 
-        // Devolver las ciudades en formato JSON
+        // Return cities in JSON format
         return response()->json($ciudades);
-    } 
+    }
+
+    /**
+     * Get all cities belonging to this department.
+     */
+    public function cities()
+    {
+        return $this->hasMany(City::class);
+    }
 }

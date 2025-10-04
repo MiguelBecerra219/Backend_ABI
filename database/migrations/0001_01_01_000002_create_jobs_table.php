@@ -4,6 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Migration to create job-related tables for Laravel's queue system.
+ *
+ * Tables created:
+ * - jobs: Stores queued jobs that are awaiting processing.
+ * - job_batches: Tracks groups of jobs dispatched as a batch.
+ * - failed_jobs: Logs jobs that have failed during execution.
+ *
+ * Key details:
+ * - Matches Laravel's default database queue scaffolding.
+ * - Provides persistence, monitoring, and retry support for queued tasks.
+ * - 'job_batches' uses a string-based primary key to uniquely identify batches.
+ */
+
 return new class extends Migration
 {
     /**

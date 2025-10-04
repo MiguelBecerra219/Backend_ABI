@@ -5,40 +5,48 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class ContentFrameworkProject
- *
- * @property $id
- * @property $content_framework_id
- * @property $project_id
- * @property $created_at
- * @property $updated_at
- *
- * @property ContentFramework $contentFramework
- * @property Project $project
- * @package App
- * @mixin \Illuminate\Database\Eloquent\Builder
+ * content_framework_project table model, manages communication with the database using the root user, 
+ * should not be used by any end user, 
+ * always use an inherited model with the connection specific to each role.
  */
 class ContentFrameworkProject extends Model
 {
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
     protected $table = 'content_framework_project';
     
+    /**
+     * Validation rules for creating a new record.
+     *
+     * Both foreign keys are required.
+     *
+     * @var array<string, string>
+     */
     static $rules = [
 		'content_framework_id' => 'required',
 		'project_id' => 'required',
     ];
 
+    /**
+     * Number of records to display per page in pagination.
+     *
+     * @var int
+     */
     protected $perPage = 20;
 
     /**
-     * Attributes that should be mass-assignable.
+     * The attributes that are mass assignable.
      *
-     * @var array
+     * @var array<int, string>
      */
     protected $fillable = ['content_framework_id','project_id'];
 
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * Get the content framework associated with this pivot record.
      */
     public function contentFramework()
     {
@@ -46,7 +54,7 @@ class ContentFrameworkProject extends Model
     }
     
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * Get the project associated with this pivot record.
      */
     public function project()
     {

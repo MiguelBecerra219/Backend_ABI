@@ -11,7 +11,7 @@
         <form class="card card-md" action="{{ route('register') }}" method="post" autocomplete="off" novalidate>
             @csrf
             <div class="card-body">
-                <!-- Mensajes de Ã©xito/error -->
+                <!-- Success/error messages -->
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('success') }}
@@ -170,10 +170,20 @@
                 </div>
             </div>
         </form>
+        <!-- Button to return to the user index -->
+        <div class="text-center text-muted mt-3">
+            <a href="{{ route('users.index') }}" class="btn btn-outline-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Volver al listado de usuarios
+            </a>
+        </div>
 
     </div>
 
-    <!-- JavaScript para mostrar/ocultar campos segÃºn el rol -->
+    <!-- JavaScript to show/hide fields based on role -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const roleSelect = document.getElementById('role');
@@ -183,11 +193,11 @@
             function toggleFields() {
                 const role = roleSelect.value;
 
-                // Ocultar todos los campos dinÃ¡micos
+                // Hide all dynamic fields
                 studentFields.style.display = 'none';
                 programFields.style.display = 'none';
 
-                // Mostrar los campos relevantes
+                // Show relevant fields
                 if (role === 'student') {
                     studentFields.style.display = 'block';
                     programFields.style.display = 'block';
@@ -196,10 +206,10 @@
                 }
             }
 
-            // Ejecutar al cargar
+            // Run on load
             toggleFields();
 
-            // Escuchar cambios
+            // Listen to changes
             roleSelect.addEventListener('change', toggleFields);
         });
     </script>

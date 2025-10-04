@@ -4,10 +4,11 @@ namespace App\Models\Professor;
 
 use App\Models\City;
 
+# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
 class ProfessorCity extends City
 {
 
-    protected $table = 'cities'; // Especifica el nombre de la tabla en la base de datos
+    protected $table = 'cities';
 
     protected $connection = 'mysql_professor';
 
