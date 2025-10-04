@@ -14,12 +14,21 @@ class Department extends Model
 {
     use HasFactory;
 
+    // Specifies the table name associated with this model
     protected $table = 'departments';
 
+    // Defines which attributes can be mass-assigned
     protected $fillable = [
         'name',
     ];
 
+    /**
+     * Defines the one-to-many relationship between Department and City.
+     * 
+     * Each department can have multiple cities associated with it.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function cities()
     {
         return $this->hasMany(City::class);

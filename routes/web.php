@@ -52,15 +52,13 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
     
-    // 👇 Added routes for Departments and Cities (new addition)
+    //  Added routes for Departments and Cities (new addition)
     // These were added to manage departments and their related cities
-    Route::resource('/departamento', DepartmentController::class);
-    Route::get('/departamentos', [DepartmentController::class, 'index'])->name('departamentos.index');
-    Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
-
-    Route::resource('/ciudad', CityController::class);
+    Route::resource('departments', DepartmentController::class);
+    Route::resource('cities', CityController::class);
     Route::get('obtener-ciudades-por-departamento/{id}', [CityController::class, 'obtenerCiudadesPorDepartamento']);
-    // 👆 End of added routes
+    Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
+    // End of added routes
 
     // Forms
     Route::resource('/formulario', FormularioController::class);
@@ -74,8 +72,8 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
 
 // Public routes for departments and cities (if you need them without authentication)
 Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
-Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
-
+Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);
+Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
 //Framework routes and content framework project
 Route::resource('frameworks', FrameworkController::class);
 Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
