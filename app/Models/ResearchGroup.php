@@ -30,7 +30,7 @@ class ResearchGroup extends Model
      */
     public function programs()
     {
-        return $this->hasMany(Program::class);
+        return $this->hasMany(Program::class, 'research_group_id', 'id');
     }
 
     /**
@@ -38,7 +38,7 @@ class ResearchGroup extends Model
      */
     public function investigationLines()
     {
-        return $this->hasMany(InvestigationLine::class);
+        return $this->hasMany(InvestigationLine::class, 'research_group_id', 'id');
     }
 
     /**

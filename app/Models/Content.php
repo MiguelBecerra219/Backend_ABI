@@ -58,7 +58,7 @@ class Content extends Model
      */
     public function contentVersions(): HasMany
     {
-        return $this->hasMany(ContentVersion::class);
+        return $this->hasMany(ContentVersion::class, 'content_id', 'id');
     }
 
     /**

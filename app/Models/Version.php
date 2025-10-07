@@ -41,7 +41,7 @@ class Version extends Model
      */
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Project::class, 'project_id', 'id');
     }
 
     /**
@@ -49,7 +49,7 @@ class Version extends Model
      */
     public function contentVersions(): HasMany
     {
-        return $this->hasMany(ContentVersion::class);
+        return $this->hasMany(ContentVersion::class, 'version_id', 'id');
     }
 
     /**

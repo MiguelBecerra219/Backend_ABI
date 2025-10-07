@@ -69,7 +69,7 @@ class Project extends Model
      */
     public function thematicArea(): BelongsTo
     {
-        return $this->belongsTo(ThematicArea::class);
+        return $this->belongsTo(ThematicArea::class, 'thematic_area_id', 'id');
     }
 
     /**
@@ -77,6 +77,6 @@ class Project extends Model
      */
     public function versions(): HasMany
     {
-        return $this->hasMany(Version::class);
+        return $this->hasMany(Version::class, 'project_id', 'id');
     }
 }

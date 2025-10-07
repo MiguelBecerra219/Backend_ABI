@@ -52,7 +52,7 @@ class CityProgram extends Model
      */
     public function professors()
     {
-        return $this->hasMany(Professor::class);
+        return $this->hasMany(Professor::class, 'city_program_id', 'id');
     }
 
     /**
@@ -60,6 +60,6 @@ class CityProgram extends Model
      */
     public function students()
     {
-        return $this->hasMany(Student::class);
+        return $this->hasMany(Student::class, 'city_program_id', 'id');
     }
 }

@@ -35,7 +35,7 @@ class Student extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
@@ -43,7 +43,7 @@ class Student extends Model
      */
     public function cityProgram()
     {
-        return $this->belongsTo(CityProgram::class);
+        return $this->belongsTo(CityProgram::class, 'city_program_id', 'id');
     }
 
     /**
@@ -51,6 +51,6 @@ class Student extends Model
      */
     public function projects()
     {
-        return $this->hasMany(Project::class);
+        return $this->hasMany(Project::class, 'student_project', 'student_id', 'project_id');
     }
 }

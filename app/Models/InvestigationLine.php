@@ -62,7 +62,7 @@ class InvestigationLine extends Model
      */
     public function researchGroup()
     {
-        return $this->belongsTo(ResearchGroup::class);
+        return $this->belongsTo(ResearchGroup::class, 'research_group_id', 'id');
     }
 
     /**
@@ -70,6 +70,6 @@ class InvestigationLine extends Model
      */
     public function thematicAreas()
     {
-        return $this->hasMany(ThematicArea::class);
+        return $this->hasMany(ThematicArea::class, 'investigation_line_id', 'id');
     }
 }

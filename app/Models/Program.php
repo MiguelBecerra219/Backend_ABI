@@ -78,7 +78,7 @@ class Program extends Model
      */
     public function researchGroup()
     {
-        return $this->belongsTo(ResearchGroup::class);
+        return $this->belongsTo(ResearchGroup::class, 'research_group_id', 'id');
     }
 
     /**
@@ -86,6 +86,6 @@ class Program extends Model
      */
     public function cities()
     {
-        return $this->belongsToMany(City::class, 'city_program');
+        return $this->belongsToMany(City::class, 'city_program', 'program_id', 'city_id');
     }
 }

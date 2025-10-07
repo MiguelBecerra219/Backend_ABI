@@ -39,7 +39,7 @@ class ContentVersion extends Model
      */
     public function content(): BelongsTo
     {
-        return $this->belongsTo(Content::class);
+        return $this->belongsTo(Content::class, 'content_id', 'id');
     }
 
     /**
@@ -47,6 +47,6 @@ class ContentVersion extends Model
      */
     public function version(): BelongsTo
     {
-        return $this->belongsTo(Version::class);
+        return $this->belongsTo(Version::class, 'version_id', 'id');
     }
 }

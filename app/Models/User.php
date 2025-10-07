@@ -53,7 +53,7 @@ class User extends Authenticatable
      */
     public function professor()
     {
-        return $this->hasOne(Professor::class);
+        return $this->hasOne(Professor::class, 'user_id', 'id');
     }
 
     /**
@@ -61,7 +61,7 @@ class User extends Authenticatable
      */
     public function student()
     {
-        return $this->hasOne(Student::class);
+        return $this->hasOne(Student::class, 'user_id', 'id');
     }
 
     /**
@@ -69,7 +69,7 @@ class User extends Authenticatable
      */
     public function researchstaff()
     {
-        return $this->hasOne(ResearchStaff::class);
+        return $this->hasOne(ResearchStaff::class, 'user_id', 'id');
     }
 
     /**

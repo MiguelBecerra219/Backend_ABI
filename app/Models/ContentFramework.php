@@ -32,6 +32,6 @@ class ContentFramework extends Model
      */
     public function framework()
     {
-        return $this->belongsTo(Framework::class, 'framework_id');
+        return $this->belongsTo(Framework::class, 'framework_id', 'id');
     }
 }

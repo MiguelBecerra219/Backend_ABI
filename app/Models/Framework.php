@@ -75,6 +75,6 @@ class Framework extends Model
      */
     public function contentFrameworks(): HasMany
     {
-        return $this->hasMany(ContentFramework::class, 'framework_id');
+        return $this->hasMany(ContentFramework::class, 'framework_id', 'id');
     }
 }

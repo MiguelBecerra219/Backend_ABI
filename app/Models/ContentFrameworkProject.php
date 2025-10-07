@@ -50,16 +50,14 @@ class ContentFrameworkProject extends Model
      */
     public function contentFramework()
     {
-        return $this->hasOne('App\Models\ContentFramework', 'id', 'content_framework_id');
+        return $this->belongsTo(ContentFramework::class, 'content_framework_id', 'id');
     }
-    
+
     /**
      * Get the project associated with this pivot record.
      */
     public function project()
     {
-        return $this->hasOne('App\Models\Project', 'id', 'project_id');
+        return $this->belongsTo(Project::class, 'project_id', 'id');
     }
-    
-
 }

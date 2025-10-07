@@ -30,7 +30,12 @@ class ThematicArea extends Model
      */
     public function investigationLine()
     {
-        return $this->belongsTo(InvestigationLine::class);
+        return $this->belongsTo(InvestigationLine::class, 'investigation_line_id', 'id');
+    }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'thematic_area_id', 'id');
     }
 
     /**
