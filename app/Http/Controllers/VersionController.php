@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\VersionRequest;
-use App\Models\Version;
+use App\Models\ResearchStaff\ResearchStaffVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +34,7 @@ class VersionController extends Controller
             $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
             // Query base con relaciones
-            $query = Version::query()->with('project');
+            $query = ResearchStaffVersion::query()->with('project');
 
             // Filtrar por proyecto si se especifica
             if ($projectId = $request->query('project_id')) {
@@ -71,7 +71,7 @@ class VersionController extends Controller
 
             return DB::transaction(function () use ($data) {
                 // Crear versión
-                $version = Version::create($data);
+                $version = ResearchStaffVersion::create($data);
 
                 // Registrar evento en logs
                 Log::info('Versión creada', [
@@ -101,7 +101,7 @@ class VersionController extends Controller
      * @param Version $version Versión a mostrar
      * @return JsonResponse Detalle de la versión
      */
-    public function show(Version $version): JsonResponse
+    public function show(ResearchStaffVersion $version): JsonResponse
     {
         try {
             // Verificar si fue eliminada
@@ -134,7 +134,7 @@ class VersionController extends Controller
      * @param Version $version Versión a actualizar
      * @return JsonResponse Versión actualizada
      */
-    public function update(VersionRequest $request, Version $version): JsonResponse
+    public function update(VersionRequest $request, ResearchStaffVersion $version): JsonResponse
     {
         try {
             $data = $request->validated();
@@ -180,7 +180,7 @@ class VersionController extends Controller
      * @param Version $version Versión a eliminar
      * @return JsonResponse Respuesta sin contenido (204) o error
      */
-    public function destroy(Version $version): JsonResponse
+    public function destroy(ResearchStaffVersion $version): JsonResponse
     {
         try {
             return DB::transaction(function () use ($version) {
@@ -231,7 +231,7 @@ class VersionController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar versión incluyendo eliminadas
-                $version = Version::withTrashed()->findOrFail($id);
+                $version = ResearchStaffVersion::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminada
                 if (!$version->trashed()) {

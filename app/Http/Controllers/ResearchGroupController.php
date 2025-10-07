@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ResearchGroup;
+use App\Models\ResearchStaff\ResearchStaffResearchGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,7 +35,7 @@ class ResearchGroupController extends Controller
             $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
             // Query base con contadores de relaciones
-            $researchGroups = ResearchGroup::query()
+            $researchGroups = ResearchStaffResearchGroup::query()
                 ->withCount(['programs', 'investigationLines'])
                 ->when($search, function ($query, string $search) {
                     $query->where(function ($q) use ($search) {
@@ -73,7 +73,7 @@ class ResearchGroupController extends Controller
     public function create(): View
     {
         return view('research-groups.create', [
-            'researchGroup' => new ResearchGroup(),
+            'researchGroup' => new ResearchStaffResearchGroup(),
         ]);
     }
 
@@ -104,7 +104,7 @@ class ResearchGroupController extends Controller
 
             return DB::transaction(function () use ($data) {
                 // Crear grupo de investigación
-                $researchGroup = ResearchGroup::create($data);
+                $researchGroup = ResearchStaffResearchGroup::create($data);
 
                 // Registrar evento en logs
                 Log::info('Grupo de investigación creado', [
@@ -138,7 +138,7 @@ class ResearchGroupController extends Controller
      * @param ResearchGroup $researchGroup Grupo a mostrar
      * @return View Vista con detalle
      */
-    public function show(ResearchGroup $researchGroup): View
+    public function show(ResearchStaffResearchGroup $researchGroup): View
     {
         // Verificar si fue eliminado
         if ($researchGroup->trashed()) {
@@ -160,7 +160,7 @@ class ResearchGroupController extends Controller
      * @param ResearchGroup $researchGroup Grupo a editar
      * @return View Vista del formulario de edición
      */
-    public function edit(ResearchGroup $researchGroup): View
+    public function edit(ResearchStaffResearchGroup $researchGroup): View
     {
         // Verificar si fue eliminado
         if ($researchGroup->trashed()) {
@@ -177,7 +177,7 @@ class ResearchGroupController extends Controller
      * @param ResearchGroup $researchGroup Grupo a actualizar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function update(Request $request, ResearchGroup $researchGroup): RedirectResponse
+    public function update(Request $request, ResearchStaffResearchGroup $researchGroup): RedirectResponse
     {
         try {
             // Validar datos excluyendo el grupo actual en unicidad
@@ -239,7 +239,7 @@ class ResearchGroupController extends Controller
      * @param ResearchGroup $researchGroup Grupo a eliminar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function destroy(ResearchGroup $researchGroup): RedirectResponse
+    public function destroy(ResearchStaffResearchGroup $researchGroup): RedirectResponse
     {
         try {
             return DB::transaction(function () use ($researchGroup) {
@@ -291,7 +291,7 @@ class ResearchGroupController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar grupo incluyendo eliminados
-                $researchGroup = ResearchGroup::withTrashed()->findOrFail($id);
+                $researchGroup = ResearchStaffResearchGroup::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminado
                 if (!$researchGroup->trashed()) {

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Framework;
+use App\Models\ResearchStaff\ResearchStaffFramework;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -41,7 +41,7 @@ class FrameworkController extends Controller
             }
 
             // Query base - solo frameworks no eliminados
-            $query = Framework::query();
+            $query = ResearchStaffFramework::query();
 
             // Aplicar filtro de búsqueda
             if ($search) {
@@ -108,7 +108,7 @@ class FrameworkController extends Controller
      */
     public function create(): View
     {
-        $framework = new Framework();
+        $framework = new ResearchStaffFramework();
         return view('framework.create', compact('framework'));
     }
 
@@ -122,7 +122,7 @@ class FrameworkController extends Controller
     {
         try {
             // Validar datos de entrada
-            $validatedData = $request->validate(Framework::$rules, [
+            $validatedData = $request->validate(ResearchStaffFramework::$rules, [
                 'name.required' => 'El nombre del framework es obligatorio.',
                 'name.unique' => 'Ya existe un framework con este nombre.',
                 'description.required' => 'La descripción es obligatoria.',
@@ -140,7 +140,7 @@ class FrameworkController extends Controller
                 $validatedData['link'] = $validatedData['link'] ?? '';
 
                 // Crear framework
-                $framework = Framework::create($validatedData);
+                $framework = ResearchStaffFramework::create($validatedData);
 
                 // Registrar evento en logs
                 Log::info('Framework creado', [
@@ -172,7 +172,7 @@ class FrameworkController extends Controller
      * @param Framework $framework Framework a mostrar
      * @return View Vista con detalle del framework
      */
-    public function show(Framework $framework): View
+    public function show(ResearchStaffFramework $framework): View
     {
         // Verificar si fue eliminado
         if ($framework->trashed()) {
@@ -188,7 +188,7 @@ class FrameworkController extends Controller
      * @param Framework $framework Framework a editar
      * @return View Vista del formulario de edición
      */
-    public function edit(Framework $framework): View
+    public function edit(ResearchStaffFramework $framework): View
     {
         // Verificar si fue eliminado
         if ($framework->trashed()) {
@@ -205,7 +205,7 @@ class FrameworkController extends Controller
      * @param Framework $framework Framework a actualizar
      * @return RedirectResponse Redirección con mensaje de resultado
      */
-    public function update(Request $request, Framework $framework): RedirectResponse
+    public function update(Request $request, ResearchStaffFramework $framework): RedirectResponse
     {
         try {
             // Reglas de validación excluyendo el framework actual en unicidad
@@ -276,7 +276,7 @@ class FrameworkController extends Controller
      * @param Framework $framework Framework a eliminar
      * @return RedirectResponse Redirección con mensaje de resultado
      */
-    public function destroy(Framework $framework): RedirectResponse
+    public function destroy(ResearchStaffFramework $framework): RedirectResponse
     {
         try {
             return DB::transaction(function () use ($framework) {
@@ -327,7 +327,7 @@ class FrameworkController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar framework incluyendo eliminados
-                $framework = Framework::withTrashed()->findOrFail($id);
+                $framework = ResearchStaffFramework::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminado
                 if (!$framework->trashed()) {

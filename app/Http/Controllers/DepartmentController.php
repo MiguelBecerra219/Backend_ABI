@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Department;
+use App\Models\ResearchStaff\ResearchStaffDepartment;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +17,7 @@ class DepartmentController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
-        $departments = Department::query()
+        $departments = ResearchStaffDepartment::query()
             ->withCount('cities')
             ->when($search, function ($query, string $search) {
                 $query->where('name', 'like', "%{$search}%");
@@ -36,7 +36,7 @@ class DepartmentController extends Controller
     public function create(): View
     {
         return view('departments.create', [
-            'department' => new Department(),
+            'department' => new ResearchStaffDepartment(),
         ]);
     }
 
@@ -46,14 +46,14 @@ class DepartmentController extends Controller
             'name' => 'required|string|max:100|unique:departments,name',
         ]);
 
-        $department = Department::create($data);
+        $department = ResearchStaffDepartment::create($data);
 
         return redirect()
             ->route('departments.index')
             ->with('success', "Departamento '{$department->name}' creado correctamente.");
     }
 
-    public function show(Department $department): View
+    public function show(ResearchStaffDepartment $department): View
     {
         $department->load(['cities' => function ($query) {
             $query->orderBy('name');
@@ -62,12 +62,12 @@ class DepartmentController extends Controller
         return view('departments.show', compact('department'));
     }
 
-    public function edit(Department $department): View
+    public function edit(ResearchStaffDepartment $department): View
     {
         return view('departments.edit', compact('department'));
     }
 
-    public function update(Request $request, Department $department): RedirectResponse
+    public function update(Request $request, ResearchStaffDepartment $department): RedirectResponse
     {
         $data = $request->validate([
             'name' => 'required|string|max:100|unique:departments,name,' . $department->id,
@@ -80,7 +80,7 @@ class DepartmentController extends Controller
             ->with('success', "Departamento '{$department->name}' actualizado correctamente.");
     }
 
-    public function destroy(Department $department): RedirectResponse
+    public function destroy(ResearchStaffDepartment $department): RedirectResponse
     {
         try {
             $name = $department->name;
@@ -96,7 +96,7 @@ class DepartmentController extends Controller
         }
     }
 
-    public function cities(Department $department): JsonResponse
+    public function cities(ResearchStaffDepartment $department): JsonResponse
     {
         $cities = $department->cities()
             ->orderBy('name')

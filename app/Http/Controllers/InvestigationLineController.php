@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InvestigationLine;
-use App\Models\ResearchGroup;
+use App\Models\ResearchStaff\ResearchStaffInvestigationLine;
+use App\Models\ResearchStaff\ResearchStaffResearchGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -37,7 +37,7 @@ class InvestigationLineController extends Controller
             $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
             // Query base con relaciones y contadores
-            $investigationLines = InvestigationLine::query()
+            $investigationLines = ResearchStaffInvestigationLine::query()
                 ->with(['researchGroup'])
                 ->withCount('thematicAreas')
                 ->when($search, function ($query, string $search) {
@@ -54,7 +54,7 @@ class InvestigationLineController extends Controller
                 ->appends($request->query());
 
             // Obtener grupos de investigación para filtro
-            $researchGroups = ResearchGroup::orderBy('name')->pluck('name', 'id');
+            $researchGroups = ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id');
 
             return view('investigation-lines.index', [
                 'investigationLines' => $investigationLines,
@@ -86,8 +86,8 @@ class InvestigationLineController extends Controller
     public function create(): View
     {
         return view('investigation-lines.create', [
-            'investigationLine' => new InvestigationLine(),
-            'researchGroups' => ResearchGroup::orderBy('name')->pluck('name', 'id'),
+            'investigationLine' => new ResearchStaffInvestigationLine(),
+            'researchGroups' => ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -116,7 +116,7 @@ class InvestigationLineController extends Controller
 
             return DB::transaction(function () use ($data) {
                 // Crear línea de investigación
-                $investigationLine = InvestigationLine::create($data);
+                $investigationLine = ResearchStaffInvestigationLine::create($data);
 
                 // Registrar evento en logs
                 Log::info('Línea de investigación creada', [
@@ -150,7 +150,7 @@ class InvestigationLineController extends Controller
      * @param InvestigationLine $investigationLine Línea a mostrar
      * @return View Vista con detalle
      */
-    public function show(InvestigationLine $investigationLine): View
+    public function show(ResearchStaffInvestigationLine $investigationLine): View
     {
         // Verificar si fue eliminada
         if ($investigationLine->trashed()) {
@@ -169,7 +169,7 @@ class InvestigationLineController extends Controller
      * @param InvestigationLine $investigationLine Línea a editar
      * @return View Vista del formulario de edición
      */
-    public function edit(InvestigationLine $investigationLine): View
+    public function edit(ResearchStaffInvestigationLine $investigationLine): View
     {
         // Verificar si fue eliminada
         if ($investigationLine->trashed()) {
@@ -178,7 +178,7 @@ class InvestigationLineController extends Controller
 
         return view('investigation-lines.edit', [
             'investigationLine' => $investigationLine,
-            'researchGroups' => ResearchGroup::orderBy('name')->pluck('name', 'id'),
+            'researchGroups' => ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -189,7 +189,7 @@ class InvestigationLineController extends Controller
      * @param InvestigationLine $investigationLine Línea a actualizar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function update(Request $request, InvestigationLine $investigationLine): RedirectResponse
+    public function update(Request $request, ResearchStaffInvestigationLine $investigationLine): RedirectResponse
     {
         try {
             // Validar datos excluyendo la línea actual en unicidad
@@ -249,7 +249,7 @@ class InvestigationLineController extends Controller
      * @param InvestigationLine $investigationLine Línea a eliminar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function destroy(InvestigationLine $investigationLine): RedirectResponse
+    public function destroy(ResearchStaffInvestigationLine $investigationLine): RedirectResponse
     {
         try {
             return DB::transaction(function () use ($investigationLine) {
@@ -301,7 +301,7 @@ class InvestigationLineController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar línea incluyendo eliminadas
-                $investigationLine = InvestigationLine::withTrashed()->findOrFail($id);
+                $investigationLine = ResearchStaffInvestigationLine::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminada
                 if (!$investigationLine->trashed()) {

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ContentFrameworkRequest;
-use App\Models\ContentFramework;
-use App\Models\Framework;
+use App\Models\ResearchStaff\ResearchStaffContentFramework;
+use App\Models\ResearchStaff\ResearchStaffFramework;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -27,7 +27,7 @@ class ContentFrameworkProjectController extends Controller
 
         $frameworkId = $request->get('framework_id');
 
-        $query = ContentFramework::with('framework')
+        $query = ResearchStaffContentFramework::with('framework')
             ->orderByDesc('created_at');
 
         if ($search !== null) {
@@ -47,7 +47,7 @@ class ContentFrameworkProjectController extends Controller
 
         $contentFrameworkProjects = $query->paginate(10)->withQueryString();
 
-        $frameworkOptions = Framework::orderBy('name')->pluck('name', 'id');
+        $frameworkOptions = ResearchStaffFramework::orderBy('name')->pluck('name', 'id');
 
         return view('content-framework-project.index', compact('contentFrameworkProjects', 'frameworkOptions'))
             ->with('search', $search)
@@ -59,8 +59,8 @@ class ContentFrameworkProjectController extends Controller
      */
     public function create(Request $request): View
     {
-        $contentFrameworkProject = new ContentFramework();
-        $frameworks = Framework::orderBy('name')->pluck('name', 'id');
+        $contentFrameworkProject = new ResearchStaffContentFramework();
+        $frameworks = ResearchStaffFramework::orderBy('name')->pluck('name', 'id');
         $prefw = $request->get('framework_id');
 
         return view('content-framework-project.create', compact('contentFrameworkProject', 'frameworks', 'prefw'));
@@ -71,7 +71,7 @@ class ContentFrameworkProjectController extends Controller
      */
     public function store(ContentFrameworkRequest $request): RedirectResponse
     {
-        $contentFrameworkProject = ContentFramework::create($request->validated());
+        $contentFrameworkProject = ResearchStaffContentFramework::create($request->validated());
 
         return redirect()->route('content-framework-projects.index')
             ->with('success', "Contenido '{$contentFrameworkProject->name}' creado correctamente.");
@@ -80,7 +80,7 @@ class ContentFrameworkProjectController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ContentFramework $contentFrameworkProject): View
+    public function show(ResearchStaffContentFramework $contentFrameworkProject): View
     {
         return view('content-framework-project.show', compact('contentFrameworkProject'));
     }
@@ -88,9 +88,9 @@ class ContentFrameworkProjectController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(ContentFramework $contentFrameworkProject): View
+    public function edit(ResearchStaffContentFramework $contentFrameworkProject): View
     {
-        $frameworks = Framework::orderBy('name')->pluck('name', 'id');
+        $frameworks = ResearchStaffFramework::orderBy('name')->pluck('name', 'id');
 
         return view('content-framework-project.edit', compact('contentFrameworkProject', 'frameworks'));
     }
@@ -98,7 +98,7 @@ class ContentFrameworkProjectController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ContentFrameworkRequest $request, ContentFramework $contentFrameworkProject): RedirectResponse
+    public function update(ContentFrameworkRequest $request, ResearchStaffContentFramework $contentFrameworkProject): RedirectResponse
     {
         $contentFrameworkProject->update($request->validated());
 
@@ -109,7 +109,7 @@ class ContentFrameworkProjectController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ContentFramework $contentFrameworkProject): RedirectResponse
+    public function destroy(ResearchStaffContentFramework $contentFrameworkProject): RedirectResponse
     {
         $nombre = $contentFrameworkProject->name;
         $contentFrameworkProject->delete();

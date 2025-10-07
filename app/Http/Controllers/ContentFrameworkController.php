@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ContentFramework;
+use App\Models\ResearchStaff\ResearchStaffContentFramework;
 use App\Http\Requests\ContentFrameworkRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -26,7 +26,7 @@ class ContentFrameworkController extends Controller
     {
         try {
             // Obtener todos los frameworks activos (no eliminados)
-            $frameworks = ContentFramework::all();
+            $frameworks = ResearchStaffContentFramework::all();
 
             return view('content_frameworks.index', compact('frameworks'));
 
@@ -61,7 +61,7 @@ class ContentFrameworkController extends Controller
         try {
             return DB::transaction(function () use ($request) {
                 // Crear el framework
-                $framework = ContentFramework::create([
+                $framework = ResearchStaffContentFramework::create([
                     'name' => $request->name,
                     'description' => $request->description ?? '',
                 ]);
@@ -94,7 +94,7 @@ class ContentFrameworkController extends Controller
      * @param ContentFramework $contentFramework Framework a editar
      * @return View Vista del formulario de edición
      */
-    public function edit(ContentFramework $contentFramework): View
+    public function edit(ResearchStaffContentFramework $contentFramework): View
     {
         // Verificar si fue eliminado lógicamente
         if ($contentFramework->trashed()) {
@@ -111,7 +111,7 @@ class ContentFrameworkController extends Controller
      * @param ContentFramework $contentFramework Framework a actualizar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function update(ContentFrameworkRequest $request, ContentFramework $contentFramework): RedirectResponse
+    public function update(ContentFrameworkRequest $request, ResearchStaffContentFramework $contentFramework): RedirectResponse
     {
         try {
             return DB::transaction(function () use ($request, $contentFramework) {
@@ -159,7 +159,7 @@ class ContentFrameworkController extends Controller
      * @param ContentFramework $contentFramework Framework a eliminar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function destroy(ContentFramework $contentFramework): RedirectResponse
+    public function destroy(ResearchStaffContentFramework $contentFramework): RedirectResponse
     {
         try {
             return DB::transaction(function () use ($contentFramework) {
@@ -209,7 +209,7 @@ class ContentFrameworkController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar framework incluyendo eliminados
-                $framework = ContentFramework::withTrashed()->findOrFail($id);
+                $framework = ResearchStaffContentFramework::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminado
                 if (!$framework->trashed()) {

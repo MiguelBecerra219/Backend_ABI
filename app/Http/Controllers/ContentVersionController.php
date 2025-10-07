@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ContentVersionRequest;
-use App\Models\ContentVersion;
+use App\Models\ResearchStaff\ResearchStaffContentVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +34,7 @@ class ContentVersionController extends Controller
             $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
             // Construir query base con relaciones
-            $query = ContentVersion::query()->with(['content', 'version.project']);
+            $query = ResearchStaffContentVersion::query()->with(['content', 'version.project']);
 
             // Aplicar filtros si existen
             if ($versionId = $request->query('version_id')) {
@@ -86,7 +86,7 @@ class ContentVersionController extends Controller
 
             return DB::transaction(function () use ($data) {
                 // Crear registro de content_version
-                $contentVersion = ContentVersion::create($data);
+                $contentVersion = ResearchStaffContentVersion::create($data);
 
                 // Registrar evento en logs
                 Log::info('Versión de contenido creada', [
@@ -117,7 +117,7 @@ class ContentVersionController extends Controller
      * @param ContentVersion $contentVersion Registro a mostrar
      * @return JsonResponse Detalle del registro
      */
-    public function show(ContentVersion $contentVersion): JsonResponse
+    public function show(ResearchStaffContentVersion $contentVersion): JsonResponse
     {
         try {
             // Verificar si fue eliminado
@@ -148,7 +148,7 @@ class ContentVersionController extends Controller
      * @param ContentVersion $contentVersion Registro a actualizar
      * @return JsonResponse Registro actualizado
      */
-    public function update(ContentVersionRequest $request, ContentVersion $contentVersion): JsonResponse
+    public function update(ContentVersionRequest $request, ResearchStaffContentVersion $contentVersion): JsonResponse
     {
         try {
             $data = $request->validated();
@@ -193,7 +193,7 @@ class ContentVersionController extends Controller
      * @param ContentVersion $contentVersion Registro a eliminar
      * @return JsonResponse Respuesta sin contenido (204)
      */
-    public function destroy(ContentVersion $contentVersion): JsonResponse
+    public function destroy(ResearchStaffContentVersion $contentVersion): JsonResponse
     {
         try {
             return DB::transaction(function () use ($contentVersion) {
@@ -238,7 +238,7 @@ class ContentVersionController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar registro incluyendo eliminados
-                $contentVersion = ContentVersion::withTrashed()->findOrFail($id);
+                $contentVersion = ResearchStaffContentVersion::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminado
                 if (!$contentVersion->trashed()) {

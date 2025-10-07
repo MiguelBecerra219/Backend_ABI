@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ContentRequest;
-use App\Models\Content;
+use App\Models\ResearchStaff\ResearchStaffContent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +48,7 @@ class ContentController extends Controller
             $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
             // Iniciar consulta base
-            $query = Content::query();
+            $query = ResearchStaffContent::query();
 
             // Aplicar filtro de búsqueda si existe
             if (!empty($validated['search'])) {
@@ -128,7 +128,7 @@ class ContentController extends Controller
                 $data = $request->validated();
 
                 // Crear el nuevo contenido
-                $content = Content::create($data);
+                $content = ResearchStaffContent::create($data);
 
                 // Registrar evento en logs
                 Log::info('Contenido creado exitosamente', [
@@ -168,7 +168,7 @@ class ContentController extends Controller
      * @param Content $content Instancia del contenido a mostrar
      * @return JsonResponse Respuesta JSON con el contenido y sus versiones
      */
-    public function show(Content $content): JsonResponse
+    public function show(ResearchStaffContent $content): JsonResponse
     {
         try {
             // Verificar si el contenido fue eliminado (soft delete)
@@ -206,7 +206,7 @@ class ContentController extends Controller
      * @param Content $content Instancia del contenido a actualizar
      * @return JsonResponse Respuesta JSON con el contenido actualizado
      */
-    public function update(ContentRequest $request, Content $content): JsonResponse
+    public function update(ContentRequest $request, ResearchStaffContent $content): JsonResponse
     {
         try {
             return DB::transaction(function () use ($request, $content) {
@@ -262,7 +262,7 @@ class ContentController extends Controller
      * @param Content $content Instancia del contenido a eliminar
      * @return JsonResponse Respuesta JSON confirmando la eliminación
      */
-    public function destroy(Content $content): JsonResponse
+    public function destroy(ResearchStaffContent $content): JsonResponse
     {
         try {
             return DB::transaction(function () use ($content) {
@@ -320,7 +320,7 @@ class ContentController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar contenido incluyendo eliminados
-                $content = Content::withTrashed()->findOrFail($id);
+                $content = ResearchStaffContent::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminado
                 if (!$content->trashed()) {

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InvestigationLine;
-use App\Models\ResearchGroup;
-use App\Models\ThematicArea;
+use App\Models\ResearchStaff\ResearchStaffInvestigationLine;
+use App\Models\ResearchStaff\ResearchStaffResearchGroup;
+use App\Models\ResearchStaff\ResearchStaffThematicArea;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +19,7 @@ class ThematicAreaController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
-        $thematicAreas = ThematicArea::query()
+        $thematicAreas = ResearchStaffThematicArea::query()
             ->with(['investigationLine.researchGroup'])
             ->when($search, function ($query, string $search) {
                 $query->where(function ($q) use ($search) {
@@ -39,8 +39,8 @@ class ThematicAreaController extends Controller
             ->paginate($perPage)
             ->appends($request->query());
 
-        $researchGroups = ResearchGroup::orderBy('name')->pluck('name', 'id');
-        $investigationLines = InvestigationLine::with('researchGroup')
+        $researchGroups = ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id');
+        $investigationLines = ResearchStaffInvestigationLine::with('researchGroup')
             ->orderBy('name')
             ->get();
 
@@ -58,9 +58,9 @@ class ThematicAreaController extends Controller
     public function create(): View
     {
         return view('thematic-areas.create', [
-            'thematicArea' => new ThematicArea(),
-            'investigationLines' => InvestigationLine::with('researchGroup')->orderBy('name')->get(),
-            'researchGroups' => ResearchGroup::orderBy('name')->pluck('name', 'id'),
+            'thematicArea' => new ResearchStaffThematicArea(),
+            'investigationLines' => ResearchStaffInvestigationLine::with('researchGroup')->orderBy('name')->get(),
+            'researchGroups' => ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -72,30 +72,30 @@ class ThematicAreaController extends Controller
             'investigation_line_id' => 'required|exists:investigation_lines,id',
         ]);
 
-        $thematicArea = ThematicArea::create($data);
+        $thematicArea = ResearchStaffThematicArea::create($data);
 
         return redirect()
             ->route('thematic-areas.index')
             ->with('success', "Área temática '{$thematicArea->name}' creada correctamente.");
     }
 
-    public function show(ThematicArea $thematicArea): View
+    public function show(ResearchStaffThematicArea $thematicArea): View
     {
         $thematicArea->load(['investigationLine.researchGroup']);
 
         return view('thematic-areas.show', compact('thematicArea'));
     }
 
-    public function edit(ThematicArea $thematicArea): View
+    public function edit(ResearchStaffThematicArea $thematicArea): View
     {
         return view('thematic-areas.edit', [
             'thematicArea' => $thematicArea,
-            'investigationLines' => InvestigationLine::with('researchGroup')->orderBy('name')->get(),
-            'researchGroups' => ResearchGroup::orderBy('name')->pluck('name', 'id'),
+            'investigationLines' => ResearchStaffInvestigationLine::with('researchGroup')->orderBy('name')->get(),
+            'researchGroups' => ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
-    public function update(Request $request, ThematicArea $thematicArea): RedirectResponse
+    public function update(Request $request, ResearchStaffThematicArea $thematicArea): RedirectResponse
     {
         $data = $request->validate([
             'name' => 'required|string|max:100|unique:thematic_areas,name,' . $thematicArea->id,
@@ -110,7 +110,7 @@ class ThematicAreaController extends Controller
             ->with('success', "Área temática '{$thematicArea->name}' actualizada correctamente.");
     }
 
-    public function destroy(ThematicArea $thematicArea): RedirectResponse
+    public function destroy(ResearchStaffThematicArea $thematicArea): RedirectResponse
     {
         $name = $thematicArea->name;
         $thematicArea->delete();

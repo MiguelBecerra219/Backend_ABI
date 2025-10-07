@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\City;
-use App\Models\Department;
+use App\Models\ResearchStaff\ResearchStaffCity;
+use App\Models\ResearchStaff\ResearchStaffDepartment;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +19,7 @@ class CityController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
-        $cities = City::query()
+        $cities = ResearchStaffCity::query()
             ->with('department')
             ->when($search, function ($query, string $search) {
                 $query->where('name', 'like', "%{$search}%");
@@ -31,7 +31,7 @@ class CityController extends Controller
             ->paginate($perPage)
             ->appends($request->query());
 
-        $departments = Department::orderBy('name')->pluck('name', 'id');
+        $departments = ResearchStaffDepartment::orderBy('name')->pluck('name', 'id');
 
         return view('city.index', [
             'cities' => $cities,
@@ -45,8 +45,8 @@ class CityController extends Controller
     public function create(): View
     {
         return view('city.create', [
-            'city' => new City(),
-            'departments' => Department::orderBy('name')->pluck('name', 'id'),
+            'city' => new ResearchStaffCity(),
+            'departments' => ResearchStaffDepartment::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -57,29 +57,29 @@ class CityController extends Controller
             'department_id' => 'required|exists:departments,id',
         ]);
 
-        $city = City::create($data);
+        $city = ResearchStaffCity::create($data);
 
         return redirect()
             ->route('cities.index')
             ->with('success', "Ciudad '{$city->name}' creada correctamente.");
     }
 
-    public function show(City $city): View
+    public function show(ResearchStaffCity $city): View
     {
         $city->load('department');
 
         return view('city.show', compact('city'));
     }
 
-    public function edit(City $city): View
+    public function edit(ResearchStaffCity $city): View
     {
         return view('city.edit', [
             'city' => $city,
-            'departments' => Department::orderBy('name')->pluck('name', 'id'),
+            'departments' => ResearchStaffDepartment::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
-    public function update(Request $request, City $city): RedirectResponse
+    public function update(Request $request, ResearchStaffCity $city): RedirectResponse
     {
         $data = $request->validate([
             'name' => 'required|string|max:100|unique:cities,name,' . $city->id,
@@ -93,7 +93,7 @@ class CityController extends Controller
             ->with('success', "Ciudad '{$city->name}' actualizada correctamente.");
     }
 
-    public function destroy(City $city): RedirectResponse
+    public function destroy(ResearchStaffCity $city): RedirectResponse
     {
         try {
             $name = $city->name;
@@ -109,7 +109,7 @@ class CityController extends Controller
         }
     }
 
-    public function byDepartment(Department $department): JsonResponse
+    public function byDepartment(ResearchStaffDepartment $department): JsonResponse
     {
         $cities = $department->cities()
             ->orderBy('name')

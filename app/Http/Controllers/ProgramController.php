@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Program;
-use App\Models\ResearchGroup;
+use App\Models\ResearchStaff\ResearchStaffProgram;
+use App\Models\ResearchStaff\ResearchStaffResearchGroup;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,7 +38,7 @@ class ProgramController extends Controller
             $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
             // Query base con relaciones
-            $programs = Program::query()
+            $programs = ResearchStaffProgram::query()
                 ->with('researchGroup')
                 ->when($search, function ($query, string $search) {
                     $query->where(function ($q) use ($search) {
@@ -54,7 +54,7 @@ class ProgramController extends Controller
                 ->appends($request->query());
 
             // Obtener grupos de investigación para filtro
-            $researchGroups = ResearchGroup::orderBy('name')->pluck('name', 'id');
+            $researchGroups = ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id');
 
             return view('programs.index', [
                 'programs' => $programs,
@@ -86,8 +86,8 @@ class ProgramController extends Controller
     public function create(): View
     {
         return view('programs.create', [
-            'program' => new Program(),
-            'researchGroups' => ResearchGroup::orderBy('name')->pluck('name', 'id'),
+            'program' => new ResearchStaffProgram(),
+            'researchGroups' => ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -118,7 +118,7 @@ class ProgramController extends Controller
 
             return DB::transaction(function () use ($data) {
                 // Crear programa
-                $program = Program::create($data);
+                $program = ResearchStaffProgram::create($data);
 
                 // Registrar evento en logs
                 Log::info('Programa creado', [
@@ -153,7 +153,7 @@ class ProgramController extends Controller
      * @param Program $program Programa a mostrar
      * @return View Vista con detalle
      */
-    public function show(Program $program): View
+    public function show(ResearchStaffProgram $program): View
     {
         // Verificar si fue eliminado
         if ($program->trashed()) {
@@ -172,7 +172,7 @@ class ProgramController extends Controller
      * @param Program $program Programa a editar
      * @return View Vista del formulario de edición
      */
-    public function edit(Program $program): View
+    public function edit(ResearchStaffProgram $program): View
     {
         // Verificar si fue eliminado
         if ($program->trashed()) {
@@ -181,7 +181,7 @@ class ProgramController extends Controller
 
         return view('programs.edit', [
             'program' => $program,
-            'researchGroups' => ResearchGroup::orderBy('name')->pluck('name', 'id'),
+            'researchGroups' => ResearchStaffResearchGroup::orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -192,7 +192,7 @@ class ProgramController extends Controller
      * @param Program $program Programa a actualizar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function update(Request $request, Program $program): RedirectResponse
+    public function update(Request $request, ResearchStaffProgram $program): RedirectResponse
     {
         try {
             // Validar datos excluyendo el programa actual en unicidad
@@ -255,7 +255,7 @@ class ProgramController extends Controller
      * @param Program $program Programa a eliminar
      * @return RedirectResponse Redirección con mensaje
      */
-    public function destroy(Program $program): RedirectResponse
+    public function destroy(ResearchStaffProgram $program): RedirectResponse
     {
         try {
             return DB::transaction(function () use ($program) {
@@ -308,7 +308,7 @@ class ProgramController extends Controller
         try {
             return DB::transaction(function () use ($id) {
                 // Buscar programa incluyendo eliminados
-                $program = Program::withTrashed()->findOrFail($id);
+                $program = ResearchStaffProgram::withTrashed()->findOrFail($id);
 
                 // Verificar si está eliminado
                 if (!$program->trashed()) {

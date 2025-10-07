@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * project_statuses table model, manages communication with the database using the root user, 
@@ -11,5 +12,5 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ProjectStatus extends Model
 {
-    //
+    use SoftDeletes;
 }
