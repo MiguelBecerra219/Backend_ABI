@@ -1,3 +1,10 @@
+{{--
+    View path: programs/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Programs module.
+    Expected variables within this template: $program.
+    Included partials or components: programs.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Editar programa académico')
@@ -48,6 +55,7 @@
                     <h3 class="card-title">Información general</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('programs.update', $program) }}">
                         @csrf
                         @method('PUT')

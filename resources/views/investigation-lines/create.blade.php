@@ -1,3 +1,10 @@
+{{--
+    View path: investigation-lines/create.blade.php.
+    Purpose: Renders the create.blade view for the Investigation Lines module.
+    This template does not rely on dynamic variables.
+    Included partials or components: investigation-lines.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Registrar línea de investigación')
@@ -51,6 +58,7 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('investigation-lines.store') }}">
                         @csrf
                         @include('investigation-lines.form')

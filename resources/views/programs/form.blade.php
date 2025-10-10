@@ -1,3 +1,10 @@
+{{--
+    View path: programs/form.blade.php.
+    Purpose: Renders the form.blade view for the Programs module.
+    Expected variables within this template: $errors, $groupName, $id, $isEdit, $message, $program, $researchGroups.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @php
     $isEdit = isset($program) && $program->exists;
 @endphp
@@ -5,7 +12,9 @@
 <div class="row">
     <div class="col-md-4">
         <div class="mb-3">
+            {{-- Label describing the purpose of 'Código del programa'. --}}
             <label for="code" class="form-label required">Código del programa</label>
+            {{-- Input element used to capture the 'code' value. --}}
             <input type="number"
                    id="code"
                    name="code"
@@ -22,7 +31,9 @@
     </div>
     <div class="col-md-8">
         <div class="mb-3">
+            {{-- Label describing the purpose of 'Nombre del programa'. --}}
             <label for="name" class="form-label required">Nombre del programa</label>
+            {{-- Input element used to capture the 'name' value. --}}
             <input type="text"
                    id="name"
                    name="name"
@@ -40,7 +51,9 @@
 </div>
 
 <div class="mb-3">
+    {{-- Label describing the purpose of 'Grupo de investigación'. --}}
     <label for="research_group_id" class="form-label required">Grupo de investigación</label>
+    {{-- Dropdown presenting the available options for 'research_group_id'. --}}
     <select id="research_group_id"
             name="research_group_id"
             class="form-select {{ $errors->has('research_group_id') ? 'is-invalid' : '' }}"
@@ -69,6 +82,7 @@
         Cancelar
     </a>
 
+    {{-- Button element of type 'submit' to trigger the intended action. --}}
     <button type="submit" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 12l5 5l10 -10" />

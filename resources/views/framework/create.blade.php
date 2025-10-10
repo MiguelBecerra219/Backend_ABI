@@ -1,3 +1,10 @@
+{{--
+    View path: framework/create.blade.php.
+    Purpose: Renders the create.blade view for the Framework module.
+    This template does not rely on dynamic variables.
+    Included partials or components: framework.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Crear Framework')
@@ -69,6 +76,7 @@
                         </div>
                         
                         <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
                             <form method="POST" action="{{ route('frameworks.store') }}" id="frameworkForm" role="form" enctype="multipart/form-data">
                                 @csrf
                                 @include('framework.form')

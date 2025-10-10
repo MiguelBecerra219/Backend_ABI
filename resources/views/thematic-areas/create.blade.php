@@ -1,3 +1,10 @@
+{{--
+    View path: thematic-areas/create.blade.php.
+    Purpose: Renders the create.blade view for the Thematic Areas module.
+    This template does not rely on dynamic variables.
+    Included partials or components: tablar::common.alert, thematic-areas.form.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Registrar área temática')
@@ -49,6 +56,7 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('thematic-areas.store') }}">
                         @csrf
                         @include('thematic-areas.form')

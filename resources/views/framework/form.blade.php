@@ -1,3 +1,10 @@
+{{--
+    View path: framework/form.blade.php.
+    Purpose: Renders the form.blade view for the Framework module.
+    Expected variables within this template: $errors, $framework, $showSubmit.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 
 @php
     $showSubmit = $showSubmit ?? (!isset($framework) || !$framework?->exists);
@@ -7,6 +14,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="form-group">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label class="form-label required" for="name">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-primary" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -15,6 +23,7 @@
                 </svg>
                 Nombre del Framework
             </label>
+            {{-- Input element used to capture the 'name' value. --}}
             <input type="text" 
                    id="name"
                    name="name" 
@@ -42,6 +51,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="form-group">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label class="form-label required" for="description">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-primary" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -53,6 +63,7 @@
                 </svg>
                 Descripción del Framework
             </label>
+            {{-- Multiline textarea allowing a detailed description for 'details'. --}}
             <textarea id="description"
                       name="description" 
                       class="form-control {{ $errors->has('description') ? 'is-invalid' : '' }}" 
@@ -79,6 +90,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="form-group">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label class="form-label" for="link">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-azure" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 1 0 -5 -5l-.5 .5"/>
@@ -86,6 +98,7 @@
                 </svg>
                 Link (opcional)
             </label>
+            {{-- Input element used to capture the 'link' value. --}}
             <input type="url"
                    id="link"
                    name="link"
@@ -106,6 +119,7 @@
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="form-group">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label class="form-label required" for="start_year">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-success" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="9"/>
@@ -113,6 +127,7 @@
                 </svg>
                 Año de Inicio
             </label>
+            {{-- Input element used to capture the 'start_year' value. --}}
             <input type="number" 
                    id="start_year"
                    name="start_year" 
@@ -138,6 +153,7 @@
     
     <div class="col-md-6">
         <div class="form-group">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label class="form-label" for="end_year">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-warning" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="9"/>
@@ -147,6 +163,7 @@
                 Año de Finalización
                 <span class="badge bg-azure-lt ms-1">Opcional</span>
             </label>
+            {{-- Input element used to capture the 'end_year' value. --}}
             <input type="number" 
                    id="end_year"
                    name="end_year" 
@@ -182,6 +199,7 @@
             Cancelar
         </a>
 
+        {{-- Button element of type 'submit' to trigger the intended action. --}}
         <button type="submit" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z"/>

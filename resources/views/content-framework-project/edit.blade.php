@@ -1,3 +1,10 @@
+{{--
+    View path: content-framework-project/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Content Framework Project module.
+    Expected variables within this template: $contentFrameworkProject, $frameworks.
+    Included partials or components: content-framework-project.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Editar Contenido del Framework')
@@ -112,6 +119,7 @@
                         </div>
 
                         <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
                             <form method="POST" action="{{ route('content-framework-projects.update', $contentFrameworkProject->id) }}" id="cfpForm" role="form">
                                 @method('PATCH')
                                 @csrf

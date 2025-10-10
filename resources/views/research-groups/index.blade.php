@@ -1,3 +1,10 @@
+{{--
+    View path: research-groups/index.blade.php.
+    Purpose: Renders the index.blade view for the Research Groups module.
+    Expected variables within this template: $group, $index, $perPage, $researchGroups, $search, $size.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @php
@@ -61,10 +68,13 @@
                     </h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="GET" action="{{ route('research-groups.index') }}" class="row g-3 align-items-end">
                         <div class="col-md-6">
+                            {{-- Label describing the purpose of 'Buscar'. --}}
                             <label for="search" class="form-label">Buscar</label>
                             <div class="input-group">
+                                {{-- Input element used to capture the 'search' value. --}}
                                 <input type="text" name="search" id="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Nombre o sigla…">
                                 @if(!empty($search))
                                     <a href="{{ route('research-groups.index') }}" class="input-group-text" title="Limpiar filtros">
@@ -77,7 +87,9 @@
                             </div>
                         </div>
                         <div class="col-md-3">
+                            {{-- Label describing the purpose of 'Registros por página'. --}}
                             <label for="per_page" class="form-label">Registros por página</label>
+                            {{-- Dropdown presenting the available options for 'per_page'. --}}
                             <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
                                 @foreach([10, 25, 50] as $size)
                                     <option value="{{ $size }}" {{ (int)($perPage ?? 10) === $size ? 'selected' : '' }}>{{ $size }}</option>
@@ -85,6 +97,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
+                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                             <button type="submit" class="btn btn-primary w-100">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M5 12h14" />
@@ -144,9 +157,11 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
+                                        {{-- Form element sends the captured data to the specified endpoint. --}}
                                         <form action="{{ route('research-groups.destroy', $group) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar el grupo {{ $group->name }}?');">
                                             @csrf
                                             @method('DELETE')
+                                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                     <line x1="4" y1="7" x2="20" y2="7" />

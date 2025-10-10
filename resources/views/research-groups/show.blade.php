@@ -1,3 +1,10 @@
+{{--
+    View path: research-groups/show.blade.php.
+    Purpose: Renders the show.blade view for the Research Groups module.
+    Expected variables within this template: $line, $program, $researchGroup.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @php

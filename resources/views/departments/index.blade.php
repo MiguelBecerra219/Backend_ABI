@@ -1,8 +1,10 @@
+{{-- Listing page that manages departments, supports filtering, pagination, and CRUD actions. --}}
 @extends('tablar::page')
 
 @section('title', 'Gestión de departamentos')
 
 @section('content')
+    {{-- Header summarizing the page purpose and exposing navigation breadcrumbs. --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
@@ -26,6 +28,7 @@
                     <p class="text-muted mb-0">Administra los departamentos disponibles y organiza sus ciudades asociadas.</p>
                 </div>
                 <div class="col-12 col-md-auto ms-auto d-print-none">
+                    {{-- Button that leads to the department creation flow. --}}
                     <a href="{{ route('departments.create') }}" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -42,6 +45,7 @@
     <div class="page-body">
         <div class="container-xl">
             @if(config('tablar.display_alert'))
+                {{-- Global alert component displayed when Tablar configuration enables it. --}}
                 @include('tablar::common.alert')
             @endif
 
@@ -50,12 +54,16 @@
                     <h3 class="card-title">Filtros</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Filter form allows searching by name and adjusting pagination size. --}}
                     <form method="GET" action="{{ route('departments.index') }}" class="row g-3 align-items-end">
                         <div class="col-md-8">
+                            {{-- Label describing the purpose of 'Buscar'. --}}
                             <label for="search" class="form-label">Buscar</label>
                             <div class="input-group">
+                                {{-- Input element used to capture the 'search' value. --}}
                                 <input type="text" id="search" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Nombre del departamento">
                                 @if(!empty($search) || ($perPage ?? 10) != 10)
+                                    {{-- Quick reset link appears when filters are active. --}}
                                     <a href="{{ route('departments.index') }}" class="input-group-text" title="Limpiar filtros">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -66,7 +74,9 @@
                             </div>
                         </div>
                         <div class="col-md-4">
+                            {{-- Label describing the purpose of 'Registros por página'. --}}
                             <label for="per_page" class="form-label">Registros por página</label>
+                            {{-- Selecting a new page size auto-submits to refresh the listing. --}}
                             <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
                                 @foreach([10, 25, 50] as $size)
                                     <option value="{{ $size }}" {{ (int)($perPage ?? 10) === $size ? 'selected' : '' }}>{{ $size }}</option>
@@ -74,6 +84,7 @@
                             </select>
                         </div>
                         <div class="col-12">
+                            {{-- Submit button triggers the GET request with the chosen filters. --}}
                             <button type="submit" class="btn btn-primary">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 6h16" />
@@ -89,6 +100,7 @@
 
             <div class="card">
                 <div class="table-responsive">
+                    {{-- Table presenting department metadata along with action buttons. --}}
                     <table class="table card-table table-vcenter text-nowrap">
                         <thead>
                             <tr>
@@ -101,6 +113,7 @@
                         </thead>
                         <tbody>
                         @forelse($departments as $index => $department)
+                            {{-- Each row represents a department with counts and timestamps. --}}
                             <tr>
                                 <td class="text-muted">{{ $departments->firstItem() + $index }}</td>
                                 <td>{{ $department->name }}</td>
@@ -109,6 +122,7 @@
                                 </td>
                                 <td>{{ $department->created_at?->format('d/m/Y') ?? '—' }}</td>
                                 <td>
+                                    {{-- Action buttons for viewing, editing, or deleting the department. --}}
                                     <div class="btn-list flex-nowrap">
                                         <a href="{{ route('departments.show', $department) }}" class="btn btn-sm btn-outline-primary" title="Ver">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -123,9 +137,11 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
-                                        <form action="{{ route('departments.destroy', $department) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar el departamento {{ $department->name }}?');">
+                                       {{-- Form element sends the captured data to the specified endpoint. --}}
+                                       <form action="{{ route('departments.destroy', $department) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar el departamento {{ $department->name }}?');">
                                             @csrf
                                             @method('DELETE')
+                                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                     <line x1="4" y1="7" x2="20" y2="7" />
@@ -140,6 +156,7 @@
                                 </td>
                             </tr>
                         @empty
+                            {{-- Empty state when no departments satisfy the current filters. --}}
                             <tr>
                                 <td colspan="5" class="text-center text-muted py-4">
                                     No se encontraron departamentos con los filtros aplicados.
@@ -151,6 +168,7 @@
                 </div>
                 @if($departments->hasPages())
                     <div class="card-footer d-flex justify-content-between align-items-center">
+                        {{-- Pagination summary and controls rendered when multiple pages exist. --}}
                         <p class="m-0 text-muted">Mostrando {{ $departments->firstItem() }}-{{ $departments->lastItem() }} de {{ $departments->total() }} resultados</p>
                         {{ $departments->links() }}
                     </div>

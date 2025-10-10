@@ -1,3 +1,10 @@
+{{--
+    View path: research-groups/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Research Groups module.
+    Expected variables within this template: $researchGroup.
+    Included partials or components: research-groups.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Editar grupo de investigación')
@@ -50,6 +57,7 @@
                     <h3 class="card-title">Datos generales</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('research-groups.update', $researchGroup) }}">
                         @csrf
                         @method('PUT')

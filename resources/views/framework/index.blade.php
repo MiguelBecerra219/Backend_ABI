@@ -1,3 +1,10 @@
+{{--
+    View path: framework/index.blade.php.
+    Purpose: Renders the index.blade view for the Framework module.
+    Expected variables within this template: $currentYear, $durationYears, $endYear, $framework, $frameworks, $i, $isCurrent, $isFuture, $option, $perPage, $perPageOptions, $remainingYears, $search, $startYear, $year, $yearsElapsed.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title')
@@ -65,6 +72,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header border-0 pb-0">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
                             <form method="GET" action="{{ route('frameworks.index') }}" class="w-100">
                                 <div class="row g-2 align-items-center">
                                     <div class="col-12 col-lg-5">
@@ -76,13 +84,16 @@
                                                     <line x1="21" y1="21" x2="15" y2="15" />
                                                 </svg>
                                             </span>
+                                            {{-- Input element used to capture the 'search' value. --}}
                                             <input type="search" name="search" value="{{ $search }}" class="form-control" placeholder="Buscar por nombre, descripción o ID">
                                         </div>
                                     </div>
                                     <div class="col-6 col-lg-2">
+                                        {{-- Input element used to capture the 'year' value. --}}
                                         <input type="number" name="year" value="{{ $year }}" class="form-control" placeholder="Año vigencia" min="1900" max="{{ date('Y') + 50 }}">
                                     </div>
                                     <div class="col-6 col-lg-2">
+                                        {{-- Dropdown presenting the available options for 'per_page'. --}}
                                         <select name="per_page" class="form-select">
                                             @foreach($perPageOptions as $option)
                                                 <option value="{{ $option }}" {{ (int) $perPage === (int) $option ? 'selected' : '' }}>Mostrar {{ $option }}</option>
@@ -90,6 +101,7 @@
                                         </select>
                                     </div>
                                     <div class="col-12 col-lg-3 d-grid gap-2 d-lg-flex">
+                                        {{-- Button element of type 'submit' to trigger the intended action. --}}
                                         <button type="submit" class="btn btn-primary w-100">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -117,6 +129,7 @@
                                 <thead>
                                     <tr>
                                         <th class="w-1">
+                                            {{-- Input element used to capture the 'input' value. --}}
                                             <input class="form-check-input m-0 align-middle" type="checkbox" aria-label="Seleccionar todos" id="select-all">
                                         </th>
                                         <th class="w-1">#</th>
@@ -147,6 +160,7 @@
                                             @endphp
                                             <tr class="framework-row">
                                                 <td>
+                                                    {{-- Input element used to capture the 'input' value. --}}
                                                     <input class="form-check-input m-0 align-middle framework-checkbox" type="checkbox" value="{{ $framework->id }}" aria-label="Seleccionar framework">
                                                 </td>
                                                 <td><span class="text-muted">{{ ++$i }}</span></td>
@@ -267,6 +281,7 @@
                                                         </a>
 
                                                         <div class="dropdown">
+                                                            {{-- Button element of type 'button' to trigger the intended action. --}}
                                                             <button class="btn btn-sm dropdown-toggle align-text-top" data-bs-toggle="dropdown" aria-expanded="false">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                                     <circle cx="12" cy="12" r="1" />
@@ -300,6 +315,7 @@
                                                                         Abrir enlace
                                                                     </a>
                                                                 @endif
+                                                                {{-- Button element of type 'button' to trigger the intended action. --}}
                                                                 <button type="button" class="dropdown-item text-danger" data-action="delete" data-framework-id="{{ $framework->id }}" data-framework-name="{{ $framework->name }}">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                                         <path d="M4 7h16" />
@@ -310,6 +326,7 @@
                                                                     </svg>
                                                                     Eliminar framework
                                                                 </button>
+                                                                {{-- Form element sends the captured data to the specified endpoint. --}}
                                                                 <form id="delete-form-{{ $framework->id }}" action="{{ route('frameworks.destroy', $framework->id) }}" method="POST" class="d-none">
                                                                     @csrf
                                                                     @method('DELETE')

@@ -1,3 +1,10 @@
+{{--
+    View path: users/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Users module.
+    Expected variables within this template: $cityPrograms, $details, $error, $errors, $message, $program, $user.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Editar usuario')
@@ -58,6 +65,7 @@
                     <h3 class="card-title">Información de cuenta</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('users.update', $user) }}" id="user-form">
                         @csrf
                         @method('PUT')
@@ -65,7 +73,9 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    {{-- Label describing the purpose of 'Email'. --}}
                                     <label for="email" class="form-label required">Email</label>
+                                    {{-- Input element used to capture the 'email' value. --}}
                                     <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror" 
                                            value="{{ old('email', $user->email) }}" required>
                                     @error('email')
@@ -76,7 +86,9 @@
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    {{-- Label describing the purpose of 'Estado'. --}}
                                     <label for="state" class="form-label required">Estado</label>
+                                    {{-- Dropdown presenting the available options for 'state'. --}}
                                     <select id="state" name="state" class="form-select @error('state') is-invalid @enderror" required>
                                         <option value="1" {{ old('state', $user->state) == '1' ? 'selected' : '' }}>Activo</option>
                                         <option value="0" {{ old('state', $user->state) == '0' ? 'selected' : '' }}>Inactivo</option>
@@ -91,7 +103,9 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    {{-- Label describing the purpose of 'Rol'. --}}
                                     <label for="role" class="form-label required">Rol</label>
+                                    {{-- Dropdown presenting the available options for 'role'. --}}
                                     <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" required>
                                         <option value="student" {{ old('role', $user->role) == 'student' ? 'selected' : '' }}>Estudiante</option>
                                         <option value="professor" {{ old('role', $user->role) == 'professor' ? 'selected' : '' }}>Profesor</option>
@@ -106,7 +120,9 @@
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    {{-- Label describing the purpose of 'Nueva contraseña'. --}}
                                     <label for="password" class="form-label">Nueva contraseña</label>
+                                    {{-- Input element used to capture the 'password' value. --}}
                                     <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" 
                                            autocomplete="new-password">
                                     @error('password')
@@ -116,8 +132,10 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    {{-- Label describing the purpose of 'Confirmar contraseña'. --}}
                                     <label class="form-label">Confirmar contraseña</label>
                                     <div class="input-group input-group-flat">
+                                        {{-- Input element used to capture the 'password_confirmation' value. --}}
                                         <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror"
                                             placeholder="Confirmar contraseña" autocomplete="off">
                                         <span class="input-group-text">
@@ -149,11 +167,14 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
+                                            {{-- Label describing the purpose of 'Cédula'. --}}
                                             <label for="card_id" class="form-label required">Cédula</label>
                                             <div class="input-group">
+                                                {{-- Input element used to capture the 'card_id' value. --}}
                                                 <input type="text" class="form-control" 
                                                     value="{{ old('card_id', $details->card_id ?? '') }}" 
                                                     readonly>
+                                                {{-- Input element used to capture the 'card_id' value. --}}
                                                 <input type="hidden" id="card_id" name="card_id" 
                                                     value="{{ old('card_id', $details->card_id ?? '') }}">
                                             </div>
@@ -165,7 +186,9 @@
                                     
                                     <div class="col-md-6">
                                         <div class="mb-3">
+                                            {{-- Label describing the purpose of 'Nombre'. --}}
                                             <label for="name" class="form-label required">Nombre</label>
+                                            {{-- Input element used to capture the 'name' value. --}}
                                             <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" 
                                                    value="{{ old('name', $details->name ?? '') }}" required>
                                             @error('name')
@@ -178,7 +201,9 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
+                                            {{-- Label describing the purpose of 'Apellido'. --}}
                                             <label for="last_name" class="form-label required">Apellido</label>
+                                            {{-- Input element used to capture the 'last_name' value. --}}
                                             <input type="text" id="last_name" name="last_name" class="form-control @error('last_name') is-invalid @enderror" 
                                                    value="{{ old('last_name', $details->last_name ?? '') }}" required>
                                             @error('last_name')
@@ -189,7 +214,9 @@
                                     
                                     <div class="col-md-6">
                                         <div class="mb-3">
+                                            {{-- Label describing the purpose of 'Teléfono'. --}}
                                             <label for="phone" class="form-label required">Teléfono</label>
+                                            {{-- Input element used to capture the 'phone' value. --}}
                                             <input type="text" id="phone" name="phone" class="form-control @error('phone') is-invalid @enderror" 
                                                    value="{{ old('phone', $details->phone ?? '') }}" required>
                                             @error('phone')
@@ -204,7 +231,9 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">
+                                                {{-- Label describing the purpose of 'Semestre'. --}}
                                                 <label for="semester" class="form-label required">Semestre</label>
+                                                {{-- Input element used to capture the 'semester' value. --}}
                                                 <input type="number" id="semester" name="semester" class="form-control @error('semester') is-invalid @enderror" 
                                                        min="1" max="10" value="{{ old('semester', $details->semester ?? '') }}">
                                                 @error('semester')
@@ -215,7 +244,9 @@
                                         
                                         <div class="col-md-6">
                                             <div class="mb-3">
+                                                {{-- Label describing the purpose of 'Programa'. --}}
                                                 <label for="student_city_program_id" class="form-label required">Programa</label>
+                                                {{-- Dropdown presenting the available options for 'city_program_id'. --}}
                                                 <select id="student_city_program_id" name="city_program_id" class="form-select @error('city_program_id') is-invalid @enderror">
                                                     <option value="">Selecciona un programa…</option>
                                                     @foreach($cityPrograms as $program)
@@ -237,7 +268,9 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">
+                                                {{-- Label describing the purpose of 'Programa'. --}}
                                                 <label for="professor_city_program_id" class="form-label required">Programa</label>
+                                                {{-- Dropdown presenting the available options for 'city_program_id'. --}}
                                                 <select id="professor_city_program_id" name="city_program_id" class="form-select @error('city_program_id') is-invalid @enderror">
                                                     <option value="">Selecciona un programa…</option>
                                                     @foreach($cityPrograms as $program)
@@ -253,6 +286,7 @@
                                         </div>
                                         
                                         <div class="col-md-6">
+                                            {{-- Input element used to capture the 'committee_leader' value. --}}
                                             <input type="hidden" id="committee_leader" name="committee_leader" value="{{ old('committee_leader', $details->committee_leader ?? ($user->role === 'committee_leader' ? '1' : '0')) }}">
                                         </div>
                                     </div>
@@ -271,6 +305,7 @@
                                 Cancelar
                             </a>
                             
+                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                             <button type="submit" class="btn btn-primary">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M5 12l5 5l10 -10" />

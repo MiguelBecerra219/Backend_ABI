@@ -1,8 +1,10 @@
+{{-- View responsible for rendering the creation form for a new department. --}}
 @extends('tablar::page')
 
 @section('title', 'Nuevo departamento')
 
 @section('content')
+    {{-- Page header with breadcrumb navigation for contextual awareness. --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
@@ -20,6 +22,7 @@
         </div>
     </div>
 
+    {{-- Main content container holding the department registration form. --}}
     <div class="page-body">
         <div class="container-xl">
             <div class="card">
@@ -27,8 +30,10 @@
                     <h3 class="card-title">Datos del departamento</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form submits the department information to the store route. --}}
                     <form action="{{ route('departments.store') }}" method="POST" novalidate>
                         @csrf
+                        {{-- Reuse the shared form partial for both create and edit flows. --}}
                         @include('departments.form')
                     </form>
                 </div>

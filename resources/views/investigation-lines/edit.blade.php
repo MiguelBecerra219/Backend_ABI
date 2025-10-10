@@ -1,3 +1,10 @@
+{{--
+    View path: investigation-lines/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Investigation Lines module.
+    Expected variables within this template: $investigationLine.
+    Included partials or components: investigation-lines.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Editar línea de investigación')
@@ -49,6 +56,7 @@
                     <h3 class="card-title">Información general</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('investigation-lines.update', $investigationLine) }}">
                         @csrf
                         @method('PUT')

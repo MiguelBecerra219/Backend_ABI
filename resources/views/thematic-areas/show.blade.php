@@ -1,3 +1,10 @@
+{{--
+    View path: thematic-areas/show.blade.php.
+    Purpose: Renders the show.blade view for the Thematic Areas module.
+    Expected variables within this template: $thematicArea.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Detalle del área temática')

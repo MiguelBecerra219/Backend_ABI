@@ -1,3 +1,10 @@
+{{--
+    View path: frameworks/show.blade.php.
+    Purpose: Renders the show.blade view for the Frameworks module.
+    Expected variables within this template: $c, $framework, $message.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('layouts.app')
 
 @section('title','Detalle Framework')
@@ -53,15 +60,20 @@
               @csrf
               <div class="row g-2 align-items-end">
                 <div class="col-12 col-md-5">
+                  {{-- Label describing the purpose of 'Nombre del objetivo'. --}}
                   <label class="form-label required">Nombre del objetivo</label>
+                  {{-- Input element used to capture the 'name' value. --}}
                   <input name="name" class="form-control" required>
                   @error('name') <div class="text-danger small">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-12 col-md-5">
+                  {{-- Label describing the purpose of 'Descripción'. --}}
                   <label class="form-label">Descripción</label>
+                  {{-- Input element used to capture the 'description' value. --}}
                   <input name="description" class="form-control">
                 </div>
                 <div class="col-12 col-md-2 d-flex">
+                  {{-- Button element of type 'button' to trigger the intended action. --}}
                   <button class="btn btn-primary ms-auto">Agregar</button>
                 </div>
               </div>
@@ -99,6 +111,7 @@
                             <form method="POST" action="{{ route('contents.destroy',$c) }}"
                                   onsubmit="return confirm('¿Eliminar contenido?')" class="d-inline">
                               @csrf @method('DELETE')
+                              {{-- Button element of type 'button' to trigger the intended action. --}}
                               <button class="btn btn-outline-danger">Eliminar</button>
                             </form>
                           </div>
@@ -123,24 +136,32 @@
   <div class="modal-dialog" role="document"><div class="modal-content">
     <div class="modal-header">
       <h5 class="modal-title">Editar contenido</h5>
+      {{-- Button element of type 'button' to trigger the intended action. --}}
       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
     </div>
+    {{-- Form element sends the captured data to the specified endpoint. --}}
     <form id="form-edit-content" method="POST">
       @csrf @method('PUT')
       <div class="modal-body">
         <div class="row g-3">
           <div class="col-12">
+            {{-- Label describing the purpose of 'Nombre'. --}}
             <label class="form-label required">Nombre</label>
+            {{-- Input element used to capture the 'name' value. --}}
             <input id="editc-name" name="name" class="form-control" required>
           </div>
           <div class="col-12">
+            {{-- Label describing the purpose of 'Descripción'. --}}
             <label class="form-label">Descripción</label>
+            {{-- Input element used to capture the 'description' value. --}}
             <input id="editc-description" name="description" class="form-control">
           </div>
         </div>
       </div>
       <div class="modal-footer">
+        {{-- Button element of type 'button' to trigger the intended action. --}}
         <button class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancelar</button>
+        {{-- Button element of type 'button' to trigger the intended action. --}}
         <button class="btn btn-primary">Guardar cambios</button>
       </div>
     </form>

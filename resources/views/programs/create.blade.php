@@ -1,3 +1,10 @@
+{{--
+    View path: programs/create.blade.php.
+    Purpose: Renders the create.blade view for the Programs module.
+    This template does not rely on dynamic variables.
+    Included partials or components: programs.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Registrar programa académico')
@@ -50,6 +57,7 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('programs.store') }}">
                         @csrf
                         @include('programs.form')

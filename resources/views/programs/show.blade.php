@@ -1,3 +1,10 @@
+{{--
+    View path: programs/show.blade.php.
+    Purpose: Renders the show.blade view for the Programs module.
+    Expected variables within this template: $program.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Detalle del programa académico')

@@ -1,8 +1,17 @@
+{{--
+    View path: content-framework-project/form.blade.php.
+    Purpose: Renders the form.blade view for the Content Framework Project module.
+    Expected variables within this template: $contentFrameworkProject, $e, $errors, $fid, $fname, $frameworks, $prefw, $preselectedFrameworkId.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @php
     // Valor por defecto si viene preseleccionado por query string (?framework_id=XX)
+    // The preselected ID keeps the form aligned with any framework context the user navigated from.
     $preselectedFrameworkId = old('framework_id', $prefw ?? ($contentFrameworkProject->framework_id ?? null));
 
     // Preferimos que el controlador pase $frameworks (id => name). Si no, hacemos un fallback seguro.
+    // This block protects the view by querying the database only when the controller did not provide data.
     if (!isset($frameworks)) {
         try {
             $frameworks = \App\Models\Framework::orderBy('name')->pluck('name', 'id')->toArray();
@@ -16,6 +25,7 @@
     <div class="col-lg-7">
         <!-- Nombre -->
         <div class="mb-3">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label for="name" class="form-label required">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-primary" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -23,6 +33,7 @@
                 </svg>
                 Nombre del Contenido
             </label>
+            {{-- Input element used to capture the 'name' value. --}}
             <input
                 type="text"
                 id="name"
@@ -43,6 +54,7 @@
 <div class="row">
     <div class="col-12 d-flex justify-content-center">
         <div class="mb-3 flex-grow-1" style="max-width: 700px; width: 100%;">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label for="description" class="form-label required text-center w-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-primary" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z"/>
@@ -51,6 +63,7 @@
                 </svg>
                 Descripción
             </label>
+            {{-- Multiline textarea allowing a detailed description for 'details'. --}}
             <textarea
                 id="description"
                 name="description"
@@ -81,6 +94,7 @@
     <div class="col-lg-5">
         <!-- Framework -->
         <div class="mb-3">
+            {{-- Label describing the purpose of 'this field'. --}}
             <label for="framework_id" class="form-label required">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-success" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="9"/>
@@ -88,6 +102,7 @@
                 </svg>
                 Framework asociado
             </label>
+            {{-- Dropdown presenting the available options for 'framework_id'. --}}
             <select
                 id="framework_id"
                 name="framework_id"
@@ -117,6 +132,7 @@
 
         <!-- Ayuditas -->
         @if(isset($contentFrameworkProject) && $contentFrameworkProject?->id)
+            {{-- Informational panel reminds the user of metadata for the record being edited. --}}
             <div class="alert alert-info">
                 <div class="d-flex">
                     <div class="me-2">
@@ -147,6 +163,7 @@
 <!-- Footer del formulario -->
 <div class="form-footer">
     <div class="d-flex justify-content-between align-items-center">
+        {{-- Secondary action allows returning to the listing without persisting changes. --}}
         <a href="{{ route('content-framework-projects.index') }}" class="btn btn-outline-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -155,6 +172,7 @@
             Cancelar
         </a>
 
+        {{-- Button element of type 'submit' to trigger the intended action. --}}
         <button type="submit" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 12l2 2l4 -4"/>

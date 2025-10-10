@@ -1,8 +1,10 @@
+{{-- Detail page presenting a single department and its related cities. --}}
 @extends('tablar::page')
 
 @section('title', 'Detalle del departamento')
 
 @section('content')
+    {{-- Header provides breadcrumb navigation and quick access actions. --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
@@ -18,6 +20,7 @@
                 </div>
                 <div class="col-12 col-md-auto ms-auto d-print-none">
                     <div class="btn-list">
+                        {{-- Shortcut to edit the current department. --}}
                         <a href="{{ route('departments.edit', $department) }}" class="btn btn-success">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
@@ -26,6 +29,7 @@
                             </svg>
                             Editar
                         </a>
+                        {{-- Return link to the department index. --}}
                         <a href="{{ route('departments.index') }}" class="btn btn-outline-secondary">
                             Volver al listado
                         </a>
@@ -35,6 +39,7 @@
         </div>
     </div>
 
+    {{-- Content area showing general department metadata and associated cities. --}}
     <div class="page-body">
         <div class="container-xl">
             <div class="row g-3">
@@ -44,6 +49,7 @@
                             <h3 class="card-title">Información general</h3>
                         </div>
                         <div class="card-body">
+                            {{-- Definition list highlights key attributes for the department. --}}
                             <dl class="row mb-0">
                                 <dt class="col-sm-5 text-muted">Nombre</dt>
                                 <dd class="col-sm-7">{{ $department->name }}</dd>
@@ -68,11 +74,13 @@
                             <h3 class="card-title">Ciudades asociadas</h3>
                         </div>
                         <div class="card-body">
+                            {{-- Conditional block lists cities or explains that none exist. --}}
                             @if($department->cities->isEmpty())
                                 <p class="text-muted mb-0">Este departamento todavía no tiene ciudades registradas.</p>
                             @else
                                 <div class="list-group list-group-flush">
                                     @foreach($department->cities as $city)
+                                        {{-- Each city entry links to its dedicated detail page. --}}
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>{{ $city->name }}</span>
                                             <a href="{{ route('cities.show', $city) }}" class="btn btn-sm btn-outline-primary">Ver</a>

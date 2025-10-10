@@ -1,3 +1,10 @@
+{{--
+    View path: thematic-areas/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Thematic Areas module.
+    Expected variables within this template: $thematicArea.
+    Included partials or components: tablar::common.alert, thematic-areas.form.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Editar área temática')
@@ -47,6 +54,7 @@
                     <h3 class="card-title">Información general</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="POST" action="{{ route('thematic-areas.update', $thematicArea) }}">
                         @csrf
                         @method('PUT')

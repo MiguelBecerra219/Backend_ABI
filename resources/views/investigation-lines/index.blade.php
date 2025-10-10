@@ -1,3 +1,10 @@
+{{--
+    View path: investigation-lines/index.blade.php.
+    Purpose: Renders the index.blade view for the Investigation Lines module.
+    Expected variables within this template: $groupName, $id, $index, $investigationLines, $line, $perPage, $researchGroupId, $researchGroups, $search, $size.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @php
@@ -53,10 +60,13 @@
                     <h3 class="card-title">Filtros de búsqueda</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="GET" action="{{ route('investigation-lines.index') }}" class="row g-3 align-items-end">
                         <div class="col-md-5">
+                            {{-- Label describing the purpose of 'Buscar'. --}}
                             <label for="search" class="form-label">Buscar</label>
                             <div class="input-group">
+                                {{-- Input element used to capture the 'search' value. --}}
                                 <input type="text" name="search" id="search" class="form-control" value="{{ $search ?? '' }}" placeholder="Nombre o descripción…">
                                 @if(!empty($search) || !empty($researchGroupId) || ($perPage ?? 10) != 10)
                                     <a href="{{ route('investigation-lines.index') }}" class="input-group-text" title="Limpiar filtros">
@@ -69,7 +79,9 @@
                             </div>
                         </div>
                         <div class="col-md-4">
+                            {{-- Label describing the purpose of 'Grupo de investigación'. --}}
                             <label for="research_group_id" class="form-label">Grupo de investigación</label>
+                            {{-- Dropdown presenting the available options for 'research_group_id'. --}}
                             <select name="research_group_id" id="research_group_id" class="form-select" onchange="this.form.submit()">
                                 <option value="">Todos</option>
                                 @foreach($researchGroups as $id => $groupName)
@@ -78,7 +90,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
+                            {{-- Label describing the purpose of 'Registros por página'. --}}
                             <label for="per_page" class="form-label">Registros por página</label>
+                            {{-- Dropdown presenting the available options for 'per_page'. --}}
                             <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
                                 @foreach([10, 25, 50] as $size)
                                     <option value="{{ $size }}" {{ (int)($perPage ?? 10) === $size ? 'selected' : '' }}>{{ $size }}</option>
@@ -86,6 +100,7 @@
                             </select>
                         </div>
                         <div class="col-12">
+                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                             <button type="submit" class="btn btn-primary">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 6h16" />
@@ -149,9 +164,11 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
+                                        {{-- Form element sends the captured data to the specified endpoint. --}}
                                         <form action="{{ route('investigation-lines.destroy', $line) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar la línea {{ $line->name }}?');">
                                             @csrf
                                             @method('DELETE')
+                                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                     <line x1="4" y1="7" x2="20" y2="7" />

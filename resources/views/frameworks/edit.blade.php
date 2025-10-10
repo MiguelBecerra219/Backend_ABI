@@ -1,3 +1,10 @@
+{{--
+    View path: frameworks/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Frameworks module.
+    Expected variables within this template: $framework, $message.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('layouts.app')
 
 @section('title','Editar Marco')
@@ -12,6 +19,7 @@
           <div class="card-header">
             <h3 class="card-title">Editar Marco — <span class="text-secondary">{{ $framework->name }}</span></h3>
           </div>
+          {{-- Form element sends the captured data to the specified endpoint. --}}
           <form method="POST" action="{{ route('frameworks.update', $framework) }}">
             @csrf
             @method('PUT')
@@ -20,7 +28,9 @@
 
                 {{-- Nombre --}}
                 <div class="col-12">
+                  {{-- Label describing the purpose of 'Nombre'. --}}
                   <label for="name" class="form-label required">Nombre</label>
+                  {{-- Input element used to capture the 'name' value. --}}
                   <input type="text" id="name" name="name"
                          class="form-control @error('name') is-invalid @enderror"
                          value="{{ old('name', $framework->name) }}" required>
@@ -31,7 +41,9 @@
 
                 {{-- Descripción --}}
                 <div class="col-12">
+                  {{-- Label describing the purpose of 'Descripción'. --}}
                   <label for="description" class="form-label">Descripción</label>
+                  {{-- Multiline textarea allowing a detailed description for 'description'. --}}
                   <textarea id="description" name="description"
                             class="form-control @error('description') is-invalid @enderror"
                             rows="3">{{ old('description', $framework->description) }}</textarea>
@@ -42,7 +54,9 @@
 
                 {{-- Año Inicio --}}
                 <div class="col-12 col-md-6">
+                  {{-- Label describing the purpose of 'Año inicio'. --}}
                   <label for="start_year" class="form-label">Año inicio</label>
+                  {{-- Input element used to capture the 'start_year' value. --}}
                   <input type="number" id="start_year" name="start_year" min="1900" max="2100"
                          class="form-control @error('start_year') is-invalid @enderror"
                          value="{{ old('start_year', $framework->start_year) }}">
@@ -53,7 +67,9 @@
 
                 {{-- Año Fin --}}
                 <div class="col-12 col-md-6">
+                  {{-- Label describing the purpose of 'Año fin'. --}}
                   <label for="end_year" class="form-label">Año fin</label>
+                  {{-- Input element used to capture the 'end_year' value. --}}
                   <input type="number" id="end_year" name="end_year" min="1900" max="2100"
                          class="form-control @error('end_year') is-invalid @enderror"
                          value="{{ old('end_year', $framework->end_year) }}">
@@ -67,6 +83,7 @@
 
             <div class="card-footer d-flex justify-content-between">
               <a href="{{ route('frameworks.index') }}" class="btn btn-outline-secondary">← Volver</a>
+              {{-- Button element of type 'submit' to trigger the intended action. --}}
               <button type="submit" class="btn btn-primary">Actualizar</button>
             </div>
           </form>

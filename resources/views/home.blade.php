@@ -1,14 +1,18 @@
+{{--
+    Dashboard landing page for authenticated users, providing a welcome message
+    and quick access cards to frequently used areas of the system.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Dashboard')
 
 @section('content')
-    <!-- Page header -->
+    {{-- Header section introducing the dashboard and greeting the user. --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <!-- Page pre-title -->
+                    {{-- Subheading gives context to the title below. --}}
                     <div class="page-pretitle">
                         Bienvenid@
                     </div>
@@ -21,7 +25,7 @@
         </div>
     </div>
 
-    <!-- Tarjeta de Bienvenida -->
+    {{-- Welcome card summarizing the system purpose and current user details. --}}
     <div class="row mt-4">
         <div class="col-12">
             <div class="card">
@@ -43,11 +47,12 @@
         </div>
     </div>
 
-    <!-- Accesos Rápidos -->
+    {{-- Quick access cards highlighting key areas of the application. --}}
     <div class="row mt-4">
         <div class="col-md-4 mb-3">
             <div class="card h-100">
                 <div class="card-body text-center">
+                    {{-- Icon visually reinforces the dashboard navigation item. --}}
                     <div class="mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-dashboard" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -65,6 +70,7 @@
         <div class="col-md-4 mb-3">
             <div class="card h-100">
                 <div class="card-body text-center">
+                    {{-- Each card follows the same structure but describes a different area. --}}
                     <div class="mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-users" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>

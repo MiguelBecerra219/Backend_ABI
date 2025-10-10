@@ -1,3 +1,10 @@
+{{--
+    View path: programs/index.blade.php.
+    Purpose: Renders the index.blade view for the Programs module.
+    Expected variables within this template: $groupName, $id, $index, $perPage, $program, $programs, $researchGroupId, $researchGroups, $search, $size.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @php
@@ -11,9 +18,12 @@
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
+                    {{-- Breadcrumb emphasises where the user is within the academic catalog. --}}
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
+                            {{-- Dashboard crumb lets the user jump back to the home page. --}}
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
+                            {{-- Active crumb indicates that the programs module is open. --}}
                             <li class="breadcrumb-item active" aria-current="page">Programas académicos</li>
                         </ol>
                     </nav>
@@ -25,12 +35,15 @@
                             <path d="M9 16h6" />
                             <path d="M11 20h2" />
                         </svg>
+                        {{-- Title clarifies that we are managing academic programs. --}}
                         Programas académicos
+                        {{-- Badge highlights how many records match the current filters. --}}
                         <span class="badge bg-teal ms-2">{{ $programs->total() }}</span>
                     </h2>
                     <p class="text-muted mb-0">Gestiona los programas educativos bilingües y asócialos a sus grupos de investigación.</p>
                 </div>
                 <div class="col-12 col-md-auto ms-auto d-print-none">
+                    {{-- Primary action button opens the creation flow for a new program. --}}
                     <a href="{{ route('programs.create') }}" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -52,13 +65,17 @@
 
             <div class="card mb-3">
                 <div class="card-header">
+                    {{-- Card heading indicates that the controls below manipulate the listing. --}}
                     <h3 class="card-title">Filtros</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="GET" action="{{ route('programs.index') }}" class="row g-3 align-items-end">
                         <div class="col-md-5">
+                            {{-- Label describing the purpose of 'Buscar'. --}}
                             <label for="search" class="form-label">Buscar</label>
                             <div class="input-group">
+                                {{-- Input element used to capture the 'search' value. --}}
                                 <input type="text" id="search" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Nombre o código…">
                                 @if(!empty($search) || !empty($researchGroupId) || ($perPage ?? 10) != 10)
                                     <a href="{{ route('programs.index') }}" class="input-group-text" title="Limpiar filtros">
@@ -71,7 +88,9 @@
                             </div>
                         </div>
                         <div class="col-md-4">
+                            {{-- Label describing the purpose of 'Grupo de investigación'. --}}
                             <label for="research_group_id" class="form-label">Grupo de investigación</label>
+                            {{-- Dropdown presenting the available options for 'research_group_id'. --}}
                             <select name="research_group_id" id="research_group_id" class="form-select" onchange="this.form.submit()">
                                 <option value="">Todos</option>
                                 @foreach($researchGroups as $id => $groupName)
@@ -80,7 +99,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
+                            {{-- Label describing the purpose of 'Registros por página'. --}}
                             <label for="per_page" class="form-label">Registros por página</label>
+                            {{-- Dropdown presenting the available options for 'per_page'. --}}
                             <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
                                 @foreach([10, 25, 50] as $size)
                                     <option value="{{ $size }}" {{ (int)($perPage ?? 10) === $size ? 'selected' : '' }}>{{ $size }}</option>
@@ -88,6 +109,7 @@
                             </select>
                         </div>
                         <div class="col-12">
+                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                             <button type="submit" class="btn btn-primary">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 6h16" />
@@ -103,6 +125,7 @@
 
             <div class="card">
                 <div class="table-responsive">
+                    {{-- Table lists each program along with its code and associated research group. --}}
                     <table class="table card-table table-vcenter text-nowrap">
                         <thead>
                             <tr>
@@ -121,6 +144,7 @@
                                 <td>{{ $program->name }}</td>
                                 <td>
                                     @if($program->researchGroup)
+                                        {{-- Link leads to the research group responsible for the program. --}}
                                         <a href="{{ route('research-groups.show', $program->researchGroup) }}" class="text-decoration-none">
                                             {{ $program->researchGroup->name }}
                                         </a>
@@ -130,12 +154,14 @@
                                 </td>
                                 <td>
                                     <div class="btn-list flex-nowrap">
+                                        {{-- Action button lets administrators review the program details. --}}
                                         <a href="{{ route('programs.show', $program) }}" class="btn btn-sm btn-outline-primary" title="Ver">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="2" />
                                                 <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7" />
                                             </svg>
                                         </a>
+                                        {{-- Action button opens the edit form to adjust this program. --}}
                                         <a href="{{ route('programs.edit', $program) }}" class="btn btn-sm btn-outline-success" title="Editar">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
@@ -143,9 +169,11 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
+                                        {{-- Form element sends the captured data to the specified endpoint. --}}
                                         <form action="{{ route('programs.destroy', $program) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar el programa {{ $program->name }}?');">
                                             @csrf
                                             @method('DELETE')
+                                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                     <line x1="4" y1="7" x2="20" y2="7" />
@@ -186,7 +214,9 @@
                 </div>
                 @if($programs->hasPages())
                     <div class="card-footer d-flex justify-content-between align-items-center">
+                        {{-- Summary communicates how many programs are being displayed right now. --}}
                         <div class="text-muted small">Mostrando {{ $programs->firstItem() }}-{{ $programs->lastItem() }} de {{ $programs->total() }} registros</div>
+                        {{-- Pagination links provide navigation through the remaining pages. --}}
                         {{ $programs->links() }}
                     </div>
                 @endif

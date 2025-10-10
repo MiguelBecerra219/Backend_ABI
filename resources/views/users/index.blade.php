@@ -1,3 +1,10 @@
+{{--
+    View path: users/index.blade.php.
+    Purpose: Renders the index.blade view for the Users module.
+    Expected variables within this template: $cityProgramId, $cityPrograms, $index, $perPage, $perPageOptions, $program, $role, $search, $size, $state, $user, $users.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Usuarios')
@@ -7,9 +14,12 @@
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
+                    {{-- Breadcrumb clarifies the user's current location within the admin panel. --}}
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
+                            {{-- Link allows returning to the dashboard overview. --}}
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
+                            {{-- Active crumb highlights the users module. --}}
                             <li class="breadcrumb-item active" aria-current="page">Usuarios</li>
                         </ol>
                     </nav>
@@ -19,12 +29,15 @@
                             <circle cx="12" cy="7" r="4" />
                             <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                         </svg>
+                        {{-- Title summarises that the table below lists system users. --}}
                         Usuarios
+                        {{-- Badge exposes the total record count given the current filter combination. --}}
                         <span class="badge bg-indigo ms-2">{{ $users->total() }}</span>
                     </h2>
                     <p class="text-muted mb-0">Administra los usuarios del sistema según su rol y estado.</p>
                 </div>
                 <div class="col-12 col-md-auto ms-auto d-print-none">
+                    {{-- Primary action button creates new accounts directly from the index. --}}
                     <a href="{{ route('register') }}" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -49,10 +62,13 @@
                     <h3 class="card-title">Filtros de búsqueda</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="GET" action="{{ route('users.index') }}" class="row g-3 align-items-end">
                         <div class="col-md-3">
+                            {{-- Label describing the purpose of 'Buscar'. --}}
                             <label for="search" class="form-label">Buscar</label>
                             <div class="input-group">
+                                {{-- Input element used to capture the 'search' value. --}}
                                 <input type="text" name="search" id="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Email, nombre, cédula…">
                                 @if(!empty($search) || !empty($role) || !empty($state) || !empty($cityProgramId) || ($perPage ?? 10) != 10)
                                     <a href="{{ route('users.index') }}" class="input-group-text" title="Limpiar filtros">
@@ -65,7 +81,9 @@
                             </div>
                         </div>
                         <div class="col-md-2">
+                            {{-- Label describing the purpose of 'Rol'. --}}
                             <label for="role" class="form-label">Rol</label>
+                            {{-- Dropdown presenting the available options for 'role'. --}}
                             <select name="role" id="role" class="form-select" onchange="this.form.submit()">
                                 <option value="">Todos</option>
                                 <option value="student" {{ (string)($role ?? '') === 'student' ? 'selected' : '' }}>Estudiante</option>
@@ -75,7 +93,9 @@
                             </select>
                         </div>
                         <div class="col-md-2">
+                            {{-- Label describing the purpose of 'Estado'. --}}
                             <label for="state" class="form-label">Estado</label>
+                            {{-- Dropdown presenting the available options for 'state'. --}}
                             <select name="state" id="state" class="form-select" onchange="this.form.submit()">
                                 <option value="">Todos</option>
                                 <option value="1" {{ ($state ?? '') == 1 ? 'selected' : '' }}>Activo</option>
@@ -83,7 +103,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
+                            {{-- Label describing the purpose of 'Programa'. --}}
                             <label for="city_program_id" class="form-label">Programa</label>
+                            {{-- Dropdown presenting the available options for 'city_program_id'. --}}
                             <select name="city_program_id" id="city_program_id" class="form-select" onchange="this.form.submit()">
                                 <option value="">Todos</option>
                                 @foreach($cityPrograms as $program)
@@ -94,7 +116,9 @@
                             </select>
                         </div>
                         <div class="col-md-2">
+                            {{-- Label describing the purpose of 'Registros por página'. --}}
                             <label for="per_page" class="form-label">Registros por página</label>
+                            {{-- Dropdown presenting the available options for 'per_page'. --}}
                             <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
                                 @foreach($perPageOptions as $size)
                                     <option value="{{ $size }}" {{ (int)($perPage ?? 10) === $size ? 'selected' : '' }}>{{ $size }}</option>
@@ -102,6 +126,7 @@
                             </select>
                         </div>
                         <div class="col-12">
+                            {{-- Button element of type 'submit' to trigger the intended action. --}}
                             <button type="submit" class="btn btn-primary">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 6h16" />
@@ -117,6 +142,7 @@
 
             <div class="card">
                 <div class="table-responsive">
+                    {{-- Table displays user attributes and quick management actions. --}}
                     <table class="table card-table table-vcenter text-nowrap">
                         <thead>
                             <tr>
@@ -174,7 +200,8 @@
                                 <td>
                                     @if($user->details && ($user->role == 'student' || $user->role == 'professor' || $user->role == 'committee_leader'))
                                         @if(isset($user->details->cityProgram))
-                                            {{ $user->details->cityProgram->program->name ?? 'N/A' }} - 
+                                            {{-- Display both the program and city to contextualize the enrollment. --}}
+                                            {{ $user->details->cityProgram->program->name ?? 'N/A' }} -
                                             {{ $user->details->cityProgram->city->name ?? 'N/A' }}
                                         @endif
                                     @endif
@@ -187,13 +214,16 @@
                                     @endif
                                 </td>
                                 <td>
+                                    {{-- Action button cluster offers view, edit, and state toggles. --}}
                                     <div class="btn-list flex-nowrap">
+                                        {{-- Opens the detail profile for additional information. --}}
                                         <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-outline-primary" title="Ver">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="2" />
                                                 <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7" />
                                             </svg>
                                         </a>
+                                        {{-- Navigates to the edit form allowing administrators to adjust user data. --}}
                                         <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-outline-success" title="Editar">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
@@ -203,9 +233,12 @@
                                         </a>
                                         @if($user->state == 1)
                                             <!-- Button to deactivate user -->
+                                            {{-- Deactivation form disables the account without deleting it. --}}
+                                            {{-- Form element sends the captured data to the specified endpoint. --}}
                                             <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas desactivar el usuario {{ $user->email }}?');">
                                                 @csrf
                                                 @method('DELETE')
+                                                {{-- Button element of type 'submit' to trigger the intended action. --}}
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -220,9 +253,12 @@
                                             </form>
                                         @else
                                             <!-- Button to activate user -->
+                                            {{-- Activation form re-enables an account that was previously disabled. --}}
+                                            {{-- Form element sends the captured data to the specified endpoint. --}}
                                             <form action="{{ route('users.activate', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas activar el usuario {{ $user->email }}?');">
                                                 @csrf
                                                 @method('PUT')
+                                                {{-- Button element of type 'submit' to trigger the intended action. --}}
                                                 <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -261,7 +297,9 @@
                 </div>
                 @if($users->hasPages())
                     <div class="card-footer d-flex justify-content-between align-items-center">
+                        {{-- Summary communicates which slice of users is visible. --}}
                         <div class="text-muted small">Mostrando {{ $users->firstItem() }}-{{ $users->lastItem() }} de {{ $users->total() }} registros</div>
+                        {{-- Pagination control renders navigation for additional result pages. --}}
                         {{ $users->links() }}
                     </div>
                 @endif

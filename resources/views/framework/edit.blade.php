@@ -1,3 +1,10 @@
+{{--
+    View path: framework/edit.blade.php.
+    Purpose: Renders the edit.blade view for the Framework module.
+    Expected variables within this template: $currentYear, $framework, $isCurrent, $isFuture.
+    Included partials or components: framework.form, tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Editar Framework')
@@ -119,6 +126,7 @@
                         </div>
                         
                         <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
                             <form method="POST" action="{{ route('frameworks.update', $framework->id) }}" id="frameworkForm" role="form" enctype="multipart/form-data">
                                 {{ method_field('PATCH') }}
                                 @csrf
@@ -136,6 +144,7 @@
                                             Cancelar
                                         </a>
 
+                                        {{-- Button element of type 'submit' to trigger the intended action. --}}
                                         <button type="submit" class="btn btn-primary">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path stroke="none" d="M0 0h24v24H0z"/>

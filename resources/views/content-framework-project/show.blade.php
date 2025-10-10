@@ -1,3 +1,10 @@
+{{--
+    View path: content-framework-project/show.blade.php.
+    Purpose: Renders the show.blade view for the Content Framework Project module.
+    Expected variables within this template: $contentFrameworkProject.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Ver Contenido del Framework')
@@ -82,6 +89,7 @@
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
+                                {{-- Label describing the purpose of 'DESCRIPCIÓN'. --}}
                                 <label class="form-label text-muted small">DESCRIPCIÓN</label>
                                 <div class="fs-5 text-dark">
                                     {{ $contentFrameworkProject->description }}
@@ -120,6 +128,7 @@
                                     Eliminar
                                 </a>
 
+                                {{-- Form element sends the captured data to the specified endpoint. --}}
                                 <form id="delete-form-{{ $contentFrameworkProject->id }}" action="{{ route('content-framework-projects.destroy', $contentFrameworkProject->id) }}" method="POST" class="d-none">
                                     @csrf
                                     @method('DELETE')

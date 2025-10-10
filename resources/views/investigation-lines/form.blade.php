@@ -1,10 +1,19 @@
+{{--
+    View path: investigation-lines/form.blade.php.
+    Purpose: Renders the form.blade view for the Investigation Lines module.
+    Expected variables within this template: $errors, $groupName, $id, $investigationLine, $isEdit, $message, $researchGroups, $selectedGroup.
+    No additional partials are included within this file.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @php
     $isEdit = isset($investigationLine) && $investigationLine->exists;
     $selectedGroup = old('research_group_id', $investigationLine->research_group_id ?? request('research_group_id'));
 @endphp
 
 <div class="mb-3">
+    {{-- Label describing the purpose of 'Nombre de la línea'. --}}
     <label for="name" class="form-label required">Nombre de la línea</label>
+    {{-- Input element used to capture the 'name' value. --}}
     <input type="text"
            id="name"
            name="name"
@@ -20,7 +29,9 @@
 </div>
 
 <div class="mb-3">
+    {{-- Label describing the purpose of 'Descripción'. --}}
     <label for="description" class="form-label required">Descripción</label>
+    {{-- Multiline textarea allowing a detailed description for 'details'. --}}
     <textarea id="description"
               name="description"
               rows="4"
@@ -34,7 +45,9 @@
 </div>
 
 <div class="mb-3">
+    {{-- Label describing the purpose of 'Grupo de investigación'. --}}
     <label for="research_group_id" class="form-label required">Grupo de investigación</label>
+    {{-- Dropdown presenting the available options for 'research_group_id'. --}}
     <select id="research_group_id"
             name="research_group_id"
             class="form-select {{ $errors->has('research_group_id') ? 'is-invalid' : '' }}"
@@ -61,6 +74,7 @@
         Cancelar
     </a>
 
+    {{-- Button element of type 'submit' to trigger the intended action. --}}
     <button type="submit" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 12l5 5l10 -10" />

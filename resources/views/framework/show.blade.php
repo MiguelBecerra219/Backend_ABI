@@ -1,3 +1,10 @@
+{{--
+    View path: framework/show.blade.php.
+    Purpose: Renders the show.blade view for the Framework module.
+    Expected variables within this template: $currentYear, $duration, $elapsedYears, $endYear, $framework, $isCurrent, $isFuture, $progress, $startYear, $totalYears, $years, $yearsActive.
+    Included partials or components: tablar::common.alert.
+    All markup below follows Tablar styling conventions for visual consistency.
+--}}
 @extends('tablar::page')
 
 @section('title', 'Ver Framework')
@@ -98,6 +105,7 @@
                             <div class="row">
                                 <div class="col-12">
                                     <div class="mb-3">
+                                        {{-- Label describing the purpose of 'DESCRIPCIÓN'. --}}
                                         <label class="form-label text-muted small">DESCRIPCIÓN</label>
                                         <div class="fs-5 text-dark">{{ $framework->description }}</div>
                                     </div>
@@ -106,6 +114,7 @@
                                 @if(!empty($framework->link))
                                 <div class="col-12">
                                     <div class="mb-2">
+                                        {{-- Label describing the purpose of 'ENLACE'. --}}
                                         <label class="form-label text-muted small">ENLACE</label>
                                         <div class="d-flex align-items-center">
                                             <a href="{{ $framework->link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-azure">
@@ -151,6 +160,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
+                                        {{-- Label describing the purpose of 'AÑO DE INICIO'. --}}
                                         <label class="form-label text-muted small">AÑO DE INICIO</label>
                                         <div class="d-flex align-items-center">
                                             <span class="badge bg-green-lt me-2 fs-6">{{ $framework->start_year }}</span>
@@ -160,6 +170,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
+                                        {{-- Label describing the purpose of 'AÑO DE FINALIZACIÓN'. --}}
                                         <label class="form-label text-muted small">AÑO DE FINALIZACIÓN</label>
                                         <div class="d-flex align-items-center">
                                             @if($framework->end_year)
@@ -175,6 +186,7 @@
                             </div>
 
                             <div class="mt-4">
+                                {{-- Label describing the purpose of 'LÍNEA DE TIEMPO'. --}}
                                 <label class="form-label text-muted small">LÍNEA DE TIEMPO</label>
                                 <div class="progress progress-lg mb-2">
                                     <div class="progress-bar bg-primary" style="width: {{ min($progress, 100) }}%" role="progressbar"></div>
@@ -322,6 +334,7 @@
                                         </svg>
                                         Editar Framework
                                     </a>
+                                    {{-- Button element of type 'button' to trigger the intended action. --}}
                                     <button type="button" class="btn btn-outline-danger" onclick="confirmDelete({{ $framework->id }}, '{{ $framework->name }}')">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -334,6 +347,7 @@
                                         Eliminar Framework
                                     </button>
                                     
+                                    {{-- Form element sends the captured data to the specified endpoint. --}}
                                     <form id="delete-form-{{ $framework->id }}" action="{{ route('frameworks.destroy', $framework->id) }}" method="POST" style="display: none;">
                                         @csrf
                                         @method('DELETE')
@@ -356,7 +370,9 @@
                     <div>Esta acción eliminará permanentemente el framework <strong id="frameworkName"></strong> y no se podrá deshacer.</div>
                 </div>
                 <div class="modal-footer">
+                    {{-- Button element of type 'button' to trigger the intended action. --}}
                     <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                    {{-- Button element of type 'button' to trigger the intended action. --}}
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Sí, eliminar</button>
                 </div>
             </div>
