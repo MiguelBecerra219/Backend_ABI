@@ -143,28 +143,111 @@ return [
     |
     */
 'menu' => [
-
-    // Menú para todos los usuarios con roles configurados
     [
-        'text' => 'Home',
+        'header' => 'Inicio',
+    ],
+    [
+        'text' => 'Panel',
         'icon' => 'ti ti-home',
-        'url' => '/home',
-        'hasRole' => 'admin', // Solo accesible para el rol 'admin'
+        'route' => 'home',
+    ],
+    [
+        'text' => 'Perfil',
+        'icon' => 'ti ti-user-circle',
+        'route' => 'perfil.edit',
+    ],
+
+    [
+        'header' => 'Gestion Academica',
+    ],
+    [
+        'text' => 'Estructura academica',
+        'icon' => 'ti ti-school',
+        'submenu' => [
+            [
+                'text' => 'Departamentos',
+                'icon' => 'ti ti-building',
+                'route' => 'departments.index',
+            ],
+            [
+                'text' => 'Ciudades',
+                'icon' => 'ti ti-map-pin',
+                'route' => 'cities.index',
+            ],
+            [
+                'text' => 'Programas',
+                'icon' => 'ti ti-certificate',
+                'route' => 'programs.index',
+            ],
+            [
+                'text' => 'Grupos de investigacion',
+                'icon' => 'ti ti-flask',
+                'route' => 'research-groups.index',
+            ],
+            [
+                'text' => 'Lineas de investigacion',
+                'icon' => 'ti ti-git-branch',
+                'route' => 'investigation-lines.index',
+            ],
+            [
+                'text' => 'Areas tematicas',
+                'icon' => 'ti ti-stack-2',
+                'route' => 'thematic-areas.index',
+            ],
+        ],
     ],
     [
         'text' => 'Frameworks',
-        'icon' => 'ti ti-code',
-        'url' => '/framework',
-        'hasRole' => 'admin', // Solo accesible para el rol 'admin'
+        'icon' => 'ti ti-hierarchy-3',
+        'submenu' => [
+            [
+                'text' => 'Frameworks',
+                'icon' => 'ti ti-square-rotated',
+                'route' => 'frameworks.index',
+            ],
+            [
+                'text' => 'Asignacion de contenidos',
+                'icon' => 'ti ti-project',
+                'route' => 'content-framework-projects.index',
+            ],
+        ],
     ],
     [
-        'text' => 'Content Framework Projects',
-        'icon' => 'ti ti-project',
-        'url' => '/content-framework-projects',
-        'hasRole' => 'admin', // Solo accesible para el rol 'admin'
+        'text' => 'Catalogo de contenidos',
+        'icon' => 'ti ti-books',
+        'submenu' => [
+            [
+                'text' => 'Contenidos',
+                'icon' => 'ti ti-book',
+                'route' => 'contents.index',
+            ],
+            [
+                'text' => 'Versiones',
+                'icon' => 'ti ti-refresh',
+                'route' => 'versions.index',
+            ],
+            [
+                'text' => 'Contenido por version',
+                'icon' => 'ti ti-link',
+                'route' => 'content-versions.index',
+            ],
+        ],
     ],
 
-
+    [
+        'header' => 'Usuarios y formularios',
+    ],
+    [
+        'text' => 'Usuarios',
+        'icon' => 'ti ti-users',
+        'route' => 'users.index',
+        'hasRole' => 'research_staff',
+    ],
+    [
+        'text' => 'Formularios',
+        'icon' => 'ti ti-file-pencil',
+        'route' => 'formulario.index',
+    ],
 ],
 
 
