@@ -369,7 +369,7 @@
 
                 rows.innerHTML = items.map(item => {
                     const thematicArea = resolveCatalogName(item.thematic_area);
-                    const statusName = resolveCatalogName(item.status);
+                    const statusName = resolveCatalogName(item.project_status);
                     const displayStatus = statusName === '—' ? 'Sin estado' : statusName;
                     const updated = item.updated_at ? new Date(item.updated_at).toLocaleString('es-CO') : '—';
                     const professors = renderParticipants(item.professors || [], 'Sin docentes');

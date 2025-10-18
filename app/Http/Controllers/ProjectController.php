@@ -62,7 +62,7 @@ class ProjectController extends Controller
             $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
             $query = ResearchStaffProject::query()
-                ->with(['status', 'thematicArea', 'professors', 'students'])
+                ->with(['projectStatus', 'thematicArea', 'professors', 'students'])
                 ->orderByDesc('created_at');
 
             if (! empty($validated['only_deleted'])) {
@@ -200,7 +200,7 @@ class ProjectController extends Controller
                 $project->professors()->sync($relationData['professor_ids'] ?? []);
                 $project->students()->sync($relationData['student_ids'] ?? []);
 
-                $project->load(['status', 'thematicArea', 'professors', 'students']);
+                $project->load(['projectStatus', 'thematicArea', 'professors', 'students']);
 
                 Log::info('Proyecto creado', [
                     'project_id' => $project->id,
@@ -241,7 +241,7 @@ class ProjectController extends Controller
                 ], 404);
             }
 
-            $project->load(['status', 'thematicArea', 'professors', 'students', 'versions']);
+            $project->load(['projectStatus', 'thematicArea', 'professors', 'students', 'versions']);
 
             return response()->json($project);
         } catch (\Exception $e) {
@@ -283,7 +283,7 @@ class ProjectController extends Controller
                     $project->students()->sync($relationData['student_ids']);
                 }
 
-                $project->load(['status', 'thematicArea', 'professors', 'students']);
+                $project->load(['projectStatus', 'thematicArea', 'professors', 'students']);
 
                 Log::info('Proyecto actualizado', [
                     'project_id' => $project->id,
@@ -368,7 +368,7 @@ class ProjectController extends Controller
                 }
 
                 $project->restore();
-                $project->load(['status', 'thematicArea', 'professors', 'students']);
+                $project->load(['projectStatus', 'thematicArea', 'professors', 'students']);
 
                 Log::info('Proyecto restaurado', [
                     'project_id' => $project->id,
