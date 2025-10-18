@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Controlador para la gestión de frameworks
@@ -28,17 +29,18 @@ class FrameworkController extends Controller
      */
     public function index(Request $request): View
     {
-        try {
-            // Obtener parámetros de filtrado y búsqueda
-            $search = $request->get('search');
-            $year = $request->get('year');
-            $perPageOptions = [10, 20, 30];
-            $perPage = (int) $request->get('per_page', $perPageOptions[0]);
+        // Obtener parámetros de filtrado y búsqueda
+        $search = $request->get('search');
+        $year = $request->get('year');
+        $perPageOptions = [10, 20, 30];
+        $perPage = (int) $request->get('per_page', $perPageOptions[0]);
 
-            // Validar que per_page esté en las opciones permitidas
-            if (! in_array($perPage, $perPageOptions, true)) {
-                $perPage = $perPageOptions[0];
-            }
+        // Validar que per_page esté en las opciones permitidas
+        if (! in_array($perPage, $perPageOptions, true)) {
+            $perPage = $perPageOptions[0];
+        }
+
+        try {
 
             // Query base - solo frameworks no eliminados
             $query = ResearchStaffFramework::query();
@@ -89,12 +91,23 @@ class FrameworkController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al listar frameworks: ' . $e->getMessage());
 
+            $emptyPaginator = new LengthAwarePaginator(
+                collect(),
+                0,
+                $perPage,
+                1,
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ]
+            );
+
             return view('framework.index', [
-                'frameworks' => collect(),
-                'search' => '',
-                'year' => null,
-                'perPage' => 10,
-                'perPageOptions' => [10, 20, 30],
+                'frameworks' => $emptyPaginator,
+                'search' => $search,
+                'year' => $year,
+                'perPage' => $perPage,
+                'perPageOptions' => $perPageOptions,
                 'i' => 0,
                 'error' => 'Ocurrió un error al cargar los frameworks.',
             ]);
