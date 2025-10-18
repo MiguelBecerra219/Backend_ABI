@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\CityProgram;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that restricts city-program lookups to the research staff
+ * connection, applying their scoped permissions.
+ */
 class ResearchStaffCityProgram extends CityProgram
 {
     protected $table = 'city_program';

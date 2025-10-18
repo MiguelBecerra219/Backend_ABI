@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 use App\Models\Professor;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that forces the research staff connection when accessing
+ * professor data, ensuring permissions stay within that role.
+ */
 class ResearchStaffProfessor extends Professor
 {
     protected $table = 'professors';
@@ -14,4 +17,12 @@ class ResearchStaffProfessor extends Professor
     protected $connection = 'mysql_research_staff';
 
     use SoftDeletes;
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function getProjectModelClass(): string
+    {
+        return ResearchStaffProject::class;
+    }
 }

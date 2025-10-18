@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\Version;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that enforces the research staff connection when handling
+ * version records so they stay within the role's privileges.
+ */
 class ResearchStaffVersion extends Version
 {
     protected $table = 'versions';

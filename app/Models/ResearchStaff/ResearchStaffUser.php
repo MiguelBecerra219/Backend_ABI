@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\User;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that runs user queries through the research staff connection
+ * so authentication data remains within the permitted scope.
+ */
 class ResearchStaffUser extends User
 {
     protected $table = 'users';

@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\ContentVersion;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that keeps content-version access on the professor connection
+ * so updates respect the role's privileges.
+ */
 class ProfessorContentVersion extends ContentVersion
 {
     protected $table = 'content_version';

@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\ThematicArea;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that ensures thematic area reads occur through the professor
+ * connection so catalog access follows faculty restrictions.
+ */
 class ProfessorThematicArea extends ThematicArea
 {
     protected $table = 'thematic_areas';

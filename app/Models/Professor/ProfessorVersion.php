@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\Version;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that ensures version records are handled via the professor
+ * connection, keeping actions within faculty privileges.
+ */
 class ProfessorVersion extends Version
 {
     protected $table = 'versions';

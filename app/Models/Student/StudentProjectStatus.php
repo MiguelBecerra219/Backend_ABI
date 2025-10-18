@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\ProjectStatus;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that keeps project status reads on the student connection to
+ * respect the privileges assigned to that role.
+ */
 class StudentProjectStatus extends ProjectStatus
 {
     protected $table = 'project_statuses';

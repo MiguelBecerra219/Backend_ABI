@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\User;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that enforces the professor connection when reading users so
+ * authentication data is limited to that role.
+ */
 class ProfessorUser extends User
 {
     protected $table = 'users';

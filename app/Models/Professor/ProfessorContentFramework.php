@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\ContentFramework;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that channels content-framework queries through the professor
+ * connection to respect faculty-level permissions.
+ */
 class ProfessorContentFramework extends ContentFramework
 {
     protected $table = 'content_frameworks';

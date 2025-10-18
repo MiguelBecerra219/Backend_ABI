@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\Department;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that restricts department records to the student connection,
+ * making sure learners only reach authorized data.
+ */
 class StudentDepartment extends Department
 {
     protected $table = 'departments';

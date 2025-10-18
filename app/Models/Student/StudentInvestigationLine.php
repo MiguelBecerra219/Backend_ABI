@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\InvestigationLine;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that restricts investigation line queries to the student
+ * connection, ensuring students only read authorized data.
+ */
 class StudentInvestigationLine extends InvestigationLine
 {
     protected $table = 'investigation_lines';

@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\City;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that applies the research staff connection when retrieving
+ * city records so the limited privileges remain enforced.
+ */
 class ResearchStaffCity extends City
 {
 

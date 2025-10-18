@@ -4,8 +4,11 @@ namespace App\Models\Student;
 
 use App\Models\Framework;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
-class StudentFramework extends Framework 
+/**
+ * Extended model that executes framework operations on the student
+ * connection, aligning with the role's restricted privileges.
+ */
+class StudentFramework extends Framework
 {
     protected $table = 'frameworks';
 

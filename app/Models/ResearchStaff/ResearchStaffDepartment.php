@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\Department;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that confines department access to the research staff
+ * connection, ensuring the scoped database rights are applied.
+ */
 class ResearchStaffDepartment extends Department
 {
     protected $table = 'departments';

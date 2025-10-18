@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\City;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that routes city queries through the professor connection so
+ * faculty work inside their permitted data scope.
+ */
 class ProfessorCity extends City
 {
 

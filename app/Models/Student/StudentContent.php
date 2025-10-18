@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\Content;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that keeps content queries on the student connection so
+ * learners adhere to their restricted database permissions.
+ */
 class StudentContent extends Content
 {
     protected $table = 'contents';

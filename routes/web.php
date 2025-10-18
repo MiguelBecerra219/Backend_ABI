@@ -73,6 +73,8 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     // Catálogo de contenidos y versiones (interfaces Tablar)
     Route::view('contents', 'contents.index')->name('contents.index');
 
+    Route::view('projects', 'projects.index')->name('projects.index');
+
     Route::view('versions', 'versions.index')->name('versions.index');
     Route::view('versions/create', 'versions.create')->name('versions.create');
     Route::get('versions/{versionId}/edit', function (int $versionId) {

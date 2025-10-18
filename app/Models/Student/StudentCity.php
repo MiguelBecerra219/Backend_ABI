@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\City;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that limits city queries to the student connection so
+ * learners operate strictly within their database permissions.
+ */
 class StudentCity extends City
 {
 

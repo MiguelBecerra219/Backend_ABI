@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\ProjectStatus;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that performs project status queries via the professor
+ * connection so catalog reads adhere to faculty permissions.
+ */
 class ProfessorProjectStatus extends ProjectStatus
 {
     protected $table = 'project_statuses';

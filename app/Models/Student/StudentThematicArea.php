@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\ThematicArea;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that keeps thematic area queries limited to the student
+ * connection so learners read only permitted catalog data.
+ */
 class StudentThematicArea extends ThematicArea
 {
     protected $table = 'thematic_areas';

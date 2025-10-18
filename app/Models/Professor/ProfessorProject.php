@@ -4,10 +4,29 @@ namespace App\Models\Professor;
 
 use App\Models\Project;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that routes queries through the professor connection so
+ * professors and committee leaders operate within their allowed scope.
+ */
 class ProfessorProject extends Project
 {
     protected $table = 'projects';
 
     protected $connection = 'mysql_professor';
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function getStudentModelClass(): string
+    {
+        return ProfessorStudent::class;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function getProfessorModelClass(): string
+    {
+        return ProfessorProfessor::class;
+    }
 }

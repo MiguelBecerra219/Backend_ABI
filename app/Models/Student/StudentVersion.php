@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\Version;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that forces the student connection for version records so
+ * learners operate under their restricted privileges.
+ */
 class StudentVersion extends Version
 {
     protected $table = 'versions';

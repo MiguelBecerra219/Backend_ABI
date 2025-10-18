@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\ContentVersion;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that keeps content-version queries on the research staff
+ * connection, aligning operations with that role's permissions.
+ */
 class ResearchStaffContentVersion extends ContentVersion
 {
     protected $table = 'content_version';

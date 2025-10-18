@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\Content;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that routes content queries through the research staff
+ * connection to enforce the limited permissions of that user.
+ */
 class ResearchStaffContent extends Content
 {
     protected $table = 'contents';

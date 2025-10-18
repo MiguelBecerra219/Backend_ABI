@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -39,6 +40,22 @@ class Project extends Model
         'thematic_area_id' => 'integer',
         'project_status_id' => 'integer',
     ];
+
+    /**
+     * Resolve the model class used for the students relationship.
+     */
+    protected function getStudentModelClass(): string
+    {
+        return Student::class;
+    }
+
+    /**
+     * Resolve the model class used for the professors relationship.
+     */
+    protected function getProfessorModelClass(): string
+    {
+        return Professor::class;
+    }
 
     /**
      * Set the title attribute with proper formatting.
@@ -78,5 +95,31 @@ class Project extends Model
     public function versions(): HasMany
     {
         return $this->hasMany(Version::class, 'project_id', 'id');
+    }
+
+    /**
+     * Professors assigned to the project.
+     */
+    public function professors(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            $this->getProfessorModelClass(),
+            'professor_project',
+            'project_id',
+            'professor_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Students linked to the project.
+     */
+    public function students(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            $this->getStudentModelClass(),
+            'student_project',
+            'project_id',
+            'student_id'
+        )->withTimestamps();
     }
 }

@@ -4,7 +4,10 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\ContentFrameworkProject;
 
-# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
+/**
+ * Extended model that limits content-framework-project access to the
+ * research staff connection, enforcing their reduced privileges.
+ */
 class ResearchStaffContentFrameworkProject extends ContentFrameworkProject
 {
     protected $table = 'content_framework_project';

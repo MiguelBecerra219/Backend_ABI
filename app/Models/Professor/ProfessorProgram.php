@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\Program;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that keeps program operations under the professor connection,
+ * ensuring faculty stay within their permitted access.
+ */
 class ProfessorProgram extends Program
 {
     protected $table = 'programs';

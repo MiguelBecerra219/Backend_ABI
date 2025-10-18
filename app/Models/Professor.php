@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -25,6 +26,14 @@ class Professor extends Model
     ];
 
     /**
+     * Resolve the model class used for the projects relationship.
+     */
+    protected function getProjectModelClass(): string
+    {
+        return Project::class;
+    }
+
+    /**
      * Get the user associated with the professor.
      */
     public function user()
@@ -43,8 +52,13 @@ class Professor extends Model
     /**
      * Get the projects assigned to the professor.
      */
-    public function projects()
+    public function projects(): BelongsToMany
     {
-        return $this->hasMany(Project::class, 'professor_project', 'professor_id', 'project_id');
+        return $this->belongsToMany(
+            $this->getProjectModelClass(),
+            'professor_project',
+            'professor_id',
+            'project_id'
+        )->withTimestamps();
     }
 }

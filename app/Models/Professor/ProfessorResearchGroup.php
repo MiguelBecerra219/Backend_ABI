@@ -4,7 +4,10 @@ namespace App\Models\Professor;
 
 use App\Models\ResearchGroup;
 
-# Extended model to use the connection with the Professor user; this database user has only the permissions needed by professors and committee leaders.
+/**
+ * Extended model that funnels research group queries through the professor
+ * connection to respect the permissions granted to faculty.
+ */
 class ProfessorResearchGroup extends ResearchGroup
 {
     protected $table = 'research_groups';

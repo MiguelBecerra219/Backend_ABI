@@ -4,7 +4,10 @@ namespace App\Models\Student;
 
 use App\Models\ContentVersion;
 
-# Extended model to use the connection with the student user, this database user has only the permissions that students need.
+/**
+ * Extended model that keeps content-version access on the student connection
+ * so permissions remain aligned with the student role.
+ */
 class StudentContentVersion extends ContentVersion
 {
     protected $table = 'content_version';
