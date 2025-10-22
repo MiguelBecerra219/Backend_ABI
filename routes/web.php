@@ -75,6 +75,13 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     Route::view('contents', 'contents.index')->name('contents.index');
 
     Route::view('projects', 'projects.index')->name('projects.index');
+    Route::view('projects/create', 'projects.create')->name('projects.create');
+    Route::get('projects/{project}/edit', function (int $projectId) {
+        return view('projects.edit', ['projectId' => $projectId]);
+    })->name('projects.edit');
+    Route::get('projects/{project}', function (int $projectId) {
+        return view('projects.show', ['projectId' => $projectId]);
+    })->name('projects.show');
 
     Route::view('versions', 'versions.index')->name('versions.index');
     Route::view('versions/create', 'versions.create')->name('versions.create');
