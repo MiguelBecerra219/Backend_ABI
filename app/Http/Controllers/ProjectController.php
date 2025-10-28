@@ -3,15 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProjectRequest;
+use App\Models\Professor\ProfessorProfessor;
+use App\Models\Professor\ProfessorProject;
+use App\Models\Professor\ProfessorProjectStatus;
+use App\Models\Professor\ProfessorStudent;
+use App\Models\Professor\ProfessorThematicArea;
 use App\Models\ResearchStaff\ResearchStaffProfessor;
 use App\Models\ResearchStaff\ResearchStaffProject;
 use App\Models\ResearchStaff\ResearchStaffProjectStatus;
 use App\Models\ResearchStaff\ResearchStaffStudent;
 use App\Models\ResearchStaff\ResearchStaffThematicArea;
+use App\Models\Student\StudentProfessor;
+use App\Models\Student\StudentProject;
+use App\Models\Student\StudentProjectStatus;
+use App\Models\Student\StudentStudent;
+use App\Models\Student\StudentThematicArea;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -25,6 +37,11 @@ use Illuminate\Validation\ValidationException;
  */
 class ProjectController extends Controller
 {
+    /**
+     * Cached model map for the authenticated role.
+     */
+    protected ?array $resolvedModels = null;
+
     /**
      * Return a paginated list of projects applying optional filters.
      */
@@ -61,7 +78,7 @@ class ProjectController extends Controller
             $perPage = (int) ($validated['per_page'] ?? 15);
             $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
-            $query = ResearchStaffProject::query()
+            $query = $this->projectQuery()
                 ->with(['projectStatus', 'thematicArea', 'professors', 'students'])
                 ->orderByDesc('created_at');
 
@@ -129,17 +146,19 @@ class ProjectController extends Controller
     public function meta(): JsonResponse
     {
         try {
-            $statuses = ResearchStaffProjectStatus::query()
+            $models = $this->models();
+
+            $statuses = $models['status']::query()
                 ->select(['id', 'name'])
                 ->orderBy('name')
                 ->get();
 
-            $thematicAreas = ResearchStaffThematicArea::query()
+            $thematicAreas = $models['thematic_area']::query()
                 ->select(['id', 'name'])
                 ->orderBy('name')
                 ->get();
 
-            $professors = ResearchStaffProfessor::query()
+            $professors = $models['professor']::query()
                 ->select(['id', 'name', 'last_name', 'card_id', 'committee_leader'])
                 ->orderBy('last_name')
                 ->orderBy('name')
@@ -153,7 +172,7 @@ class ProjectController extends Controller
                     ];
                 });
 
-            $students = ResearchStaffStudent::query()
+            $students = $models['student']::query()
                 ->select(['id', 'name', 'last_name', 'card_id', 'semester'])
                 ->orderBy('last_name')
                 ->orderBy('name')
@@ -194,8 +213,10 @@ class ProjectController extends Controller
             $relationData = Arr::only($data, ['professor_ids', 'student_ids']);
             $projectData = Arr::except($data, ['professor_ids', 'student_ids']);
 
-            return DB::transaction(function () use ($projectData, $relationData) {
-                $project = ResearchStaffProject::create($projectData);
+            $projectClass = $this->writableProjectModel();
+
+            return DB::transaction(function () use ($projectClass, $projectData, $relationData) {
+                $project = $projectClass::create($projectData);
 
                 $project->professors()->sync($relationData['professor_ids'] ?? []);
                 $project->students()->sync($relationData['student_ids'] ?? []);
@@ -232,21 +253,29 @@ class ProjectController extends Controller
     /**
      * Display the full details of a project including its relationships.
      */
-    public function show(ResearchStaffProject $project): JsonResponse
+    public function show(int $projectId): JsonResponse
     {
         try {
+            $visibleProject = $this->projectQuery(true)->findOrFail($projectId);
+
+            $project = $this->writableProjectQuery(true)
+                ->with(['projectStatus', 'thematicArea', 'professors', 'students', 'versions'])
+                ->findOrFail($visibleProject->id);
+
             if ($project->trashed()) {
                 return response()->json([
                     'message' => 'El proyecto solicitado no está disponible.',
                 ], 404);
             }
 
-            $project->load(['projectStatus', 'thematicArea', 'professors', 'students', 'versions']);
-
             return response()->json($project);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'El proyecto solicitado no existe.',
+            ], 404);
         } catch (\Exception $e) {
             Log::error('Error al mostrar proyecto: ' . $e->getMessage(), [
-                'project_id' => $project->id,
+                'project_id' => $projectId,
                 'trace' => $e->getTraceAsString(),
             ]);
 
@@ -259,9 +288,12 @@ class ProjectController extends Controller
     /**
      * Update an existing project and optionally sync its assignments.
      */
-    public function update(ProjectRequest $request, ResearchStaffProject $project): JsonResponse
+    public function update(ProjectRequest $request, int $projectId): JsonResponse
     {
         try {
+            $visibleProject = $this->projectQuery(true)->findOrFail($projectId);
+            $project = $this->writableProjectQuery()->findOrFail($visibleProject->id);
+
             if ($project->trashed()) {
                 return response()->json([
                     'message' => 'No se puede actualizar un proyecto eliminado.',
@@ -295,6 +327,10 @@ class ProjectController extends Controller
                     'data' => $project,
                 ]);
             });
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'No se encontró el proyecto especificado.',
+            ], 404);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Los datos proporcionados no son válidos.',
@@ -302,7 +338,7 @@ class ProjectController extends Controller
             ], 422);
         } catch (\Exception $e) {
             Log::error('Error al actualizar proyecto: ' . $e->getMessage(), [
-                'project_id' => $project->id ?? null,
+                'project_id' => $projectId ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
@@ -315,9 +351,12 @@ class ProjectController extends Controller
     /**
      * Soft delete a project provided it has no registered versions.
      */
-    public function destroy(ResearchStaffProject $project): JsonResponse
+    public function destroy(int $projectId): JsonResponse
     {
         try {
+            $visibleProject = $this->projectQuery(true)->findOrFail($projectId);
+            $project = $this->writableProjectQuery()->findOrFail($visibleProject->id);
+
             if ($project->trashed()) {
                 return response()->json([
                     'message' => 'El proyecto ya fue eliminado.',
@@ -340,9 +379,13 @@ class ProjectController extends Controller
 
                 return response()->json(null, 204);
             });
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'No se encontró el proyecto especificado.',
+            ], 404);
         } catch (\Exception $e) {
             Log::error('Error al eliminar proyecto: ' . $e->getMessage(), [
-                'project_id' => $project->id ?? null,
+                'project_id' => $projectId ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
@@ -359,7 +402,8 @@ class ProjectController extends Controller
     {
         try {
             return DB::transaction(function () use ($id) {
-                $project = ResearchStaffProject::withTrashed()->findOrFail($id);
+                $visibleProject = $this->projectQuery(true)->findOrFail($id);
+                $project = $this->writableProjectQuery(true)->findOrFail($visibleProject->id);
 
                 if (! $project->trashed()) {
                     return response()->json([
@@ -393,6 +437,88 @@ class ProjectController extends Controller
             return response()->json([
                 'message' => 'Ocurrió un error al restaurar el proyecto.',
             ], 500);
+        }
     }
-}
+
+    /**
+     * Resolve the model classes for the authenticated user's role.
+     */
+    protected function resolveModelsForRole(?string $role): array
+    {
+        return match ($role) {
+            'professor', 'committee_leader' => [
+                'project' => ProfessorProject::class,
+                'status' => ProfessorProjectStatus::class,
+                'thematic_area' => ProfessorThematicArea::class,
+                'professor' => ProfessorProfessor::class,
+                'student' => ProfessorStudent::class,
+            ],
+            'student' => [
+                'project' => StudentProject::class,
+                'status' => StudentProjectStatus::class,
+                'thematic_area' => StudentThematicArea::class,
+                'professor' => StudentProfessor::class,
+                'student' => StudentStudent::class,
+            ],
+            default => [
+                'project' => ResearchStaffProject::class,
+                'status' => ResearchStaffProjectStatus::class,
+                'thematic_area' => ResearchStaffThematicArea::class,
+                'professor' => ResearchStaffProfessor::class,
+                'student' => ResearchStaffStudent::class,
+            ],
+        };
+    }
+
+    /**
+     * Retrieve the model class that has permission to write project data.
+     */
+    protected function writableProjectModel(): string
+    {
+        return ResearchStaffProject::class;
+    }
+
+    /**
+     * Build a query builder using the privileged project model.
+     */
+    protected function writableProjectQuery(bool $withTrashed = false): Builder
+    {
+        $model = $this->writableProjectModel();
+
+        $query = $model::query();
+
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+
+        return $query;
+    }
+
+    /**
+     * Build the base query for projects, optionally including soft deleted rows.
+     */
+    protected function projectQuery(bool $withTrashed = false): Builder
+    {
+        $model = $this->models()['project'];
+
+        $query = $model::query();
+
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+
+        return $query;
+    }
+
+    /**
+     * Retrieve the cached model map for the current request.
+     */
+    protected function models(): array
+    {
+        if ($this->resolvedModels === null) {
+            $this->resolvedModels = $this->resolveModelsForRole(Auth::user()?->role);
+        }
+
+        return $this->resolvedModels;
+    }
 }

@@ -111,6 +111,17 @@ Route::middleware(['auth', 'role:committee_leader'])->prefix('projects/evaluatio
 });
 
 
+Route::view('projects', 'projects.index')->name('projects.index');
+    Route::view('projects/create', 'projects.create')->name('projects.create');
+    Route::get('projects/{project}/edit', function (int $projectId) {
+        return view('projects.edit', ['projectId' => $projectId]);
+    })->name('projects.edit');
+    Route::get('projects/{project}', function (int $projectId) {
+        return view('projects.show', ['projectId' => $projectId]);
+    })->name('projects.show');
+
+
+    
 
 
 // Public routes for departments and cities (if you need them without authentication)
