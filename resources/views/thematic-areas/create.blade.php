@@ -44,23 +44,27 @@
 
     <div class="page-body">
         <div class="container-xl">
-            @if(config('tablar','display_alert'))
+            @if(config('tablar.display_alert'))
                 @include('tablar::common.alert')
             @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Información del área</h3>
-                    <div class="card-actions">
-                        <small class="text-muted">Los campos marcados con * son obligatorios</small>
+            <div class="row g-3">
+                <div class="col-12 col-xl-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Información del área</h3>
+                            <div class="card-actions">
+                                <small class="text-muted">Los campos marcados con * son obligatorios</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
+                            <form method="POST" action="{{ route('thematic-areas.store') }}">
+                                @csrf
+                                @include('thematic-areas.form')
+                            </form>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    {{-- Form element sends the captured data to the specified endpoint. --}}
-                    <form method="POST" action="{{ route('thematic-areas.store') }}">
-                        @csrf
-                        @include('thematic-areas.form')
-                    </form>
                 </div>
             </div>
         </div>
