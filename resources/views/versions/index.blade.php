@@ -61,7 +61,7 @@
                         <div class="col-12 col-md-4">
                             <label for="project-id" class="form-label">ID del proyecto</label>
                             <input type="number" id="project-id" class="form-control" min="1" placeholder="Ej. 12">
-                            <small class="form-hint">Deja vacío para ver todas las versiones.</small>
+                            
                         </div>
                         <div class="col-12 col-sm-6 col-md-2">
                             <label for="version-per-page" class="form-label">Por página</label>
