@@ -45,7 +45,7 @@
         @error('name')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
-        <small class="form-hint">Introduce el nombre oficial del programa bilingüe.</small>
+        <small class="form-hint">Introduce el nombre oficial del programa.</small>
     </div>
 </div>
 

@@ -33,7 +33,7 @@
                         Programas académicos
                         <span class="badge bg-teal ms-2">{{ $programs->total() }}</span>
                     </h2>
-                    <p class="text-muted mb-0">Gestiona los programas educativos bilingües y asócialos a sus grupos de investigación.</p>
+                    <p class="text-muted mb-0">Gestiona los programas educativos y asócialos a sus grupos de investigación.</p>
                 </div>
                 <div class="col-12 col-md-auto ms-auto d-print-none">
                     {{-- Primary action button opens the creation flow for a new program. --}}
