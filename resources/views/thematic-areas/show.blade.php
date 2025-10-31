@@ -53,46 +53,53 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Información general</h3>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Nombre</dt>
-                        <dd class="col-sm-9">{{ $thematicArea->name }}</dd>
+            <div class="row row-cards justify-content-center">
+                <div class="col-12 col-xl-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Información general</h3>
+                            <div class="card-actions">
+                                <span class="badge bg-orange-lt">ID {{ $thematicArea->id }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Nombre</dt>
+                                <dd class="col-sm-9">{{ $thematicArea->name }}</dd>
 
-                        <dt class="col-sm-3">Descripción</dt>
-                        <dd class="col-sm-9">{{ $thematicArea->description }}</dd>
+                                <dt class="col-sm-3">Descripción</dt>
+                                <dd class="col-sm-9">{{ $thematicArea->description }}</dd>
 
-                        <dt class="col-sm-3">Línea de investigación</dt>
-                        <dd class="col-sm-9">
-                            @if($thematicArea->investigationLine)
-                                <a href="{{ route('investigation-lines.show', $thematicArea->investigationLine) }}" class="text-decoration-none">
-                                    {{ $thematicArea->investigationLine->name }}
-                                </a>
-                            @else
-                                <span class="text-muted">Sin línea</span>
-                            @endif
-                        </dd>
+                                <dt class="col-sm-3">Línea de investigación</dt>
+                                <dd class="col-sm-9">
+                                    @if($thematicArea->investigationLine)
+                                        <a href="{{ route('investigation-lines.show', $thematicArea->investigationLine) }}" class="text-decoration-none">
+                                            {{ $thematicArea->investigationLine->name }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">Sin línea</span>
+                                    @endif
+                                </dd>
 
-                        <dt class="col-sm-3">Grupo de investigación</dt>
-                        <dd class="col-sm-9">
-                            @if($thematicArea->investigationLine && $thematicArea->investigationLine->researchGroup)
-                                <a href="{{ route('research-groups.show', $thematicArea->investigationLine->researchGroup) }}" class="text-decoration-none">
-                                    {{ $thematicArea->investigationLine->researchGroup->name }}
-                                </a>
-                            @else
-                                <span class="text-muted">Sin grupo</span>
-                            @endif
-                        </dd>
+                                <dt class="col-sm-3">Grupo de investigación</dt>
+                                <dd class="col-sm-9">
+                                    @if($thematicArea->investigationLine && $thematicArea->investigationLine->researchGroup)
+                                        <a href="{{ route('research-groups.show', $thematicArea->investigationLine->researchGroup) }}" class="text-decoration-none">
+                                            {{ $thematicArea->investigationLine->researchGroup->name }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">Sin grupo</span>
+                                    @endif
+                                </dd>
 
-                        <dt class="col-sm-3">Creado</dt>
-                        <dd class="col-sm-9">{{ $thematicArea->created_at?->format('d/m/Y H:i') ?? 'N/D' }}</dd>
+                                <dt class="col-sm-3">Creado</dt>
+                                <dd class="col-sm-9">{{ $thematicArea->created_at?->format('d/m/Y H:i') ?? 'N/D' }}</dd>
 
-                        <dt class="col-sm-3">Última actualización</dt>
-                        <dd class="col-sm-9">{{ $thematicArea->updated_at?->diffForHumans() ?? 'N/D' }}</dd>
-                    </dl>
+                                <dt class="col-sm-3">Última actualización</dt>
+                                <dd class="col-sm-9">{{ $thematicArea->updated_at?->diffForHumans() ?? 'N/D' }}</dd>
+                            </dl>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

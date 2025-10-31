@@ -16,7 +16,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('catalog.versions') }}">Versiones</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('versions.index') }}">Versiones</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Detalle</li>
                         </ol>
                     </nav>
@@ -35,8 +35,8 @@
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">
-                        <a href="{{ route('catalog.versions.edit', ['versionId' => $versionId]) }}" class="btn btn-primary" id="version-edit-link">Editar</a>
-                        <a href="{{ route('catalog.versions') }}" class="btn btn-outline-secondary">Volver</a>
+                        <a href="{{ route('versions.edit', ['versionId' => $versionId]) }}" class="btn btn-primary" id="version-edit-link">Editar</a>
+                        <a href="{{ route('versions.index') }}" class="btn btn-outline-secondary">Volver</a>
                     </div>
                 </div>
             </div>

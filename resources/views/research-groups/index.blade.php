@@ -7,10 +7,6 @@
 --}}
 @extends('tablar::page')
 
-@php
-    use Illuminate\Support\Str;
-@endphp
-
 @section('title', 'Grupos de investigación')
 
 @section('content')
@@ -53,7 +49,7 @@
 
     <div class="page-body">
         <div class="container-xl">
-            @if(config('tablar','display_alert'))
+            @if(config('tablar.display_alert'))
                 @include('tablar::common.alert')
             @endif
 
@@ -70,7 +66,7 @@
                 <div class="card-body">
                     {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="GET" action="{{ route('research-groups.index') }}" class="row g-3 align-items-end">
-                        <div class="col-md-6">
+                        <div class="col-12 col-lg-6 col-xl-5">
                             {{-- Label describing the purpose of 'Buscar'. --}}
                             <label for="search" class="form-label">Buscar</label>
                             <div class="input-group">
@@ -86,7 +82,7 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-4 col-xl-3">
                             {{-- Label describing the purpose of 'Registros por página'. --}}
                             <label for="per_page" class="form-label">Registros por página</label>
                             {{-- Dropdown presenting the available options for 'per_page'. --}}
@@ -96,7 +92,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-4 col-xl-2">
                             {{-- Button element of type 'submit' to trigger the intended action. --}}
                             <button type="submit" class="btn btn-primary w-100">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -111,13 +107,19 @@
             </div>
 
             <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Listado de grupos</h3>
+                    <div class="card-actions">
+                        <span class="badge bg-indigo-lt">{{ $researchGroups->total() }}</span>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter align-middle text-nowrap">
                         <thead>
                             <tr>
                                 <th class="w-1">#</th>
-                                <th>Grupo</th>
-                                <th>Descripción</th>
+                                <th style="max-width: 260px;">Grupo</th>
+                                <th style="max-width: 360px;">Descripción</th>
                                 <th class="text-center">Programas</th>
                                 <th class="text-center">Líneas</th>
                                 <th class="w-1">Acciones</th>
@@ -127,13 +129,13 @@
                         @forelse($researchGroups as $index => $group)
                             <tr>
                                 <td class="text-muted">{{ $researchGroups->firstItem() + $index }}</td>
-                                <td>
-                                    <div class="fw-medium">{{ $group->name }}</div>
-                                    <div class="text-muted small">Sigla: {{ $group->initials }}</div>
+                                <td class="text-truncate" style="max-width: 260px;">
+                                    <div class="fw-medium text-truncate" title="{{ $group->name }}">{{ $group->name }}</div>
+                                    <div class="text-muted small text-truncate" title="Sigla: {{ $group->initials }}">Sigla: {{ $group->initials }}</div>
                                 </td>
-                                <td>
-                                    <div class="text-truncate" style="max-width: 360px;" title="{{ $group->description }}">
-                                        {{ Str::limit($group->description, 120) }}
+                                <td class="text-truncate" style="max-width: 360px;">
+                                    <div class="text-truncate" title="{{ $group->description }}">
+                                        {{ $group->description }}
                                     </div>
                                 </td>
                                 <td class="text-center">
@@ -157,21 +159,24 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
-                                        {{-- Form element sends the captured data to the specified endpoint. --}}
-                                        <form action="{{ route('research-groups.destroy', $group) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar el grupo {{ $group->name }}?');">
+                                        {{-- Dedicated form is triggered via the custom confirmation modal. --}}
+                                        <form action="{{ route('research-groups.destroy', $group) }}" method="POST" class="d-none" id="delete-research-group-{{ $group->id }}">
                                             @csrf
                                             @method('DELETE')
-                                            {{-- Button element of type 'submit' to trigger the intended action. --}}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <line x1="4" y1="7" x2="20" y2="7" />
-                                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                                    <line x1="14" y1="11" x2="14" y2="17" />
-                                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                                                    <path d="M9 7v-3h6v3" />
-                                                </svg>
-                                            </button>
                                         </form>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Eliminar"
+                                                data-delete-form="delete-research-group-{{ $group->id }}"
+                                                data-group-name="{{ $group->name }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="4" y1="7" x2="20" y2="7" />
+                                                <line x1="10" y1="11" x2="10" y2="17" />
+                                                <line x1="14" y1="11" x2="14" y2="17" />
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                                <path d="M9 7v-3h6v3" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -203,12 +208,89 @@
                     </table>
                 </div>
                 @if($researchGroups->hasPages())
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        <div class="text-muted small">Mostrando {{ $researchGroups->firstItem() }}-{{ $researchGroups->lastItem() }} de {{ $researchGroups->total() }} registros</div>
-                        {{ $researchGroups->links() }}
+                    <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                        @php
+                            $from = $researchGroups->firstItem() ?? 0;
+                            $to = $researchGroups->lastItem() ?? 0;
+                        @endphp
+                        <div class="text-muted small">Mostrando {{ $from }}-{{ $to }} de {{ $researchGroups->total() }} registros</div>
+                        <nav aria-label="Paginación de grupos de investigación">
+                            {{ $researchGroups->onEachSide(1)->links('pagination::bootstrap-5') }}
+                        </nav>
                     </div>
                 @endif
             </div>
         </div>
     </div>
 @endsection
+
+{{-- Modal replaces the native confirmation dialog when deleting a research group. --}}
+<div class="modal modal-blur fade" id="research-group-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Eliminar grupo de investigación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="research-group-delete-message">¿Deseas eliminar este grupo? Esta acción es reversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="research-group-delete-confirm">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalElement = document.getElementById('research-group-delete-modal');
+            const modalInstance = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+            const messageElement = document.getElementById('research-group-delete-message');
+            const confirmButton = document.getElementById('research-group-delete-confirm');
+            let targetFormId = null;
+
+            document.addEventListener('click', event => {
+                const trigger = event.target.closest('[data-delete-form]');
+                if (!trigger) {
+                    return;
+                }
+
+                event.preventDefault();
+                targetFormId = trigger.getAttribute('data-delete-form');
+                const groupName = trigger.getAttribute('data-group-name');
+                messageElement.textContent = groupName
+                    ? `¿Deseas eliminar el grupo "${groupName}"? Esta acción es reversible.`
+                    : '¿Deseas eliminar este grupo? Esta acción es reversible.';
+                confirmButton.disabled = false;
+                confirmButton.innerHTML = 'Eliminar';
+                modalInstance?.show();
+            });
+
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                targetFormId = null;
+                confirmButton.disabled = false;
+                confirmButton.innerHTML = 'Eliminar';
+            });
+
+            confirmButton.addEventListener('click', () => {
+                if (!targetFormId) {
+                    modalInstance?.hide();
+                    return;
+                }
+
+                const form = document.getElementById(targetFormId);
+                if (!form) {
+                    modalInstance?.hide();
+                    return;
+                }
+
+                confirmButton.disabled = true;
+                confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+                form.submit();
+            });
+        });
+    </script>
+@endpush

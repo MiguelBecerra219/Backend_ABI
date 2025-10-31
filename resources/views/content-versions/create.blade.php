@@ -1,10 +1,10 @@
 {{--
-    View path: content_versions/create.blade.php.
-    Purpose: Tablar create view to register a new content-version relationship via the API.
+    View path: content-versions/create.blade.php.
+    Purpose: Presents the create view for content-version records using the shared form fragment.
 --}}
 @extends('tablar::page')
 
-@section('title', 'Nuevo registro de contenido en versión')
+@section('title', 'Registrar valor de contenido')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -14,23 +14,21 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('catalog.content-versions') }}">Versiones de contenido</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Crear nueva</li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-versions.index') }}">Versiones de contenido</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Crear</li>
                         </ol>
                     </nav>
                     <h2 class="page-title d-flex align-items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg me-2 text-primary" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <path d="M9 3h6a2 2 0 0 1 2 2v14l-5 -3l-5 3v-14a2 2 0 0 1 2 -2" />
-                            <path d="M9 7h6" />
-                            <path d="M9 11h6" />
                         </svg>
                         Registrar valor de contenido
                     </h2>
                     <p class="text-muted mb-0">Asocia un contenido con una versión de proyecto y registra el valor diligenciado.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
-                    <a href="{{ route('catalog.content-versions') }}" class="btn btn-outline-secondary">Volver al listado</a>
+                    <a href="{{ route('content-versions.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
                 </div>
             </div>
         </div>
@@ -40,21 +38,25 @@
         <div class="container-xl">
             <div id="content-version-create-alert" class="alert d-none" role="alert"></div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Datos del registro</h3>
-                    <div class="card-actions">
-                        <small class="text-secondary">Completa todos los campos para guardar el registro</small>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <form id="content-version-create-form" novalidate>
-                        @include('content_versions.form')
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('catalog.content-versions') }}" class="btn btn-link">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar registro</button>
+            <div class="row g-3">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Datos del registro</h3>
+                            <div class="card-actions">
+                                <small class="text-secondary">Completa todos los campos para guardar el registro</small>
+                            </div>
                         </div>
-                    </form>
+                        <div class="card-body">
+                            <form id="content-version-create-form" novalidate>
+                                @include('content-versions.form')
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ route('content-versions.index') }}" class="btn btn-link">Cancelar</a>
+                                    <button type="submit" class="btn btn-primary">Guardar registro</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -201,17 +203,15 @@
                             feedbackValue?.classList.remove('d-none');
                             feedbackValue && (feedbackValue.textContent = errors.value[0]);
                         }
-
-                        showAlert('danger', body.message ?? 'No fue posible guardar el registro.');
+                        const message = body.message ?? 'No fue posible guardar el registro.';
+                        showAlert('danger', message);
                         return;
                     }
 
-                    showAlert('success', body.message ?? 'Registro guardado correctamente. Redirigiendo...');
-                    setTimeout(() => {
-                        window.location.href = '{{ route('catalog.content-versions') }}';
-                    }, 1200);
+                    showAlert('success', 'El registro se guardó correctamente.');
+                    form.reset();
                 } catch (error) {
-                    showAlert('danger', 'Ocurrió un error inesperado al guardar.');
+                    showAlert('danger', error.message || 'No fue posible guardar el registro.');
                 } finally {
                     submitButton.disabled = false;
                     submitButton.classList.remove('btn-loading');
@@ -219,12 +219,4 @@
             });
         });
     </script>
-@endpush
-
-@push('css')
-    <style>
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .08);
-        }
-    </style>
 @endpush

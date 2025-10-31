@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\VersionRequest;
+use App\Models\ResearchStaff\ResearchStaffContentVersion;
 use App\Models\ResearchStaff\ResearchStaffVersion;
+use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -111,12 +113,39 @@ class VersionController extends Controller
                 ], 404);
             }
 
-            // Cargar relaciones con ordenamiento
-            $version->load(['project', 'contents' => function ($query) {
-                $query->orderBy('name');
-            }]);
+            // Load the related project so the frontend can display contextual info.
+            $version->load('project');
 
-            return response()->json($version);
+            // Gather associated contents using the model bound to the research staff connection.
+            $contents = ResearchStaffContentVersion::query()
+                ->with('content')
+                ->where('version_id', $version->id)
+                ->get()
+                ->sortBy(function (ResearchStaffContentVersion $contentVersion) {
+                    return Str::lower($contentVersion->content?->name ?? '');
+                })
+                ->values()
+                ->map(function (ResearchStaffContentVersion $contentVersion) {
+                    return [
+                        'id' => $contentVersion->content?->id,
+                        'name' => $contentVersion->content?->name,
+                        'description' => $contentVersion->content?->description,
+                        'pivot' => [
+                            'id' => $contentVersion->id,
+                            'content_id' => $contentVersion->content_id,
+                            'version_id' => $contentVersion->version_id,
+                            'value' => $contentVersion->value,
+                            'created_at' => $contentVersion->created_at?->toJSON(),
+                            'updated_at' => $contentVersion->updated_at?->toJSON(),
+                        ],
+                    ];
+                })
+                ->toArray();
+
+            $payload = $version->toArray();
+            $payload['contents'] = $contents;
+
+            return response()->json($payload);
 
         } catch (\Exception $e) {
             Log::error('Error al mostrar versión: ' . $e->getMessage());

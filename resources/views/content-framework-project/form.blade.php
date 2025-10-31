@@ -1,193 +1,100 @@
 {{--
     View path: content-framework-project/form.blade.php.
-    Purpose: Renders the form.blade view for the Content Framework Project module.
-    Expected variables within this template: $contentFrameworkProject, $e, $errors, $fid, $fname, $frameworks, $prefw, $preselectedFrameworkId.
-    No additional partials are included within this file.
-    All markup below follows Tablar styling conventions for visual consistency.
+    Purpose: Shared form fragment used on create and edit screens for framework contents.
+    Expected variables: $contentFrameworkProject (optional), $frameworks (optional), $prefw (optional).
 --}}
 @php
-    // Valor por defecto si viene preseleccionado por query string (?framework_id=XX)
-    // The preselected ID keeps the form aligned with any framework context the user navigated from.
-    $preselectedFrameworkId = old('framework_id', $prefw ?? ($contentFrameworkProject->framework_id ?? null));
+    $record = $contentFrameworkProject ?? null;
+    $preselectedFrameworkId = old('framework_id', $prefw ?? ($record->framework_id ?? null));
 
-    // Preferimos que el controlador pase $frameworks (id => name). Si no, hacemos un fallback seguro.
-    // This block protects the view by querying the database only when the controller did not provide data.
     if (!isset($frameworks)) {
         try {
             $frameworks = \App\Models\Framework::orderBy('name')->pluck('name', 'id')->toArray();
-        } catch (\Throwable $e) {
+        } catch (\Throwable $exception) {
             $frameworks = [];
         }
     }
 @endphp
 
-<div class="row">
-    <div class="col-lg-7">
-        <!-- Nombre -->
-        <div class="mb-3">
-            {{-- Label describing the purpose of 'this field'. --}}
-            <label for="name" class="form-label required">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-primary" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="9" y1="9" x2="15" y2="9"/>
-                </svg>
-                Nombre del Contenido
-            </label>
-            {{-- Input element used to capture the 'name' value. --}}
-            <input
-                type="text"
-                id="name"
-                name="name"
-                class="form-control {{ $errors->has('name') ? 'is-invalid' : '' }}"
-                placeholder="Ej: Competencias de Comunicación 1"
-                maxlength="255"
-                value="{{ old('name', $contentFrameworkProject->name ?? '') }}"
-                required
-            >
-            @if($errors->has('name'))
-                <div class="invalid-feedback">{{ $errors->first('name') }}</div>
-            @endif
-            <small class="form-hint">Es el título corto y descriptivo del contenido.</small>
-        </div>
-
-       <!-- Descripción centrada -->
-<div class="row">
-    <div class="col-12 d-flex justify-content-center">
-        <div class="mb-3 flex-grow-1" style="max-width: 700px; width: 100%;">
-            {{-- Label describing the purpose of 'this field'. --}}
-            <label for="description" class="form-label required text-center w-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-primary" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z"/>
-                    <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
-                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
-                </svg>
-                Descripción
-            </label>
-            {{-- Multiline textarea allowing a detailed description for 'details'. --}}
-            <textarea
-                id="description"
-                name="description"
-                rows="4"
-                maxlength="1000"
-                class="form-control text-center {{ $errors->has('description') ? 'is-invalid' : '' }}"
-                placeholder="Describe el objetivo, alcance y características del contenido…"
-                required
-            >{{ old('description', $contentFrameworkProject->description ?? '') }}</textarea>
-            @if($errors->has('description'))
-                <div class="invalid-feedback">{{ $errors->first('description') }}</div>
-            @endif
-            <small class="form-hint text-center w-100">Mínimo 10 caracteres.</small>
-        </div>
-    </div>
-</div>
-
-@push('css')
-<style>
-    /* Centrar placeholder del textarea */
-    #description::placeholder {
-        text-align: center;
-    }
-</style>
-@endpush
+<div class="row g-3">
+    <div class="col-12">
+        <label for="name" class="form-label required">Nombre del contenido</label>
+        <input
+            type="text"
+            id="name"
+            name="name"
+            class="form-control {{ $errors->has('name') ? 'is-invalid' : '' }}"
+            placeholder="Ej: Competencias comunicativas"
+            value="{{ old('name', $record->name ?? '') }}"
+            maxlength="255"
+            required
+        >
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-hint">Utiliza un nombre breve y descriptivo.</small>
     </div>
 
-    <div class="col-lg-5">
-        <!-- Framework -->
-        <div class="mb-3">
-            {{-- Label describing the purpose of 'this field'. --}}
-            <label for="framework_id" class="form-label required">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-success" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="9"/>
-                    <polyline points="12 7 12 12 15 15"/>
-                </svg>
-                Framework asociado
-            </label>
-            {{-- Dropdown presenting the available options for 'framework_id'. --}}
-            <select
-                id="framework_id"
-                name="framework_id"
-                class="form-select {{ $errors->has('framework_id') ? 'is-invalid' : '' }}"
-                required
-            >
-                <option value="" disabled {{ $preselectedFrameworkId ? '' : 'selected' }}>Selecciona un framework…</option>
-                @foreach($frameworks as $fid => $fname)
-                    <option value="{{ $fid }}" {{ (string)$preselectedFrameworkId === (string)$fid ? 'selected' : '' }}>
-                        {{ $fname }}
-                    </option>
-                @endforeach
-            </select>
-            @if($errors->has('framework_id'))
-                <div class="invalid-feedback">{{ $errors->first('framework_id') }}</div>
-            @endif
-            <small class="form-hint">El contenido quedará vinculado a este framework.</small>
+    <div class="col-12">
+        <label for="description" class="form-label required">Descripción</label>
+        <textarea
+            id="description"
+            name="description"
+            class="form-control {{ $errors->has('description') ? 'is-invalid' : '' }}"
+            rows="4"
+            placeholder="Describe el objetivo del contenido dentro del framework."
+            maxlength="1000"
+            required
+        >{{ old('description', $record->description ?? '') }}</textarea>
+        @error('description')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-hint">Explica en qué contexto se aplicará este contenido.</small>
+    </div>
 
-            @if($preselectedFrameworkId)
-                <div class="mt-2">
-                    <a class="badge bg-azure-lt text-decoration-none" href="{{ route('frameworks.show', $preselectedFrameworkId) }}">
-                        Ver framework seleccionado
-                    </a>
-                </div>
-            @endif
-        </div>
-
-        <!-- Ayuditas -->
-        @if(isset($contentFrameworkProject) && $contentFrameworkProject?->id)
-            {{-- Informational panel reminds the user of metadata for the record being edited. --}}
-            <div class="alert alert-info">
-                <div class="d-flex">
-                    <div class="me-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9"/>
-                            <path d="M12 8v4"/>
-                            <path d="M12 16h.01"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="fw-bold">Información del registro</div>
-                        <div class="text-muted small">
-                            <b>ID:</b> #{{ $contentFrameworkProject->id }} |
-                            <b>Creado:</b> {{ $contentFrameworkProject->created_at?->format('d/m/Y H:i') }}
-                            @if($contentFrameworkProject->updated_at && $contentFrameworkProject->updated_at != $contentFrameworkProject->created_at)
-                                | <b>Actualizado:</b> {{ $contentFrameworkProject->updated_at?->format('d/m/Y H:i') }}
-                            @endif
-                        </div>
-                    </div>
-                </div>
+    <div class="col-12 col-lg-6">
+        <label for="framework_id" class="form-label required">Framework asociado</label>
+        <select
+            id="framework_id"
+            name="framework_id"
+            class="form-select {{ $errors->has('framework_id') ? 'is-invalid' : '' }}"
+            required
+        >
+            <option value="" disabled {{ $preselectedFrameworkId ? '' : 'selected' }}>Selecciona un framework…</option>
+            @foreach($frameworks as $frameworkId => $frameworkName)
+                <option value="{{ $frameworkId }}" {{ (string)$preselectedFrameworkId === (string)$frameworkId ? 'selected' : '' }}>
+                    {{ $frameworkName }}
+                </option>
+            @endforeach
+        </select>
+        @error('framework_id')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-hint">El contenido quedará vinculado a este framework.</small>
+        @if($preselectedFrameworkId)
+            <div class="mt-2">
+                <a class="badge bg-azure-lt text-decoration-none" href="{{ route('frameworks.show', $preselectedFrameworkId) }}">Ver framework seleccionado</a>
             </div>
         @endif
     </div>
-</div>
 
-<hr class="my-3">
+    @if($record?->id)
+        <div class="col-12 col-lg-6">
+            <div class="alert alert-info h-100 mb-0">
+                <h4 class="alert-title">Información del registro</h4>
+                <p class="mb-1">ID: #{{ $record->id }}</p>
+                <p class="mb-1">Creado: {{ $record->created_at?->format('d/m/Y H:i') ?? '—' }}</p>
+                <p class="mb-0">Actualizado: {{ $record->updated_at?->format('d/m/Y H:i') ?? '—' }}</p>
+            </div>
+        </div>
+    @endif
 
-<!-- Footer del formulario -->
-<div class="form-footer">
-    <div class="d-flex justify-content-between align-items-center">
-        {{-- Secondary action allows returning to the listing without persisting changes. --}}
-        <a href="{{ route('content-framework-projects.index') }}" class="btn btn-outline-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-            Cancelar
-        </a>
-
-        {{-- Button element of type 'submit' to trigger the intended action. --}}
-        <button type="submit" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 12l2 2l4 -4"/>
-                <circle cx="12" cy="12" r="9"/>
-            </svg>
-            {{ isset($contentFrameworkProject) && $contentFrameworkProject?->id ? 'Actualizar Contenido' : 'Crear Contenido' }}
-        </button>
+    <div class="col-12">
+        <div class="d-flex justify-content-between flex-column flex-sm-row gap-2">
+            <a href="{{ route('content-framework-projects.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {{ $record?->id ? 'Actualizar contenido' : 'Guardar contenido' }}
+            </button>
+        </div>
     </div>
 </div>
-
-@push('css')
-<style>
-    /* Centrar placeholder del textarea */
-    #description::placeholder {
-        text-align: center;
-    }
-</style>
-@endpush

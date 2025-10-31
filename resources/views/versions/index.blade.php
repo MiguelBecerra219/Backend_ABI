@@ -52,7 +52,7 @@
 
             <div id="version-alert" class="alert d-none" role="alert"></div>
 
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header">
                     <h3 class="card-title">Filtros de búsqueda</h3>
                 </div>
@@ -61,9 +61,9 @@
                         <div class="col-12 col-md-4">
                             <label for="project-id" class="form-label">ID del proyecto</label>
                             <input type="number" id="project-id" class="form-control" min="1" placeholder="Ej. 12">
-                            <small class="form-hint">Deja vacío para ver todas las versiones.</small>
+                            
                         </div>
-                        <div class="col-6 col-md-2">
+                        <div class="col-12 col-sm-6 col-md-2">
                             <label for="version-per-page" class="form-label">Por página</label>
                             <select id="version-per-page" class="form-select">
                                 <option value="10">10</option>
@@ -71,14 +71,14 @@
                                 <option value="50">50</option>
                             </select>
                         </div>
-                        <div class="col-6 col-md-2 d-grid">
-                            <button type="reset" class="btn btn-outline-secondary">Limpiar</button>
+                        <div class="col-12 col-sm-6 col-md-2">
+                            <button type="reset" class="btn btn-outline-secondary w-100">Limpiar</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Listado de versiones</h3>
                     <div class="card-actions">
@@ -86,14 +86,14 @@
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter align-middle" aria-label="Tabla de versiones" id="version-table">
                         <thead>
                             <tr>
                                 <th class="w-1">ID</th>
-                                <th>Proyecto</th>
-                                <th class="w-1">Creada</th>
-                                <th class="w-1">Actualizada</th>
-                                <th class="w-1">Acciones</th>
+                                <th class="text-truncate" style="max-width: 260px;">Proyecto</th>
+                                <th class="text-truncate" style="max-width: 160px;">Creada</th>
+                                <th class="text-truncate" style="max-width: 160px;">Actualizada</th>
+                                <th class="w-1 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="version-rows">
@@ -113,6 +113,7 @@
         </div>
     </div>
 
+    {{-- Modal used to create or update versions through the API. --}}
     <div class="modal modal-blur fade" id="modal-version" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -136,6 +137,25 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal replaces the native confirmation dialog when deleting a version. --}}
+    <div class="modal fade" id="version-delete-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Eliminar versión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">¿Deseas eliminar <span class="fw-semibold" id="version-delete-name">esta versión</span>? Esta acción es irreversible.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="version-delete-confirm">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('js')
@@ -143,12 +163,40 @@
         document.addEventListener('DOMContentLoaded', () => {
             const apiBase = '{{ url('/api/versions') }}';
             const csrfToken = '{{ csrf_token() }}';
+            const showUrlTemplate = '{{ url('versions') }}/:id';
+            const editUrlTemplate = '{{ url('versions') }}/:id/edit';
 
             const state = {
                 page: 1,
                 perPage: 10,
                 projectId: null,
                 currentId: null,
+            };
+
+            const icons = {
+                view: `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="2" />
+                        <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7" />
+                    </svg>
+                `,
+                edit: `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                        <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+                        <path d="M16 5l3 3" />
+                    </svg>
+                `,
+                delete: `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M5 7h14" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                        <path d="M9 7v-3h6v3" />
+                    </svg>
+                `,
             };
 
             const rows = document.getElementById('version-rows');
@@ -167,6 +215,12 @@
             const submitBtn = document.getElementById('version-submit');
             const projectField = document.getElementById('version-project');
             const modalInstance = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+            const deleteModalElement = document.getElementById('version-delete-modal');
+            const deleteModal = deleteModalElement && window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(deleteModalElement) : null;
+            const deleteNameLabel = document.getElementById('version-delete-name');
+            const deleteConfirmButton = document.getElementById('version-delete-confirm');
+            let deleteTargetId = null;
 
             function escapeHtml(value) {
                 return String(value ?? '')
@@ -206,18 +260,25 @@
                         const created = item.created_at ? new Date(item.created_at).toLocaleString('es-CO') : '—';
                         const updated = item.updated_at ? new Date(item.updated_at).toLocaleString('es-CO') : '—';
                         const projectTitle = item.project?.title ? escapeHtml(item.project.title) : 'Proyecto sin título';
-                        const project = item.project ? `${projectTitle} (#${item.project.id ?? '—'})` : 'Sin proyecto';
+                        const projectLabel = item.project ? `${projectTitle} (#${item.project.id ?? '—'})` : 'Sin proyecto';
+                        const projectHtml = `<span class="d-inline-block text-truncate" style="max-width: 260px;" title="${projectLabel}">${projectLabel}</span>`;
+                        const createdHtml = `<span class="d-inline-block text-truncate" style="max-width: 160px;" title="${escapeHtml(created)}">${escapeHtml(created)}</span>`;
+                        const updatedHtml = `<span class="d-inline-block text-truncate" style="max-width: 160px;" title="${escapeHtml(updated)}">${escapeHtml(updated)}</span>`;
+                        const showUrl = showUrlTemplate.replace(':id', item.id);
+                        const editUrl = editUrlTemplate.replace(':id', item.id);
+                        const safeDeleteLabel = escapeHtml(`versión #${item.id}`);
+
                         return `
                             <tr data-id="${item.id}">
                                 <td class="text-secondary">#${item.id}</td>
-                                <td>${project}</td>
-                                <td>${created}</td>
-                                <td>${updated}</td>
+                                <td>${projectHtml}</td>
+                                <td>${createdHtml}</td>
+                                <td>${updatedHtml}</td>
                                 <td>
-                                    <div class="btn-list flex-nowrap">
-                                        <button class="btn btn-outline-primary btn-sm" data-action="edit" data-id="${item.id}">Editar</button>
-                                        <a class="btn btn-outline-secondary btn-sm" href="{{ route('content-versions.index') }}?version_id=${item.id}">Contenidos</a>
-                                        <button class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${item.id}">Eliminar</button>
+                                    <div class="btn-list flex-nowrap justify-content-center">
+                                        <a class="btn btn-sm btn-outline-primary" href="${showUrl}" title="Ver">${icons.view}</a>
+                                        <a class="btn btn-sm btn-outline-success" href="${editUrl}" title="Editar">${icons.edit}</a>
+                                        <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${item.id}" data-title="${safeDeleteLabel}" title="Eliminar">${icons.delete}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -241,9 +302,15 @@
                 }
 
                 pagination.innerHTML = links.map(link => {
-                    const label = link.label
+                    let label = link.label
                         .replace('&laquo;', '«')
                         .replace('&raquo;', '»');
+                    const normalized = label.toLowerCase();
+                    if (normalized.includes('previous')) {
+                        label = '‹';
+                    } else if (normalized.includes('next')) {
+                        label = '›';
+                    }
                     const disabled = link.url === null ? ' disabled' : '';
                     const active = link.active ? ' active' : '';
                     return `
@@ -272,14 +339,6 @@
                     totalBadge.textContent = '0';
                     summary.textContent = 'Mostrando 0 a 0 de 0 registros';
                 }
-            }
-
-            async function getVersion(id) {
-                const response = await fetch(`${apiBase}/${id}`, { headers: { 'Accept': 'application/json' } });
-                if (!response.ok) {
-                    throw new Error('No fue posible obtener la información de la versión.');
-                }
-                return response.json();
             }
 
             async function submitVersion(method, url, payload) {
@@ -367,32 +426,28 @@
                 const id = button.getAttribute('data-id');
                 if (!id) return;
 
-                if (button.dataset.action === 'edit') {
-                    try {
-                        clearAlert();
-                        const data = await getVersion(id);
-                        state.currentId = data.id;
-                        modalTitle.textContent = `Editar versión #${data.id}`;
-                        projectField.value = data.project_id ?? '';
-                        submitBtn.textContent = 'Actualizar versión';
-                        modalInstance?.show();
-                    } catch (error) {
-                        setAlert(error.message || 'No fue posible cargar la versión para edición.');
-                    }
-                }
-
                 if (button.dataset.action === 'delete') {
-                    if (!confirm('¿Deseas eliminar esta versión?')) {
-                        return;
-                    }
-                    try {
-                        clearAlert();
-                        await deleteVersion(id);
-                        setAlert('Versión eliminada correctamente.', 'success');
-                        fetchVersions(buildQuery(state.page));
-                    } catch (error) {
-                        setAlert(error.message || 'No fue posible eliminar la versión.');
-                    }
+                    deleteTargetId = id;
+                    const label = button.getAttribute('data-title') || `versión #${id}`;
+                    deleteNameLabel.textContent = label;
+                    deleteModal?.show();
+                }
+            });
+
+            deleteConfirmButton?.addEventListener('click', async () => {
+                if (!deleteTargetId) {
+                    return;
+                }
+                try {
+                    clearAlert();
+                    await deleteVersion(deleteTargetId);
+                    setAlert('Versión eliminada correctamente.', 'success');
+                    fetchVersions(buildQuery(state.page));
+                } catch (error) {
+                    setAlert(error.message || 'No fue posible eliminar la versión.');
+                } finally {
+                    deleteModal?.hide();
+                    deleteTargetId = null;
                 }
             });
 

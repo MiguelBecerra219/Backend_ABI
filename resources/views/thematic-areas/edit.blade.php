@@ -45,21 +45,28 @@
 
     <div class="page-body">
         <div class="container-xl">
-            @if(config('tablar','display_alert'))
+            @if(config('tablar.display_alert'))
                 @include('tablar::common.alert')
             @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Información general</h3>
-                </div>
-                <div class="card-body">
-                    {{-- Form element sends the captured data to the specified endpoint. --}}
-                    <form method="POST" action="{{ route('thematic-areas.update', $thematicArea) }}">
-                        @csrf
-                        @method('PUT')
-                        @include('thematic-areas.form')
-                    </form>
+            <div class="row g-3">
+                <div class="col-12 col-xl-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Información general</h3>
+                            <div class="card-actions">
+                                <span class="badge bg-orange-lt">ID {{ $thematicArea->id }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
+                            <form method="POST" action="{{ route('thematic-areas.update', $thematicArea) }}">
+                                @csrf
+                                @method('PUT')
+                                @include('thematic-areas.form')
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

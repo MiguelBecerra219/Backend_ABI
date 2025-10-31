@@ -16,7 +16,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('catalog.versions') }}">Versiones</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('versions.index') }}">Versiones</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Editar</li>
                         </ol>
                     </nav>
@@ -38,7 +38,7 @@
                     <p class="text-muted mb-0">Actualiza la referencia del proyecto asociado a esta versión.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
-                    <a href="{{ route('catalog.versions') }}" class="btn btn-outline-secondary">Volver al listado</a>
+                    <a href="{{ route('versions.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
                 </div>
             </div>
         </div>
@@ -59,7 +59,7 @@
                     <form id="version-edit-form" novalidate>
                         @include('versions.form')
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('catalog.versions') }}" class="btn btn-link">Cancelar</a>
+                            <a href="{{ route('versions.index') }}" class="btn btn-link">Cancelar</a>
                             <button type="submit" class="btn btn-primary">Guardar cambios</button>
                         </div>
                     </form>
@@ -205,7 +205,7 @@
                     showAlert('success', body.message ?? 'Versión actualizada correctamente.');
                     alertBox.classList.remove('d-none');
                     setTimeout(() => {
-                        window.location.href = '{{ route('catalog.versions') }}';
+                        window.location.href = '{{ route('versions.index') }}';
                     }, 1200);
                 } catch (error) {
                     showAlert('danger', 'Ocurrió un error inesperado al guardar.');

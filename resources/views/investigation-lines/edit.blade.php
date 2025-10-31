@@ -51,17 +51,28 @@
                 @include('tablar::common.alert')
             @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Información general</h3>
-                </div>
-                <div class="card-body">
-                    {{-- Form element sends the captured data to the specified endpoint. --}}
-                    <form method="POST" action="{{ route('investigation-lines.update', $investigationLine) }}">
-                        @csrf
-                        @method('PUT')
-                        @include('investigation-lines.form')
-                    </form>
+            <div class="row g-3">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Información general</h3>
+                            <div class="card-actions">
+                                <small class="text-secondary">Actualiza los datos necesarios y guarda los cambios</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
+                            <form method="POST" action="{{ route('investigation-lines.update', $investigationLine) }}">
+                                @csrf
+                                @method('PUT')
+                                @include('investigation-lines.form')
+                                <div class="d-flex flex-column flex-md-row justify-content-end gap-2 mt-3">
+                                    <a href="{{ route('investigation-lines.index') }}" class="btn btn-link">Cancelar</a>
+                                    <button type="submit" class="btn btn-primary">Actualizar línea</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

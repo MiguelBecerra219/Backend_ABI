@@ -118,14 +118,14 @@
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter">
                         <thead>
                             <tr>
                                 <th class="w-1">ID</th>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Roles permitidos</th>
-                                <th class="w-1">Actualizado</th>
+                                <th class="text-truncate" style="max-width: 220px;">Nombre</th>
+                                <th class="text-truncate" style="max-width: 320px;">Descripción</th>
+                                <th class="text-truncate" style="max-width: 260px;">Roles permitidos</th>
+                                <th class="text-nowrap">Actualizado</th>
                                 <th class="w-1">Acciones</th>
                             </tr>
                         </thead>
@@ -138,7 +138,7 @@
                 </div>
                 <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                     <div class="text-secondary" id="content-summary">Mostrando 0 a 0 de 0 registros</div>
-                    <nav>
+                    <nav aria-label="Paginación de contenidos">
                         <ul class="pagination mb-0" id="content-pagination"></ul>
                     </nav>
                 </div>
@@ -190,6 +190,50 @@
             </div>
         </div>
     </div>
+    <div class="modal modal-blur fade" id="modal-content-detail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-content-detail-title">Detalle del contenido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row g-3 mb-0">
+                        <dt class="col-sm-4 text-secondary">Identificador</dt>
+                        <dd class="col-sm-8" id="content-detail-id">—</dd>
+                        <dt class="col-sm-4 text-secondary">Nombre</dt>
+                        <dd class="col-sm-8" id="content-detail-name">—</dd>
+                        <dt class="col-sm-4 text-secondary">Descripción</dt>
+                        <dd class="col-sm-8" id="content-detail-description">—</dd>
+                        <dt class="col-sm-4 text-secondary">Roles permitidos</dt>
+                        <dd class="col-sm-8" id="content-detail-roles">—</dd>
+                        <dt class="col-sm-4 text-secondary">Última actualización</dt>
+                        <dd class="col-sm-8" id="content-detail-updated">—</dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal modal-blur fade" id="modal-content-delete" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Eliminar contenido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0" id="modal-content-delete-message">¿Deseas eliminar este contenido?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="modal-content-delete-confirm">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('js')
@@ -205,6 +249,7 @@
                 search: '',
                 roles: [],
                 currentId: null,
+                pendingDeleteId: null,
             };
 
             const rows = document.getElementById('content-rows');
@@ -225,6 +270,20 @@
             const formRolesContainer = document.getElementById('content-form-roles');
 
             const modalInstance = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+            const detailModalElement = document.getElementById('modal-content-detail');
+            const detailModalInstance = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(detailModalElement) : null;
+            const detailFields = {
+                id: document.getElementById('content-detail-id'),
+                name: document.getElementById('content-detail-name'),
+                description: document.getElementById('content-detail-description'),
+                roles: document.getElementById('content-detail-roles'),
+                updated: document.getElementById('content-detail-updated'),
+            };
+
+            const deleteModalElement = document.getElementById('modal-content-delete');
+            const deleteModalInstance = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(deleteModalElement) : null;
+            const deleteMessage = document.getElementById('modal-content-delete-message');
+            const deleteConfirmButton = document.getElementById('modal-content-delete-confirm');
 
             function escapeHtml(value) {
                 return String(value ?? '')
@@ -264,14 +323,26 @@
                 if (!Array.isArray(roles) || !roles.length) {
                     return '<span class="badge bg-secondary">Sin roles definidos</span>';
                 }
-                return roles.map(role => {
+
+                const badges = roles.map(role => {
                     const label = {
                         @foreach($roleLabels as $key => $label)
                             '{{ $key }}': '{{ $label }}',
                         @endforeach
                     }[role] || role;
-                    return `<span class="badge bg-azure-lt me-1 mb-1">${label}</span>`;
+                    return `<span class="badge bg-azure-lt">${label}</span>`;
                 }).join('');
+
+                return `<div class="d-flex flex-wrap gap-1" style="max-width: 260px;">${badges}</div>`;
+            }
+
+            function formatDateTime(value) {
+                if (!value) {
+                    return '—';
+                }
+
+                const parsed = new Date(value);
+                return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('es-CO');
             }
 
             function renderTable(data) {
@@ -281,21 +352,48 @@
                     rows.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-4">No se encontraron contenidos para los filtros seleccionados.</td></tr>';
                 } else {
                     rows.innerHTML = items.map(item => {
-                        const updated = item.updated_at ? new Date(item.updated_at).toLocaleString('es-CO') : '—';
+                        const updated = formatDateTime(item.updated_at);
+                        const safeName = escapeHtml(item.name);
                         const description = item.description
-                            ? escapeHtml(item.description)
+                            ? (() => {
+                                const safeDescription = escapeHtml(item.description);
+                                return `<span class="d-inline-block text-truncate" style="max-width: 320px;" title="${safeDescription}">${safeDescription}</span>`;
+                            })()
                             : '<span class="text-secondary">Sin descripción</span>';
+
                         return `
-                            <tr data-id="${item.id}">
+                            <tr data-id="${item.id}" data-name="${safeName}">
                                 <td class="text-secondary">#${item.id}</td>
-                                <td class="fw-semibold">${escapeHtml(item.name)}</td>
+                                <td>
+                                    <span class="d-inline-block fw-semibold text-truncate" style="max-width: 220px;" title="${safeName}">${safeName}</span>
+                                </td>
                                 <td>${description}</td>
                                 <td>${renderRoles(item.roles)}</td>
-                                <td>${updated}</td>
+                                <td class="text-secondary">${updated}</td>
                                 <td>
                                     <div class="btn-list flex-nowrap">
-                                        <button class="btn btn-outline-primary btn-sm" data-action="edit" data-id="${item.id}">Editar</button>
-                                        <button class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${item.id}">Eliminar</button>
+                                        <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${item.id}" title="Ver">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="2" />
+                                                <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7" />
+                                            </svg>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" data-action="edit" data-id="${item.id}" title="Editar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                                                <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+                                                <path d="M16 5l3 3" />
+                                            </svg>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${item.id}" title="Eliminar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="4" y1="7" x2="20" y2="7" />
+                                                <line x1="10" y1="11" x2="10" y2="17" />
+                                                <line x1="14" y1="11" x2="14" y2="17" />
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                                <path d="M9 7v-3h6v3" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -456,6 +554,33 @@
                 const id = button.getAttribute('data-id');
                 if (!id) return;
 
+                if (button.dataset.action === 'view') {
+                    try {
+                        clearAlert();
+                        const data = await getContent(id);
+                        detailFields.id.textContent = `#${data.id ?? id}`;
+                        detailFields.name.textContent = data.name ?? 'Sin nombre';
+                        detailFields.description.textContent = data.description ?? 'Sin descripción registrada.';
+                        if (Array.isArray(data.roles) && data.roles.length) {
+                            detailFields.roles.innerHTML = data.roles.map(role => {
+                                const label = {
+                                    @foreach($roleLabels as $key => $label)
+                                        '{{ $key }}': '{{ $label }}',
+                                    @endforeach
+                                }[role] || role;
+                                return `<span class="badge bg-azure-lt me-1 mb-1">${label}</span>`;
+                            }).join('');
+                        } else {
+                            detailFields.roles.innerHTML = '<span class="text-secondary">Sin roles definidos</span>';
+                        }
+                        detailFields.updated.textContent = formatDateTime(data.updated_at);
+                        detailModalInstance?.show();
+                    } catch (error) {
+                        setAlert(error.message || 'No fue posible cargar el detalle del contenido.');
+                    }
+                    return;
+                }
+
                 if (button.dataset.action === 'edit') {
                     try {
                         clearAlert();
@@ -472,20 +597,41 @@
                     } catch (error) {
                         setAlert(error.message || 'No fue posible cargar el contenido para edición.');
                     }
+                    return;
                 }
 
                 if (button.dataset.action === 'delete') {
-                    if (!confirm('¿Seguro que deseas eliminar este contenido? Esta acción no se puede deshacer.')) {
-                        return;
-                    }
-                    try {
-                        clearAlert();
-                        await deleteContent(id);
-                        setAlert('Contenido eliminado correctamente.', 'success');
-                        fetchContents(buildQuery(state.page));
-                    } catch (error) {
-                        setAlert(error.message || 'No fue posible eliminar el contenido.');
-                    }
+                    const row = button.closest('tr');
+                    const name = row ? row.getAttribute('data-name') : '';
+                    state.pendingDeleteId = Number(id);
+                    deleteMessage.textContent = name
+                        ? `¿Deseas eliminar el contenido "${name}"? Esta acción no se puede deshacer.`
+                        : '¿Deseas eliminar este contenido? Esta acción no se puede deshacer.';
+                    deleteModalInstance?.show();
+                }
+            });
+
+            deleteModalElement.addEventListener('hidden.bs.modal', () => {
+                state.pendingDeleteId = null;
+            });
+
+            deleteConfirmButton.addEventListener('click', async () => {
+                if (!state.pendingDeleteId) {
+                    return;
+                }
+                try {
+                    clearAlert();
+                    deleteConfirmButton.disabled = true;
+                    deleteConfirmButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+                    await deleteContent(state.pendingDeleteId);
+                    deleteModalInstance?.hide();
+                    setAlert('Contenido eliminado correctamente.', 'success');
+                    fetchContents(buildQuery(state.page));
+                } catch (error) {
+                    setAlert(error.message || 'No fue posible eliminar el contenido.');
+                } finally {
+                    deleteConfirmButton.disabled = false;
+                    deleteConfirmButton.textContent = 'Eliminar';
                 }
             });
 

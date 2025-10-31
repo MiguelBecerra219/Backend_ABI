@@ -1,16 +1,13 @@
 {{--
-    Partial path: content_versions/form.blade.php.
-    Purpose: Shared Tablar form fragment for linking contents to versions with a captured value.
-    Expected variables:
-    - $contentVersion (optional): existing record used when editing.
-    - $contentId (optional): selected content identifier passed from JS.
-    - $versionId (optional): selected version identifier passed from JS.
+    Partial path: content-versions/form.blade.php.
+    Purpose: Shared form fragment for selecting a content, version, and captured value.
+    Expected variables: $contentVersion (optional), $contentId (optional), $versionId (optional).
 --}}
 @php
-    $contentVersionModel = $contentVersion ?? null;
-    $selectedContent = old('content_id', $contentId ?? ($contentVersionModel->content_id ?? ''));
-    $selectedVersion = old('version_id', $versionId ?? ($contentVersionModel->version_id ?? ''));
-    $value = old('value', $contentVersionModel->value ?? '');
+    $model = $contentVersion ?? null;
+    $selectedContent = old('content_id', $contentId ?? ($model->content_id ?? ''));
+    $selectedVersion = old('version_id', $versionId ?? ($model->version_id ?? ''));
+    $value = old('value', $model->value ?? '');
 @endphp
 
 <div class="mb-3">
@@ -43,12 +40,3 @@
     >{{ $value }}</textarea>
     <div class="invalid-feedback d-none" data-feedback-for="value"></div>
 </div>
-
-@push('css')
-    <style>
-        .form-label.required::after {
-            content: ' *';
-            color: var(--tblr-danger);
-        }
-    </style>
-@endpush
