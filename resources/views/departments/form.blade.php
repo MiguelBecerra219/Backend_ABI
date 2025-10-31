@@ -1,11 +1,9 @@
 {{--
-    Determine whether the form is being used for creation or editing so the submit
-    button text can reflect the proper action.
+    Partial path: departments/form.blade.php.
+    Purpose: Shared Tablar form fragment for department create and edit screens.
+    Expected variables: $department (optional) and $errors for validation feedback.
+    The hosting view must render the surrounding submit and cancel actions.
 --}}
-@php
-    $isEdit = isset($department) && $department->exists;
-@endphp
-
 {{-- Wrapper for the department name input field and its validation feedback. --}}
 <div class="mb-3">
     {{-- Label clarifies the required nature of the department name field. --}}
@@ -32,24 +30,3 @@
     <small class="form-hint">Introduce el nombre oficial del departamento administrativo.</small>
 </div>
 
-<hr class="my-4">
-
-{{-- Footer containing navigation back to the list and the contextual submit button. --}}
-<div class="form-footer d-flex justify-content-between align-items-center">
-    {{-- Cancel button returns the user to the department index without saving changes. --}}
-    <a href="{{ route('departments.index') }}" class="btn btn-outline-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-        Cancelar
-    </a>
-
-    {{-- Submit button either creates or updates a department based on the view context. --}}
-    <button type="submit" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12l5 5l10 -10" />
-        </svg>
-        {{ $isEdit ? 'Actualizar departamento' : 'Crear departamento' }}
-    </button>
-</div>

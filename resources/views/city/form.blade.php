@@ -1,14 +1,9 @@
 {{--
-    View path: city/form.blade.php.
-    Purpose: Renders the form.blade view for the City module.
-    Expected variables within this template: $city, $departmentName, $departments, $errors, $id, $isEdit, $message.
-    No additional partials are included within this file.
-    All markup below follows Tablar styling conventions for visual consistency.
+    Partial path: city/form.blade.php.
+    Purpose: Shared Tablar form fragment for city create and edit screens.
+    Expected variables within this template: $city (optional), $departments (array-like), $errors.
+    The surrounding view is responsible for rendering actions such as cancel or submit buttons.
 --}}
-@php
-    $isEdit = isset($city) && $city->exists;
-@endphp
-
 <div class="row g-3">
     <div class="col-md-6">
         <div class="mb-3">
@@ -51,25 +46,4 @@
             <small class="form-hint">La ciudad se asociará automáticamente al departamento elegido.</small>
         </div>
     </div>
-</div>
-
-<hr class="my-4">
-
-<div class="form-footer d-flex justify-content-between align-items-center">
-    {{-- Secondary action lets the user abandon the form without saving changes. --}}
-    <a href="{{ route('cities.index') }}" class="btn btn-outline-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-        Cancelar
-    </a>
-
-    {{-- Button element of type 'submit' to trigger the intended action. --}}
-    <button type="submit" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12l5 5l10 -10" />
-        </svg>
-        {{ $isEdit ? 'Actualizar ciudad' : 'Crear ciudad' }}
-    </button>
 </div>

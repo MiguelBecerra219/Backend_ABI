@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ContentRequest;
 use App\Models\ResearchStaff\ResearchStaffContent;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -178,12 +180,43 @@ class ContentController extends Controller
                 ], 404);
             }
 
-            // Cargar relaciones con versiones ordenadas
-            $content->load(['versions' => function ($query) {
-                $query->orderByDesc('content_version.created_at');
-            }]);
+            // Attempt to load the related versions but fail gracefully if the connection does not expose them
+            try {
+                $content->load(['versions' => function ($query) {
+                    $query->orderByDesc('content_version.created_at');
+                }]);
+            } catch (QueryException $exception) {
+                Log::warning('Unable to load versions for the requested content. Returning base content data instead.', [
+                    'content_id' => $content->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
 
-            return response()->json($content);
+            $response = [
+                'id' => $content->id,
+                'name' => $content->name,
+                'description' => $content->description,
+                'roles' => Arr::wrap($content->roles),
+                'created_at' => $content->created_at,
+                'updated_at' => $content->updated_at,
+            ];
+
+            if ($content->relationLoaded('versions')) {
+                $response['versions'] = $content->versions->map(static function ($version) {
+                    return [
+                        'id' => $version->id,
+                        'name' => $version->name,
+                        'pivot' => [
+                            'id' => $version->pivot->id ?? null,
+                            'value' => $version->pivot->value ?? null,
+                            'created_at' => $version->pivot->created_at ?? null,
+                            'updated_at' => $version->pivot->updated_at ?? null,
+                        ],
+                    ];
+                });
+            }
+
+            return response()->json($response);
 
         } catch (\Exception $e) {
             Log::error('Error al mostrar contenido: ' . $e->getMessage(), [

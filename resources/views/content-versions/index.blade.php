@@ -1,11 +1,10 @@
 {{--
-    View path: content_versions/index.blade.php.
-    Purpose: Tablar-styled dashboard to manage the relationship between
-    contents and project versions using the JSON API.
+    View path: content-versions/index.blade.php.
+    Purpose: Management console for linking contents with project versions via the JSON API.
 --}}
 @extends('tablar::page')
 
-@section('title', 'Versiones de Contenido')
+@section('title', 'Versiones de contenido')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -15,8 +14,8 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('contents.index') }}">Contenidos</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Versiones diligenciadas</li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-versions.index') }}">Versiones de contenido</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Listado</li>
                         </ol>
                     </nav>
                     <h2 class="page-title d-flex align-items-center">
@@ -24,21 +23,20 @@
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <path d="M9 3h6a2 2 0 0 1 2 2v14l-5 -3l-5 3v-14a2 2 0 0 1 2 -2" />
                         </svg>
-                        Versiones de Contenido
+                        Versiones de contenido
+                        <span class="badge bg-primary ms-2" id="content-version-total">0</span>
                     </h2>
-                    <p class="text-muted mb-0">Administra los valores diligenciados para cada contenido en las versiones de los proyectos.</p>
+                    <p class="text-muted mb-0">Administra los valores diligenciados para cada contenido dentro de las versiones de proyecto.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
-                    <div class="btn-list">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-content-version" id="btn-new-content-version">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M12 5v14" />
-                                <path d="M5 12h14" />
-                            </svg>
-                            Nuevo registro
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-content-version" id="btn-new-content-version">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M12 5v14" />
+                            <path d="M5 12h14" />
+                        </svg>
+                        Nuevo registro
+                    </button>
                 </div>
             </div>
         </div>
@@ -52,7 +50,7 @@
 
             <div id="content-version-alert" class="alert d-none" role="alert"></div>
 
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header">
                     <h3 class="card-title">Filtros avanzados</h3>
                 </div>
@@ -93,23 +91,23 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Registros diligenciados</h3>
                     <div class="card-actions">
-                        <span class="badge bg-azure" id="content-version-total">0</span>
+                        <span class="badge bg-azure" id="content-version-summary">Mostrando 0 a 0 de 0 registros</span>
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter">
                         <thead>
                             <tr>
                                 <th class="w-1">ID</th>
-                                <th>Contenido</th>
-                                <th>Versión</th>
-                                <th>Proyecto</th>
-                                <th>Valor diligenciado</th>
-                                <th class="w-1">Actualizado</th>
+                                <th class="text-truncate" style="max-width: 200px;">Contenido</th>
+                                <th class="text-truncate" style="max-width: 160px;">Versión</th>
+                                <th class="text-truncate" style="max-width: 260px;">Proyecto</th>
+                                <th class="text-truncate" style="max-width: 320px;">Valor diligenciado</th>
+                                <th class="text-truncate" style="max-width: 160px;">Actualizado</th>
                                 <th class="w-1">Acciones</th>
                             </tr>
                         </thead>
@@ -121,7 +119,7 @@
                     </table>
                 </div>
                 <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                    <div class="text-secondary" id="content-version-summary">Mostrando 0 a 0 de 0 registros</div>
+                    <div class="text-secondary" id="content-version-footer-summary">Mostrando 0 a 0 de 0 registros</div>
                     <nav>
                         <ul class="pagination mb-0" id="content-version-pagination"></ul>
                     </nav>
@@ -166,6 +164,25 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal replaces the native confirmation when deleting a record. --}}
+    <div class="modal fade" id="content-version-delete-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Eliminar registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">¿Deseas eliminar <span class="fw-semibold" id="content-version-delete-name">este registro</span>? Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="content-version-delete-confirm">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('js')
@@ -175,6 +192,8 @@
             const contentsEndpoint = '{{ url('/api/contents') }}';
             const versionsEndpoint = '{{ url('/api/versions') }}';
             const csrfToken = '{{ csrf_token() }}';
+            const editUrlTemplate = '{{ route('content-versions.edit', ['contentVersionId' => '__ID__']) }}'.replace('__ID__', ':id');
+            const showUrlTemplate = '{{ route('content-versions.show', ['contentVersionId' => '__ID__']) }}'.replace('__ID__', ':id');
 
             const state = {
                 page: 1,
@@ -183,14 +202,14 @@
                 contentId: null,
                 projectId: null,
                 search: '',
-                currentId: null,
                 contents: new Map(),
                 versions: new Map(),
             };
 
             const rows = document.getElementById('content-version-rows');
             const totalBadge = document.getElementById('content-version-total');
-            const summary = document.getElementById('content-version-summary');
+            const summaryBadge = document.getElementById('content-version-summary');
+            const footerSummary = document.getElementById('content-version-footer-summary');
             const pagination = document.getElementById('content-version-pagination');
             const alertBox = document.getElementById('content-version-alert');
 
@@ -209,6 +228,13 @@
             const formContent = document.getElementById('form-content');
             const formValue = document.getElementById('form-value');
             const modalInstance = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+            const deleteModalElement = document.getElementById('content-version-delete-modal');
+            const deleteModal = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(deleteModalElement) : null;
+            const deleteNameLabel = document.getElementById('content-version-delete-name');
+            const deleteConfirmButton = document.getElementById('content-version-delete-confirm');
+            let pendingDeleteId = null;
+            let pendingDeleteLabel = 'este registro';
 
             function escapeHtml(value) {
                 return String(value ?? '')
@@ -263,23 +289,34 @@
                         const project = version?.project;
                         const content = item.content;
                         const updated = item.updated_at ? new Date(item.updated_at).toLocaleString('es-CO') : '—';
-                        const projectTitle = project?.title ? escapeHtml(project.title) : 'Proyecto sin título';
+                        const projectTitle = project?.title ?? 'Proyecto sin título';
                         const projectLabel = project ? `${projectTitle} (#${project.id ?? '—'})` : 'Sin proyecto';
                         const valuePreview = item.value ? escapeHtml(truncate(item.value, 100)) : '<span class="text-secondary">Sin valor</span>';
                         const contentName = content ? escapeHtml(content.name) : 'Contenido eliminado';
+                        const contentNamePlain = content?.name ?? 'Contenido eliminado';
                         const versionLabel = version ? `Versión #${version.id}` : 'Sin versión';
+                        const editUrl = editUrlTemplate.replace(':id', item.id);
+                        const showUrl = showUrlTemplate.replace(':id', item.id);
+
                         return `
                             <tr data-id="${item.id}">
                                 <td class="text-secondary">#${item.id}</td>
-                                <td>${contentName}</td>
-                                <td>${versionLabel}</td>
-                                <td>${projectLabel}</td>
-                                <td>${valuePreview}</td>
-                                <td>${updated}</td>
+                                <td class="text-truncate" style="max-width: 200px;" title="${contentNamePlain}">${contentName}</td>
+                                <td class="text-truncate" style="max-width: 160px;">${escapeHtml(versionLabel)}</td>
+                                <td class="text-truncate" style="max-width: 260px;" title="${escapeHtml(projectLabel)}">${escapeHtml(truncate(projectLabel, 60))}</td>
+                                <td class="text-truncate" style="max-width: 320px;">${valuePreview}</td>
+                                <td class="text-truncate" style="max-width: 160px;">${escapeHtml(updated)}</td>
                                 <td>
                                     <div class="btn-list flex-nowrap">
-                                        <button class="btn btn-outline-primary btn-sm" data-action="edit" data-id="${item.id}">Editar</button>
-                                        <button class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${item.id}">Eliminar</button>
+                                        <a href="${showUrl}" class="btn btn-sm btn-outline-primary" title="Ver">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2" /><path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7" /></svg>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-success" data-action="edit" data-id="${item.id}" title="Editar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${item.id}" data-name="${escapeHtml(contentNamePlain)}" title="Eliminar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3h6v3" /></svg>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -287,11 +324,12 @@
                     }).join('');
                 }
 
-                totalBadge.textContent = data?.total ?? 0;
                 const from = data?.from ?? 0;
                 const to = data?.to ?? 0;
                 const total = data?.total ?? 0;
-                summary.textContent = `Mostrando ${from} a ${to} de ${total} registros`;
+                totalBadge.textContent = total;
+                summaryBadge.textContent = `Mostrando ${from} a ${to} de ${total} registros`;
+                footerSummary.textContent = `Mostrando ${from} a ${to} de ${total} registros`;
 
                 renderPagination(data?.links || []);
             }
@@ -332,7 +370,8 @@
                     rows.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error al cargar los datos.</td></tr>';
                     pagination.innerHTML = '';
                     totalBadge.textContent = '0';
-                    summary.textContent = 'Mostrando 0 a 0 de 0 registros';
+                    summaryBadge.textContent = 'Mostrando 0 a 0 de 0 registros';
+                    footerSummary.textContent = 'Mostrando 0 a 0 de 0 registros';
                 }
             }
 
@@ -411,8 +450,7 @@
                 formVersion.innerHTML = '<option value="">Selecciona una versión</option>';
                 filterVersion.innerHTML = '<option value="">Todas</option>';
                 options.forEach(item => {
-                    const project = item.project ? ` - ${item.project.title ?? 'Proyecto #'+item.project.id}` : '';
-                    const label = `Versión #${item.id}${project}`;
+                    const label = `Versión #${item.id} · Proyecto ${item.project_id ?? '—'}`;
                     state.versions.set(String(item.id), label);
                     const option = document.createElement('option');
                     option.value = item.id;
@@ -422,7 +460,11 @@
                 });
             }
 
-            filtersForm.addEventListener('submit', event => event.preventDefault());
+            function resetModalForm() {
+                form.reset();
+                modalTitle.textContent = 'Nuevo registro';
+                submitBtn.textContent = 'Guardar';
+            }
 
             filtersForm.addEventListener('reset', () => {
                 setTimeout(() => {
@@ -430,164 +472,134 @@
                     state.contentId = null;
                     state.projectId = null;
                     state.search = '';
-                    state.perPage = 10;
-                    state.page = 1;
-                    filterPerPage.value = '10';
-                    filterSearch.value = '';
-                    filterProject.value = '';
-                    filterVersion.value = '';
-                    filterContent.value = '';
-                    fetchContentVersions(buildQuery());
+                    state.perPage = Number(filterPerPage.value) || 10;
+                    fetchContentVersions(buildQuery(1));
                 }, 0);
             });
 
             filterVersion.addEventListener('change', () => {
                 state.versionId = filterVersion.value || null;
-                state.page = 1;
-                fetchContentVersions(buildQuery());
+                fetchContentVersions(buildQuery(1));
             });
 
             filterContent.addEventListener('change', () => {
                 state.contentId = filterContent.value || null;
-                state.page = 1;
-                fetchContentVersions(buildQuery());
+                fetchContentVersions(buildQuery(1));
             });
 
-            filterProject.addEventListener('change', () => {
-                const value = filterProject.value.trim();
-                state.projectId = value ? Number(value) : null;
-                state.page = 1;
-                fetchContentVersions(buildQuery());
+            filterProject.addEventListener('input', event => {
+                state.projectId = event.target.value ? Number(event.target.value) : null;
+                fetchContentVersions(buildQuery(1));
             });
 
-            filterSearch.addEventListener('input', () => {
-                const value = filterSearch.value.trim();
-                state.search = value;
-                state.page = 1;
-                fetchContentVersions(buildQuery());
+            filterSearch.addEventListener('input', event => {
+                state.search = event.target.value.trim();
+                fetchContentVersions(buildQuery(1));
             });
 
-            filterPerPage.addEventListener('change', () => {
-                state.perPage = Number(filterPerPage.value) || 10;
-                state.page = 1;
-                fetchContentVersions(buildQuery());
+            filterPerPage.addEventListener('change', event => {
+                state.perPage = Number(event.target.value) || 10;
+                fetchContentVersions(buildQuery(1));
             });
 
             pagination.addEventListener('click', event => {
                 const link = event.target.closest('a[data-url]');
-                if (!link) return;
+                if (!link) {
+                    return;
+                }
                 event.preventDefault();
                 const url = link.getAttribute('data-url');
-                if (!url) return;
-                fetchContentVersions(url);
+                if (url) {
+                    fetchContentVersions(url);
+                }
             });
 
-            rows.addEventListener('click', async event => {
-                const button = event.target.closest('button[data-action]');
-                if (!button) return;
-                const id = button.getAttribute('data-id');
-                if (!id) return;
+            rows.addEventListener('click', event => {
+                const button = event.target.closest('[data-action]');
+                if (!button) {
+                    return;
+                }
+
+                const id = Number(button.getAttribute('data-id'));
+                if (!id) {
+                    return;
+                }
 
                 if (button.dataset.action === 'edit') {
-                    try {
-                        clearAlert();
-                        const data = await getContentVersion(id);
-                        state.currentId = data.id;
-                        modalTitle.textContent = `Editar registro #${data.id}`;
-                        formVersion.value = data.version_id ?? '';
-                        formContent.value = data.content_id ?? '';
-                        formValue.value = data.value ?? '';
-                        submitBtn.textContent = 'Actualizar registro';
-                        modalInstance?.show();
-                    } catch (error) {
-                        setAlert(error.message || 'No fue posible cargar el registro para edición.');
-                    }
+                    window.location.href = editUrlTemplate.replace(':id', id);
+                    return;
                 }
 
                 if (button.dataset.action === 'delete') {
-                    if (!confirm('¿Deseas eliminar este registro?')) {
-                        return;
+                    pendingDeleteId = id;
+                    pendingDeleteLabel = button.getAttribute('data-name') || 'este registro';
+                    if (deleteNameLabel) {
+                        deleteNameLabel.textContent = pendingDeleteLabel;
                     }
-                    try {
-                        clearAlert();
-                        await deleteContentVersion(id);
-                        setAlert('Registro eliminado correctamente.', 'success');
-                        fetchContentVersions(buildQuery(state.page));
-                    } catch (error) {
-                        setAlert(error.message || 'No fue posible eliminar el registro.');
-                    }
+                    deleteModal?.show();
                 }
             });
 
-            modalElement.addEventListener('show.bs.modal', () => {
-                if (!state.currentId) {
-                    modalTitle.textContent = 'Nuevo registro';
-                    submitBtn.textContent = 'Guardar';
-                    form.reset();
+            deleteConfirmButton.addEventListener('click', async () => {
+                if (!pendingDeleteId) {
+                    return;
+                }
+
+                deleteConfirmButton.disabled = true;
+                try {
+                    await deleteContentVersion(pendingDeleteId);
+                    deleteModal?.hide();
+                    pendingDeleteId = null;
+                    pendingDeleteLabel = 'este registro';
+                    fetchContentVersions(buildQuery(state.page));
+                } catch (error) {
+                    setAlert(error.message || 'No fue posible eliminar el registro.');
+                } finally {
+                    deleteConfirmButton.disabled = false;
                 }
             });
 
-            modalElement.addEventListener('hidden.bs.modal', () => {
-                state.currentId = null;
-                form.reset();
+            document.getElementById('btn-new-content-version')?.addEventListener('click', () => {
+                resetModalForm();
             });
 
             form.addEventListener('submit', async event => {
                 event.preventDefault();
+                clearAlert();
+                submitBtn.disabled = true;
+                submitBtn.classList.add('btn-loading');
+
+                const payload = {
+                    content_id: formContent.value ? Number(formContent.value) : null,
+                    version_id: formVersion.value ? Number(formVersion.value) : null,
+                    value: formValue.value.trim(),
+                };
+
                 try {
-                    clearAlert();
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
-
-                    const payload = {
-                        version_id: Number(formVersion.value),
-                        content_id: Number(formContent.value),
-                        value: formValue.value.trim(),
-                    };
-
-                    if (!payload.version_id || !payload.content_id || !payload.value) {
+                    if (!payload.content_id || !payload.version_id || !payload.value) {
                         throw new Error('Completa todos los campos obligatorios.');
                     }
 
-                    let method = 'POST';
-                    let url = apiBase;
-
-                    if (state.currentId) {
-                        method = 'PUT';
-                        url = `${apiBase}/${state.currentId}`;
-                    }
-
-                    await submitContentVersion(method, url, payload);
+                    await submitContentVersion('POST', apiBase, payload);
                     modalInstance?.hide();
-                    setAlert(state.currentId ? 'Registro actualizado correctamente.' : 'Registro creado con éxito.', 'success');
-                    fetchContentVersions(buildQuery());
+                    resetModalForm();
+                    fetchContentVersions(buildQuery(state.page));
                 } catch (error) {
                     setAlert(error.message || 'No fue posible guardar el registro.');
                 } finally {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = state.currentId ? 'Actualizar registro' : 'Guardar';
+                    submitBtn.classList.remove('btn-loading');
                 }
             });
 
-            document.getElementById('btn-new-content-version').addEventListener('click', () => {
-                state.currentId = null;
-                modalTitle.textContent = 'Nuevo registro';
-                submitBtn.textContent = 'Guardar';
-                form.reset();
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                resetModalForm();
             });
 
-            loadContents();
-            loadVersions();
-            fetchContentVersions(buildQuery());
+            (async () => {
+                await Promise.all([loadContents(), loadVersions()]);
+                fetchContentVersions();
+            })();
         });
     </script>
-@endpush
-
-@push('css')
-    <style>
-        .form-label.required::after {
-            content: ' *';
-            color: var(--tblr-danger);
-        }
-    </style>
 @endpush

@@ -44,31 +44,28 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <div class="row">
+            <div class="row g-3">
                 <div class="col-12 col-lg-8">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">Detalles del objetivo</h3>
-                        </div>
-                        <form method="POST" action="{{ route('frameworks.contents.store', $framework) }}" class="card-body">
-                            @csrf
-                            @include('contents.form', ['showRoleSelector' => false])
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('frameworks.show', $framework) }}" class="btn btn-link">Cancelar</a>
-                                <button type="submit" class="btn btn-primary">Guardar objetivo</button>
+                            <div class="card-actions">
+                                <small class="text-secondary">Los campos marcados con * son obligatorios</small>
                             </div>
-                        </form>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('frameworks.contents.store', $framework) }}">
+                                @csrf
+                                @include('contents.form', ['showRoleSelector' => false])
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ route('frameworks.show', $framework) }}" class="btn btn-link">Cancelar</a>
+                                    <button type="submit" class="btn btn-primary">Guardar objetivo</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 @endsection
-
-@push('css')
-    <style>
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .08);
-        }
-    </style>
-@endpush

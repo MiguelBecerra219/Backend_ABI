@@ -55,32 +55,29 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <div class="row">
+            <div class="row g-3">
                 <div class="col-12 col-lg-8">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">Información general</h3>
-                        </div>
-                        <form method="POST" action="{{ route('contents.update', $content) }}" class="card-body">
-                            @csrf
-                            @method('PUT')
-                            @include('contents.form', ['content' => $content, 'selectedRoles' => $selectedRoles ?? []])
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('catalog.contents') }}" class="btn btn-link">Cancelar</a>
-                                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                            <div class="card-actions">
+                                <small class="text-secondary">Actualiza los campos necesarios y guarda los cambios</small>
                             </div>
-                        </form>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('contents.update', $content) }}">
+                                @csrf
+                                @method('PUT')
+                                @include('contents.form', ['content' => $content, 'selectedRoles' => $selectedRoles ?? []])
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ route('catalog.contents') }}" class="btn btn-link">Cancelar</a>
+                                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 @endsection
-
-@push('css')
-    <style>
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .08);
-        }
-    </style>
-@endpush

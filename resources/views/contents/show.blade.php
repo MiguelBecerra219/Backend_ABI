@@ -42,11 +42,7 @@
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">
                         <a href="{{ route('contents.edit', $content) }}" class="btn btn-primary">Editar</a>
-                        <form method="POST" action="{{ route('contents.destroy', $content) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este contenido?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Eliminar</button>
-                        </form>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#content-delete-modal">Eliminar</button>
                         <a href="{{ route('catalog.contents') }}" class="btn btn-outline-secondary">Volver</a>
                     </div>
                 </div>
@@ -95,12 +91,43 @@
             </div>
         </div>
     </div>
+    <form method="POST" action="{{ route('contents.destroy', $content) }}" id="content-delete-form" class="d-none">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    <div class="modal modal-blur fade" id="content-delete-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Eliminar contenido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Esta acción eliminará el contenido <strong>{{ $content->name }}</strong>. ¿Deseas continuar?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="content-delete-confirm">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
-@push('css')
-    <style>
-        .btn-list form {
-            display: inline-flex;
-        }
-    </style>
+@push('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const deleteForm = document.getElementById('content-delete-form');
+            const confirmButton = document.getElementById('content-delete-confirm');
+
+            if (deleteForm && confirmButton) {
+                confirmButton.addEventListener('click', () => {
+                    confirmButton.disabled = true;
+                    confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+                    deleteForm.submit();
+                });
+            }
+        });
+    </script>
 @endpush

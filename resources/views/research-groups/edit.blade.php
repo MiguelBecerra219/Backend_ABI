@@ -48,21 +48,28 @@
 
     <div class="page-body">
         <div class="container-xl">
-            @if(config('tablar','display_alert'))
+            @if(config('tablar.display_alert'))
                 @include('tablar::common.alert')
             @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Datos generales</h3>
-                </div>
-                <div class="card-body">
-                    {{-- Form element sends the captured data to the specified endpoint. --}}
-                    <form method="POST" action="{{ route('research-groups.update', $researchGroup) }}">
-                        @csrf
-                        @method('PUT')
-                        @include('research-groups.form')
-                    </form>
+            <div class="row g-3">
+                <div class="col-12 col-xl-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Datos generales</h3>
+                            <div class="card-actions">
+                                <span class="badge bg-indigo-lt">ID {{ $researchGroup->id }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
+                            <form method="POST" action="{{ route('research-groups.update', $researchGroup) }}">
+                                @csrf
+                                @method('PUT')
+                                @include('research-groups.form')
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

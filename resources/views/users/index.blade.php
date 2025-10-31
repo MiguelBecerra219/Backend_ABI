@@ -1,7 +1,9 @@
 {{--
     View path: users/index.blade.php.
-    Purpose: Renders the index.blade view for the Users module.
-    Expected variables within this template: $cityProgramId, $cityPrograms, $index, $perPage, $perPageOptions, $program, $role, $search, $size, $state, $user, $users.
+    Purpose: Renders the index view for the Users module following the same layout conventions
+    as the projects catalogue.
+    Expected variables within this template: $cityProgramId, $cityPrograms, $perPage, $perPageOptions,
+    $role, $search, $state, $users.
     Included partials or components: tablar::common.alert.
     All markup below follows Tablar styling conventions for visual consistency.
 --}}
@@ -25,7 +27,7 @@
                     </nav>
                     <h2 class="page-title d-flex align-items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg me-2 text-indigo" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <circle cx="12" cy="7" r="4" />
                             <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                         </svg>
@@ -36,7 +38,7 @@
                     </h2>
                     <p class="text-muted mb-0">Administra los usuarios del sistema según su rol y estado.</p>
                 </div>
-                <div class="col-12 col-md-auto ms-auto d-print-none">
+                <div class="col-auto ms-auto d-print-none">
                     {{-- Primary action button creates new accounts directly from the index. --}}
                     <a href="{{ route('register') }}" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -53,7 +55,7 @@
 
     <div class="page-body">
         <div class="container-xl">
-            @if(config('tablar','display_alert'))
+            @if(config('tablar.display_alert'))
                 @include('tablar::common.alert')
             @endif
 
@@ -64,7 +66,7 @@
                 <div class="card-body">
                     {{-- Form element sends the captured data to the specified endpoint. --}}
                     <form method="GET" action="{{ route('users.index') }}" class="row g-3 align-items-end">
-                        <div class="col-md-3">
+                        <div class="col-12 col-xl-4">
                             {{-- Label describing the purpose of 'Buscar'. --}}
                             <label for="search" class="form-label">Buscar</label>
                             <div class="input-group">
@@ -80,7 +82,7 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-12 col-sm-6 col-xl-2">
                             {{-- Label describing the purpose of 'Rol'. --}}
                             <label for="role" class="form-label">Rol</label>
                             {{-- Dropdown presenting the available options for 'role'. --}}
@@ -92,7 +94,7 @@
                                 <option value="research_staff" {{ (string)($role ?? '') === 'research_staff' ? 'selected' : '' }}>Personal de Investigación</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-12 col-sm-6 col-xl-2">
                             {{-- Label describing the purpose of 'Estado'. --}}
                             <label for="state" class="form-label">Estado</label>
                             {{-- Dropdown presenting the available options for 'state'. --}}
@@ -102,7 +104,7 @@
                                 <option value="0" {{ ($state ?? '') == 0 ? 'selected' : '' }}>Inactivo</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-xl-2">
                             {{-- Label describing the purpose of 'Programa'. --}}
                             <label for="city_program_id" class="form-label">Programa</label>
                             {{-- Dropdown presenting the available options for 'city_program_id'. --}}
@@ -115,7 +117,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-12 col-sm-6 col-xl-2">
                             {{-- Label describing the purpose of 'Registros por página'. --}}
                             <label for="per_page" class="form-label">Registros por página</label>
                             {{-- Dropdown presenting the available options for 'per_page'. --}}
@@ -125,9 +127,9 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-12">
+                        <div class="col-12 col-sm-6 col-xl-2">
                             {{-- Button element of type 'submit' to trigger the intended action. --}}
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary w-100">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 6h16" />
                                     <path d="M4 12h10" />
@@ -141,27 +143,35 @@
             </div>
 
             <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Listado de usuarios</h3>
+                    <div class="card-actions">
+                        <span class="badge bg-azure">{{ $users->total() }}</span>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     {{-- Table displays user attributes and quick management actions. --}}
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter align-middle" aria-label="Tabla de usuarios">
                         <thead>
                             <tr>
                                 <th class="w-1">#</th>
-                                <th>Email</th>
-                                <th>Rol</th>
-                                <th>Estado</th>
-                                <th>Nombre</th>
-                                <th>Cédula</th>
-                                <th>Programa</th>
-                                <th>Semestre/Líder</th>
-                                <th class="w-1">Acciones</th>
+                                <th class="text-truncate" style="max-width: 220px;">Email</th>
+                                <th class="text-truncate" style="max-width: 160px;">Rol</th>
+                                <th class="text-truncate" style="max-width: 140px;">Estado</th>
+                                <th class="text-truncate" style="max-width: 220px;">Nombre</th>
+                                <th class="text-truncate" style="max-width: 160px;">Cédula</th>
+                                <th class="text-truncate" style="max-width: 240px;">Programa</th>
+                                <th class="text-truncate" style="max-width: 160px;">Semestre/Líder</th>
+                                <th class="w-1 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                         @forelse($users as $index => $user)
                             <tr>
                                 <td class="text-muted">{{ $users->firstItem() + $index }}</td>
-                                <td>{{ $user->email }}</td>
+                                <td>
+                                    <span class="d-inline-block text-truncate" style="max-width: 220px;" title="{{ $user->email }}">{{ $user->email }}</span>
+                                </td>
                                 <td>
                                     @switch($user->role)
                                         @case('student')
@@ -189,33 +199,46 @@
                                 </td>
                                 <td>
                                     @if($user->details)
-                                        {{ $user->details->name }} {{ $user->details->last_name }}
+                                        <span class="d-inline-block text-truncate" style="max-width: 220px;" title="{{ $user->details->name }} {{ $user->details->last_name }}">
+                                            {{ $user->details->name }} {{ $user->details->last_name }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">Sin datos</span>
                                     @endif
                                 </td>
                                 <td>
                                     @if($user->details)
-                                        {{ $user->details->card_id }}
+                                        <span class="d-inline-block text-truncate" style="max-width: 160px;" title="{{ $user->details->card_id }}">{{ $user->details->card_id }}</span>
+                                    @else
+                                        <span class="text-muted">Sin datos</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if($user->details && ($user->role == 'student' || $user->role == 'professor' || $user->role == 'committee_leader'))
+                                    @if($user->details && in_array($user->role, ['student', 'professor', 'committee_leader']))
                                         @if(isset($user->details->cityProgram))
                                             {{-- Display both the program and city to contextualize the enrollment. --}}
-                                            {{ $user->details->cityProgram->program->name ?? 'N/A' }} -
-                                            {{ $user->details->cityProgram->city->name ?? 'N/A' }}
+                                            <span class="d-inline-block text-truncate" style="max-width: 240px;" title="{{ $user->details->cityProgram->program->name ?? 'N/A' }} - {{ $user->details->cityProgram->city->name ?? 'N/A' }}">
+                                                {{ $user->details->cityProgram->program->name ?? 'N/A' }} - {{ $user->details->cityProgram->city->name ?? 'N/A' }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">Sin programa</span>
                                         @endif
+                                    @else
+                                        <span class="text-muted">No aplica</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if($user->role == 'student' && $user->details)
-                                        {{ $user->details->semester }}
-                                    @elseif(($user->role == 'professor' || $user->role == 'committee_leader') && $user->details)
-                                        {{ $user->details->committee_leader ? 'Sí' : 'No' }}
+                                    @if($user->role === 'student' && $user->details)
+                                        <span class="badge bg-blue-lt">Semestre {{ $user->details->semester }}</span>
+                                    @elseif(in_array($user->role, ['professor', 'committee_leader']) && $user->details)
+                                        <span class="badge bg-secondary-lt">{{ $user->details->committee_leader ? 'Líder' : 'Docente' }}</span>
+                                    @else
+                                        <span class="text-muted">—</span>
                                     @endif
                                 </td>
                                 <td>
                                     {{-- Action button cluster offers view, edit, and state toggles. --}}
-                                    <div class="btn-list flex-nowrap">
+                                    <div class="btn-list flex-nowrap justify-content-center">
                                         {{-- Opens the detail profile for additional information. --}}
                                         <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-outline-primary" title="Ver">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -231,44 +254,37 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
-                                        @if($user->state == 1)
-                                            <!-- Button to deactivate user -->
-                                            {{-- Deactivation form disables the account without deleting it. --}}
-                                            {{-- Form element sends the captured data to the specified endpoint. --}}
-                                            <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas desactivar el usuario {{ $user->email }}?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                {{-- Button element of type 'submit' to trigger the intended action. --}}
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                        <line x1="4" y1="6" x2="20" y2="6" />
-                                                        <line x1="4" y1="12" x2="20" y2="12" />
-                                                        <line x1="4" y1="18" x2="16" y2="18" />
-                                                        <path d="M16 6l4 4" />
-                                                        <path d="M16 12l4 -4" />
-                                                        <path d="M16 18l4 -4" />
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        @else
-                                            <!-- Button to activate user -->
-                                            {{-- Activation form re-enables an account that was previously disabled. --}}
-                                            {{-- Form element sends the captured data to the specified endpoint. --}}
-                                            <form action="{{ route('users.activate', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas activar el usuario {{ $user->email }}?');">
-                                                @csrf
-                                                @method('PUT')
-                                                {{-- Button element of type 'submit' to trigger the intended action. --}}
-                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                        <path d="M7 12l5 5l10 -10" />
-                                                        <path d="M2 7l5 -5" />
-                                                        <polyline points="2.5 16.5 6.5 20.5 12 15" />
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        @endif
+                                        @php
+                                            $isActive = $user->state == 1 || $user->state === '1';
+                                            $statusFormId = $isActive ? 'user-status-form-deactivate-' . $user->id : 'user-status-form-activate-' . $user->id;
+                                        @endphp
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="{{ $isActive ? 'Desactivar' : 'Activar' }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#user-status-modal"
+                                            data-form="{{ $statusFormId }}"
+                                            data-user="{{ $user->email }}"
+                                            data-action="{{ $isActive ? 'deactivate' : 'activate' }}"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                <path d="M5 7h14" />
+                                                <path d="M10 11v6" />
+                                                <path d="M14 11v6" />
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                                <path d="M9 7v-3h6v3" />
+                                            </svg>
+                                        </button>
+                                        <form id="user-status-form-deactivate-{{ $user->id }}" action="{{ route('users.destroy', $user) }}" method="POST" class="d-none">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
+                                        <form id="user-status-form-activate-{{ $user->id }}" action="{{ route('users.activate', $user) }}" method="POST" class="d-none">
+                                            @csrf
+                                            @method('PUT')
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -295,15 +311,83 @@
                         </tbody>
                     </table>
                 </div>
-                @if($users->hasPages())
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        {{-- Summary communicates which slice of users is visible. --}}
+                <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                    {{-- Summary communicates which slice of users is visible. --}}
+                    @if($users->count())
                         <div class="text-muted small">Mostrando {{ $users->firstItem() }}-{{ $users->lastItem() }} de {{ $users->total() }} registros</div>
-                        {{-- Pagination control renders navigation for additional result pages. --}}
-                        {{ $users->links() }}
-                    </div>
-                @endif
+                    @else
+                        <div class="text-muted small">No hay registros para los filtros aplicados</div>
+                    @endif
+                    {{-- Pagination control renders navigation for additional result pages. --}}
+                    {{ $users->onEachSide(1)->links('vendor.pagination.bootstrap-5') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal replaces the native confirmation dialog when changing the user status. --}}
+    <div class="modal fade" id="user-status-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="user-status-modal-title">Confirmar acción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0" id="user-status-modal-message">¿Deseas continuar con esta acción?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="user-status-confirm">Confirmar</button>
+                </div>
             </div>
         </div>
     </div>
 @endsection
+
+@push('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalElement = document.getElementById('user-status-modal');
+            const modalTitle = document.getElementById('user-status-modal-title');
+            const modalMessage = document.getElementById('user-status-modal-message');
+            const confirmButton = document.getElementById('user-status-confirm');
+            const modalInstance = modalElement && window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+            let formToSubmit = null;
+
+            modalElement?.addEventListener('show.bs.modal', event => {
+                const trigger = event.relatedTarget;
+                formToSubmit = null;
+                if (!trigger) {
+                    return;
+                }
+
+                const action = trigger.getAttribute('data-action');
+                const email = trigger.getAttribute('data-user');
+                const formId = trigger.getAttribute('data-form');
+                formToSubmit = formId ? document.getElementById(formId) : null;
+
+                if (action === 'deactivate') {
+                    modalTitle.textContent = 'Desactivar usuario';
+                    modalMessage.textContent = `¿Deseas desactivar la cuenta ${email}? Puedes reactivarla más adelante.`;
+                    confirmButton.classList.remove('btn-success');
+                    confirmButton.classList.add('btn-danger');
+                    confirmButton.textContent = 'Desactivar';
+                } else {
+                    modalTitle.textContent = 'Activar usuario';
+                    modalMessage.textContent = `¿Deseas activar la cuenta ${email}? El usuario podrá volver a iniciar sesión.`;
+                    confirmButton.classList.remove('btn-danger');
+                    confirmButton.classList.add('btn-success');
+                    confirmButton.textContent = 'Activar';
+                }
+            });
+
+            confirmButton?.addEventListener('click', () => {
+                if (formToSubmit) {
+                    formToSubmit.submit();
+                }
+                modalInstance?.hide();
+            });
+        });
+    </script>
+@endpush

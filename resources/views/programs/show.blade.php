@@ -1,6 +1,6 @@
 {{--
     View path: programs/show.blade.php.
-    Purpose: Renders the show.blade view for the Programs module.
+    Purpose: Renders the detail view for the Programs module.
     Expected variables within this template: $program.
     No additional partials are included within this file.
     All markup below follows Tablar styling conventions for visual consistency.
@@ -16,7 +16,7 @@
                 <div class="col">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="#">Inicio</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
                             <li class="breadcrumb-item"><a href="{{ route('programs.index') }}">Programas académicos</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Detalle</li>
                         </ol>
@@ -28,9 +28,17 @@
                         </svg>
                         {{ $program->name }}
                     </h2>
+                    <p class="text-muted mb-0">Consulta los detalles del programa y verifica su grupo de investigación asociado.</p>
                 </div>
                 <div class="col-12 col-md-auto ms-auto d-print-none">
                     <div class="btn-list">
+                        <a href="{{ route('programs.index') }}" class="btn btn-outline-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M15 6l-6 6l6 6" />
+                            </svg>
+                            Volver al listado
+                        </a>
                         <a href="{{ route('programs.edit', $program) }}" class="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
@@ -38,13 +46,6 @@
                                 <path d="M16 5l3 3" />
                             </svg>
                             Editar programa
-                        </a>
-                        <a href="{{ route('programs.index') }}" class="btn btn-outline-secondary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M15 6l-6 6l6 6" />
-                            </svg>
-                            Volver al listado
                         </a>
                     </div>
                 </div>
@@ -69,7 +70,7 @@
                         <dt class="col-sm-3">Grupo de investigación</dt>
                         <dd class="col-sm-9">
                             @if($program->researchGroup)
-                                <a href="{{ route('research-groups.show', $program->researchGroup) }}" class="text-decoration-none">
+                                <a href="{{ route('research-groups.show', $program->researchGroup) }}" class="text-decoration-none text-reset">
                                     {{ $program->researchGroup->name }}
                                 </a>
                             @else

@@ -15,7 +15,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('catalog.versions') }}">Versiones</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('versions.index') }}">Versiones</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Crear nueva</li>
                         </ol>
                     </nav>
@@ -30,7 +30,7 @@
                     <p class="text-muted mb-0">Registra una nueva iteración del proyecto para capturar avances y contenidos.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
-                    <a href="{{ route('catalog.versions') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('versions.index') }}" class="btn btn-outline-secondary">
                         Volver al listado
                     </a>
                 </div>
@@ -55,7 +55,7 @@
                             <form id="version-form" novalidate>
                                 @include('versions.form')
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('catalog.versions') }}" class="btn btn-link">Cancelar</a>
+                                    <a href="{{ route('versions.index') }}" class="btn btn-link">Cancelar</a>
                                     <button type="submit" class="btn btn-primary">Guardar versión</button>
                                 </div>
                             </form>
@@ -216,7 +216,7 @@
                     alertBox.classList.remove('d-none');
 
                     setTimeout(() => {
-                        window.location.href = '{{ route('catalog.versions') }}';
+                        window.location.href = '{{ route('versions.index') }}';
                     }, 1200);
                 } catch (error) {
                     showAlert('danger', 'Ocurrió un error inesperado. Intenta nuevamente.');

@@ -119,12 +119,12 @@
             <div class="card">
                 <div class="table-responsive">
                     {{-- Table presents the filtered results in a structured format. --}}
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter">
                         <thead>
                             <tr>
                                 <th class="w-1">#</th>
-                                <th>Ciudad</th>
-                                <th>Departamento</th>
+                                <th class="text-truncate" style="max-width: 220px;">Ciudad</th>
+                                <th class="text-truncate" style="max-width: 220px;">Departamento</th>
                                 <th>Creado</th>
                                 <th class="w-1">Acciones</th>
                             </tr>
@@ -133,8 +133,16 @@
                         @forelse($cities as $index => $city)
                             <tr>
                                 <td class="text-muted">{{ $cities->firstItem() + $index }}</td>
-                                <td>{{ $city->name }}</td>
-                                <td>{{ $city->department?->name ?? '—' }}</td>
+                                <td>
+                                    <span class="d-inline-block text-truncate" style="max-width: 220px;" title="{{ $city->name }}">{{ $city->name }}</span>
+                                </td>
+                                <td>
+                                    @if($city->department)
+                                        <span class="d-inline-block text-truncate" style="max-width: 220px;" title="{{ $city->department->name }}">{{ $city->department->name }}</span>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
                                 <td>{{ $city->created_at?->format('d/m/Y') ?? '—' }}</td>
                                 <td>
                                     <div class="btn-list flex-nowrap">
@@ -153,21 +161,21 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
-                                        {{-- Form element sends the captured data to the specified endpoint. --}}
-                                        <form action="{{ route('cities.destroy', $city) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar la ciudad {{ $city->name }}?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            {{-- Button element of type 'submit' to trigger the intended action. --}}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <line x1="4" y1="7" x2="20" y2="7" />
-                                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                                    <line x1="14" y1="11" x2="14" y2="17" />
-                                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                                                    <path d="M9 7v-3h6v3" />
-                                                </svg>
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Eliminar"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#city-delete-modal"
+                                                data-city-name="{{ $city->name }}"
+                                                data-destroy-url="{{ route('cities.destroy', $city) }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="4" y1="7" x2="20" y2="7" />
+                                                <line x1="10" y1="11" x2="10" y2="17" />
+                                                <line x1="14" y1="11" x2="14" y2="17" />
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                                <path d="M9 7v-3h6v3" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -182,14 +190,68 @@
                     </table>
                 </div>
                 @if($cities->hasPages())
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        {{-- Pagination summary communicates the current slice being displayed. --}}
-                        <p class="m-0 text-muted">Mostrando {{ $cities->firstItem() }}-{{ $cities->lastItem() }} de {{ $cities->total() }} resultados</p>
-                        {{-- Pagination links allow navigation through additional pages of results. --}}
-                        {{ $cities->links() }}
+                    <div class="card-footer">
+                        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
+                            {{-- Pagination summary communicates the current slice being displayed. --}}
+                            <p class="m-0 text-muted">Mostrando {{ $cities->firstItem() }}-{{ $cities->lastItem() }} de {{ $cities->total() }} resultados</p>
+                            {{-- Pagination links allow navigation through additional pages of results. --}}
+                            {{ $cities->withQueryString()->links('vendor.pagination.bootstrap-5') }}
+                        </div>
                     </div>
                 @endif
+        </div>
+    </div>
+</div>
+
+{{-- Modal handles delete confirmations without relying on the native browser dialog. --}}
+<div class="modal fade" id="city-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Eliminar ciudad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="city-delete-message">¿Deseas eliminar esta ciudad?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="city-delete-form" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
             </div>
         </div>
     </div>
+</div>
+
 @endsection
+
+@push('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalElement = document.getElementById('city-delete-modal');
+            const messageElement = document.getElementById('city-delete-message');
+            const formElement = document.getElementById('city-delete-form');
+
+            modalElement?.addEventListener('show.bs.modal', event => {
+                const trigger = event.relatedTarget;
+                if (!trigger) {
+                    return;
+                }
+
+                const cityName = trigger.getAttribute('data-city-name') ?? 'esta ciudad';
+                const destroyUrl = trigger.getAttribute('data-destroy-url');
+
+                if (messageElement) {
+                    messageElement.textContent = `¿Deseas eliminar la ciudad ${cityName}?`;
+                }
+
+                if (formElement && destroyUrl) {
+                    formElement.setAttribute('action', destroyUrl);
+                }
+            });
+        });
+    </script>
+@endpush

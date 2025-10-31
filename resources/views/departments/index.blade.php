@@ -101,11 +101,11 @@
             <div class="card">
                 <div class="table-responsive">
                     {{-- Table presenting department metadata along with action buttons. --}}
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter">
                         <thead>
                             <tr>
                                 <th class="w-1">#</th>
-                                <th>Departamento</th>
+                                <th class="text-truncate" style="max-width: 240px;">Departamento</th>
                                 <th class="text-center">Ciudades registradas</th>
                                 <th>Creado</th>
                                 <th class="w-1">Acciones</th>
@@ -116,7 +116,9 @@
                             {{-- Each row represents a department with counts and timestamps. --}}
                             <tr>
                                 <td class="text-muted">{{ $departments->firstItem() + $index }}</td>
-                                <td>{{ $department->name }}</td>
+                                <td>
+                                    <span class="d-inline-block text-truncate" style="max-width: 240px;" title="{{ $department->name }}">{{ $department->name }}</span>
+                                </td>
                                 <td class="text-center">
                                     <span class="badge bg-indigo-lt">{{ $department->cities_count }}</span>
                                 </td>
@@ -137,21 +139,21 @@
                                                 <path d="M16 5l3 3" />
                                             </svg>
                                         </a>
-                                       {{-- Form element sends the captured data to the specified endpoint. --}}
-                                       <form action="{{ route('departments.destroy', $department) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Deseas eliminar el departamento {{ $department->name }}?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            {{-- Button element of type 'submit' to trigger the intended action. --}}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <line x1="4" y1="7" x2="20" y2="7" />
-                                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                                    <line x1="14" y1="11" x2="14" y2="17" />
-                                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                                                    <path d="M9 7v-3h6v3" />
-                                                </svg>
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Eliminar"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#department-delete-modal"
+                                                data-department-name="{{ $department->name }}"
+                                                data-destroy-url="{{ route('departments.destroy', $department) }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="4" y1="7" x2="20" y2="7" />
+                                                <line x1="10" y1="11" x2="10" y2="17" />
+                                                <line x1="14" y1="11" x2="14" y2="17" />
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                                <path d="M9 7v-3h6v3" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -167,13 +169,68 @@
                     </table>
                 </div>
                 @if($departments->hasPages())
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        {{-- Pagination summary and controls rendered when multiple pages exist. --}}
-                        <p class="m-0 text-muted">Mostrando {{ $departments->firstItem() }}-{{ $departments->lastItem() }} de {{ $departments->total() }} resultados</p>
-                        {{ $departments->links() }}
+                    <div class="card-footer">
+                        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
+                            {{-- Pagination summary and controls rendered when multiple pages exist. --}}
+                            <p class="m-0 text-muted">Mostrando {{ $departments->firstItem() }}-{{ $departments->lastItem() }} de {{ $departments->total() }} resultados</p>
+                            {{ $departments->withQueryString()->links('vendor.pagination.bootstrap-5') }}
+                        </div>
                     </div>
                 @endif
             </div>
         </div>
     </div>
 @endsection
+
+{{-- Modal replaces the default browser confirm dialog when deleting a department. --}}
+<div class="modal fade" id="department-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Eliminar departamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="department-delete-message">¿Deseas eliminar este departamento?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="department-delete-form" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@push('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalElement = document.getElementById('department-delete-modal');
+            const messageElement = document.getElementById('department-delete-message');
+            const formElement = document.getElementById('department-delete-form');
+
+            modalElement?.addEventListener('show.bs.modal', event => {
+                const trigger = event.relatedTarget;
+                if (!trigger) {
+                    return;
+                }
+
+                const departmentName = trigger.getAttribute('data-department-name') ?? 'este departamento';
+                const destroyUrl = trigger.getAttribute('data-destroy-url');
+
+                if (messageElement) {
+                    messageElement.textContent = `¿Deseas eliminar el departamento ${departmentName}?`;
+                }
+
+                if (formElement && destroyUrl) {
+                    formElement.setAttribute('action', destroyUrl);
+                }
+            });
+        });
+    </script>
+@endpush

@@ -50,19 +50,27 @@
                 @include('tablar::common.alert')
             @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Información de la línea</h3>
-                    <div class="card-actions">
-                        <small class="text-muted">Todos los campos marcados con * son obligatorios</small>
+            <div class="row g-3">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Información de la línea</h3>
+                            <div class="card-actions">
+                                <small class="text-secondary">Todos los campos marcados con * son obligatorios</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {{-- Form element sends the captured data to the specified endpoint. --}}
+                            <form method="POST" action="{{ route('investigation-lines.store') }}">
+                                @csrf
+                                @include('investigation-lines.form')
+                                <div class="d-flex flex-column flex-md-row justify-content-end gap-2 mt-3">
+                                    <a href="{{ route('investigation-lines.index') }}" class="btn btn-link">Cancelar</a>
+                                    <button type="submit" class="btn btn-primary">Crear línea</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    {{-- Form element sends the captured data to the specified endpoint. --}}
-                    <form method="POST" action="{{ route('investigation-lines.store') }}">
-                        @csrf
-                        @include('investigation-lines.form')
-                    </form>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 {{--
     View path: programs/create.blade.php.
-    Purpose: Renders the create.blade view for the Programs module.
+    Purpose: Renders the create view for the Programs module using the shared form partial.
     This template does not rely on dynamic variables.
     Included partials or components: programs.form, tablar::common.alert.
     All markup below follows Tablar styling conventions for visual consistency.
@@ -16,9 +16,9 @@
                 <div class="col">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="#">Inicio</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
                             <li class="breadcrumb-item"><a href="{{ route('programs.index') }}">Programas académicos</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Nuevo</li>
+                            <li class="breadcrumb-item active" aria-current="page">Crear</li>
                         </ol>
                     </nav>
                     <h2 class="page-title d-flex align-items-center">
@@ -30,8 +30,8 @@
                     </h2>
                     <p class="text-muted mb-0">Ingresa la información del programa bilingüe y relaciónalo con un grupo de investigación.</p>
                 </div>
-                <div class="col-12 col-md-auto ms-auto d-print-none">
-                    <a href="{{ route('programs.index') }}" class="btn btn-outline-primary">
+                <div class="col-auto ms-auto d-print-none">
+                    <a href="{{ route('programs.index') }}" class="btn btn-outline-secondary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <path d="M15 6l-6 6l6 6" />
@@ -45,23 +45,27 @@
 
     <div class="page-body">
         <div class="container-xl">
-            @if(config('tablar','display_alert'))
+            @if(config('tablar.display_alert'))
                 @include('tablar::common.alert')
             @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Información del programa</h3>
-                    <div class="card-actions">
-                        <small class="text-muted">Campos marcados con * son obligatorios</small>
+            <div class="row g-3">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Información del programa</h3>
+                            <div class="card-actions">
+                                <small class="text-secondary">Los campos marcados con * son obligatorios</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {{-- Form stores the captured program data. --}}
+                            <form method="POST" action="{{ route('programs.store') }}">
+                                @csrf
+                                @include('programs.form')
+                            </form>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    {{-- Form element sends the captured data to the specified endpoint. --}}
-                    <form method="POST" action="{{ route('programs.store') }}">
-                        @csrf
-                        @include('programs.form')
-                    </form>
                 </div>
             </div>
         </div>

@@ -1,8 +1,7 @@
 {{--
-    View path: content_versions/show.blade.php.
-    Purpose: Tablar detail view for content-version records powered by the API.
-    Expected variables:
-    - $contentVersionId (int): identifier provided by the route closure.
+    View path: content-versions/show.blade.php.
+    Purpose: Displays the detail view for a content-version record retrieved via the JSON API.
+    Expected variables: $contentVersionId (int).
 --}}
 @extends('tablar::page')
 
@@ -16,7 +15,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('catalog.content-versions') }}">Versiones de contenido</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-versions.index') }}">Versiones de contenido</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Detalle</li>
                         </ol>
                     </nav>
@@ -24,9 +23,6 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg me-2 text-primary" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <path d="M9 3h6a2 2 0 0 1 2 2v14l-5 -3l-5 3v-14a2 2 0 0 1 2 -2" />
-                            <path d="M9 7h6" />
-                            <path d="M9 11h6" />
-                            <path d="M9 15h6" />
                         </svg>
                         Registro #{{ $contentVersionId }}
                     </h2>
@@ -34,8 +30,8 @@
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">
-                        <a href="{{ route('catalog.content-versions.edit', ['contentVersionId' => $contentVersionId]) }}" class="btn btn-primary">Editar</a>
-                        <a href="{{ route('catalog.content-versions') }}" class="btn btn-outline-secondary">Volver</a>
+                        <a href="{{ route('content-versions.edit', ['contentVersionId' => $contentVersionId]) }}" class="btn btn-outline-primary">Editar</a>
+                        <a href="{{ route('content-versions.index') }}" class="btn btn-outline-secondary">Volver</a>
                     </div>
                 </div>
             </div>
@@ -162,12 +158,3 @@
         });
     </script>
 @endpush
-
-@push('css')
-    <style>
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .08);
-        }
-    </style>
-@endpush
-
