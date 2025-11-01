@@ -1,4 +1,4 @@
-{{--
+{{-- 
     View path: projects/create.blade.php.
     Purpose: Presents the create screen for research projects while honouring the business
     rules for professors (RF03) and students (RF01).
@@ -85,17 +85,24 @@
 @endsection
 
 @push('js')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const investigationSelect = document.getElementById('investigation_line_id');
-            const thematicSelect = document.getElementById('thematic_area_id');
-            const areas = @json(($thematicAreas ?? collect())->map(function ($area) {
+    @php
+        // Precompute a plain array for JS to avoid Blade parser issues inside @json
+        $areasForJs = ($thematicAreas ?? collect())
+            ->map(function ($area) {
                 return [
                     'id' => $area->id,
                     'name' => $area->name,
                     'investigation_line_id' => $area->investigation_line_id,
                 ];
-            })->values());
+            })
+            ->values();
+    @endphp
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const investigationSelect = document.getElementById('investigation_line_id');
+            const thematicSelect = document.getElementById('thematic_area_id');
+            const areas = @json($areasForJs);
 
             function renderAreas(lineId) {
                 thematicSelect.innerHTML = '<option value="">Selecciona un área temática</option>';
