@@ -15,6 +15,7 @@ use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ResearchGroupController;
 use App\Http\Controllers\ThematicAreaController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectEvaluationController;
 
 
@@ -74,14 +75,7 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     // Catálogo de contenidos y versiones (interfaces Tablar)
     Route::view('contents', 'contents.index')->name('contents.index');
 
-    Route::view('projects', 'projects.index')->name('projects.index');
-    Route::view('projects/create', 'projects.create')->name('projects.create');
-    Route::get('projects/{project}/edit', function (int $projectId) {
-        return view('projects.edit', ['projectId' => $projectId]);
-    })->name('projects.edit');
-    Route::get('projects/{project}', function (int $projectId) {
-        return view('projects.show', ['projectId' => $projectId]);
-    })->name('projects.show');
+    // Other research staff resources remain available in this group.
 
     Route::view('versions', 'versions.index')->name('versions.index');
     Route::view('versions/create', 'versions.create')->name('versions.create');
@@ -111,14 +105,9 @@ Route::middleware(['auth', 'role:committee_leader'])->prefix('projects/evaluatio
 });
 
 
-Route::view('projects', 'projects.index')->name('projects.index');
-    Route::view('projects/create', 'projects.create')->name('projects.create');
-    Route::get('projects/{project}/edit', function (int $projectId) {
-        return view('projects.edit', ['projectId' => $projectId]);
-    })->name('projects.edit');
-    Route::get('projects/{project}', function (int $projectId) {
-        return view('projects.show', ['projectId' => $projectId]);
-    })->name('projects.show');
+Route::middleware(['auth'])->group(function () {
+    Route::resource('projects', ProjectController::class)->except(['destroy']);
+});
 
 
     

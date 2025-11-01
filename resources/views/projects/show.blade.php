@@ -1,8 +1,6 @@
 {{--
     View path: projects/show.blade.php.
-    Purpose: Renders the Tablar-styled detail screen for a research project using API data.
-    Expected variables:
-    - $projectId (int): identifier of the project to display, provided via the route closure.
+    Purpose: Presents a detailed summary of the project, its latest version and participants.
 --}}
 @extends('tablar::page')
 
@@ -26,13 +24,13 @@
                             <path d="M12 20l4 -9l-4 -3l-4 3z" />
                             <path d="M8 4l-2 4l-4 .5l3 3l-.5 4l3.5 -2l3.5 2l-.5 -4l3 -3l-4 -.5l-2 -4z" />
                         </svg>
-                        Proyecto #{{ $projectId }}
+                        Proyecto #{{ $project->id }}
                     </h2>
-                    <p class="text-muted mb-0">Consulta los datos más recientes del proyecto y sus participantes vinculados.</p>
+                    <p class="text-muted mb-0">Consulta la versión más reciente de la propuesta y sus participantes asociados.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
-                    <a href="{{ route('projects.edit', ['project' => $projectId]) }}" class="btn btn-primary">Editar</a>
+                    <a href="{{ route('projects.edit', $project) }}" class="btn btn-primary">Editar</a>
                 </div>
             </div>
         </div>
@@ -40,49 +38,121 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <div id="project-show-alert" class="alert alert-info" role="alert">Cargando información del proyecto…</div>
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
 
-            <div class="row g-3" id="project-content" hidden>
+            <div class="row g-3">
                 <div class="col-12 col-lg-8">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <div>
-                                <h3 class="card-title mb-0" id="project-title">—</h3>
-                                <small class="text-secondary" id="project-meta">—</small>
+                                <h3 class="card-title mb-0">{{ $project->title }}</h3>
+                                <small class="text-secondary">Registrado el {{ optional($project->created_at)->format('d/m/Y H:i') }}</small>
                             </div>
-                            <span class="badge bg-indigo" id="project-status">—</span>
+                            <span class="badge bg-indigo">{{ $project->projectStatus->name ?? 'Sin estado' }}</span>
                         </div>
                         <div class="card-body">
                             <dl class="row g-3 mb-0">
                                 <dt class="col-sm-4">Área temática</dt>
-                                <dd class="col-sm-8" id="project-thematic-area">—</dd>
+                                <dd class="col-sm-8">{{ $project->thematicArea->name ?? 'No definida' }}</dd>
 
-                                <dt class="col-sm-4">Criterios de evaluación</dt>
-                                <dd class="col-sm-8" id="project-evaluation">—</dd>
+                                <dt class="col-sm-4">Línea de investigación</dt>
+                                <dd class="col-sm-8">{{ $project->thematicArea->investigationLine->name ?? 'No definida' }}</dd>
+
+                                @if ($project->evaluation_criteria)
+                                    <dt class="col-sm-4">Criterios de evaluación</dt>
+                                    <dd class="col-sm-8 text-prewrap">{{ $project->evaluation_criteria }}</dd>
+                                @endif
 
                                 <dt class="col-sm-4">Última actualización</dt>
-                                <dd class="col-sm-8" id="project-updated-at">—</dd>
+                                <dd class="col-sm-8">{{ optional($project->updated_at)->format('d/m/Y H:i') }}</dd>
 
-                                <dt class="col-sm-4">Creado en</dt>
-                                <dd class="col-sm-8" id="project-created-at">—</dd>
+                                <dt class="col-sm-4">Versión vigente</dt>
+                                <dd class="col-sm-8">
+                                    @if ($latestVersion)
+                                        {{ $latestVersion->created_at->format('d/m/Y H:i') }}
+                                    @else
+                                        Sin versiones registradas
+                                    @endif
+                                </dd>
                             </dl>
                         </div>
                     </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3 class="card-title">Contenidos de la versión</h3>
+                        </div>
+                        <div class="card-body">
+                            @if ($latestVersion && count($contentValues))
+                                <dl class="row g-3 mb-0">
+                                    @foreach ($contentValues as $label => $value)
+                                        <dt class="col-sm-4">{{ $label }}</dt>
+                                        <dd class="col-sm-8 text-prewrap">{{ $value }}</dd>
+                                    @endforeach
+                                </dl>
+                            @else
+                                <p class="text-secondary mb-0">La versión aún no registra contenidos.</p>
+                            @endif
+                        </div>
+                    </div>
                 </div>
+
                 <div class="col-12 col-lg-4">
                     <div class="card mb-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h3 class="card-title mb-0">Profesores asignados</h3>
-                            <span class="badge bg-primary" id="project-professors-count">0</span>
+                            <h3 class="card-title mb-0">Profesores asociados</h3>
+                            <span class="badge bg-primary">{{ $project->professors->count() }}</span>
                         </div>
-                        <div class="card-body" id="project-professors">—</div>
+                        <div class="card-body">
+                            @forelse ($project->professors as $professor)
+                                <div class="d-flex align-items-start gap-2 mb-3">
+                                    <span class="avatar bg-azure-lt text-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <circle cx="12" cy="7" r="4" />
+                                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <div class="fw-semibold">{{ $professor->name }} {{ $professor->last_name }}</div>
+                                        <div class="text-secondary small">{{ $professor->mail ?? 'Correo no registrado' }}</div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-secondary mb-0">Sin profesores asociados.</p>
+                            @endforelse
+                        </div>
                     </div>
+
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title mb-0">Estudiantes participantes</h3>
-                            <span class="badge bg-primary" id="project-students-count">0</span>
+                            <span class="badge bg-primary">{{ $project->students->count() }}</span>
                         </div>
-                        <div class="card-body" id="project-students">—</div>
+                        <div class="card-body">
+                            @forelse ($project->students as $student)
+                                <div class="d-flex align-items-start gap-2 mb-3">
+                                    <span class="avatar bg-green-lt text-green">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <circle cx="12" cy="7" r="4" />
+                                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <div class="fw-semibold">{{ $student->name }} {{ $student->last_name }}</div>
+                                        <div class="text-secondary small">Documento: {{ $student->card_id ?? 'No registrado' }}</div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-secondary mb-0">Sin estudiantes vinculados.</p>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             </div>
@@ -90,102 +160,11 @@
     </div>
 @endsection
 
-@push('js')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const apiBase = '{{ url('/api/projects') }}';
-            const projectId = {{ (int) $projectId }};
-
-            const alertBox = document.getElementById('project-show-alert');
-            const content = document.getElementById('project-content');
-            const titleElement = document.getElementById('project-title');
-            const metaElement = document.getElementById('project-meta');
-            const statusElement = document.getElementById('project-status');
-            const thematicAreaElement = document.getElementById('project-thematic-area');
-            const evaluationElement = document.getElementById('project-evaluation');
-            const updatedElement = document.getElementById('project-updated-at');
-            const createdElement = document.getElementById('project-created-at');
-            const professorsContainer = document.getElementById('project-professors');
-            const professorsBadge = document.getElementById('project-professors-count');
-            const studentsContainer = document.getElementById('project-students');
-            const studentsBadge = document.getElementById('project-students-count');
-
-            // Converts the API timestamp into a localized string.
-            function formatDate(value) {
-                if (!value) {
-                    return '—';
-                }
-                const date = new Date(value);
-                if (Number.isNaN(date.getTime())) {
-                    return value;
-                }
-                return date.toLocaleString('es-CO');
-            }
-
-            // Builds the HTML structure for either professors or students.
-            function renderPeople(items, emptyLabel) {
-                if (!Array.isArray(items) || !items.length) {
-                    return `<p class="text-secondary mb-0">${emptyLabel}</p>`;
-                }
-
-                return items.map(person => {
-                    const fullName = [person.name, person.last_name].filter(Boolean).join(' ').trim() || 'Sin nombre';
-                    const documentId = person.card_id ? `Documento: ${person.card_id}` : 'Documento no disponible';
-                    return `
-                        <div class="d-flex align-items-start gap-2 mb-2">
-                            <span class="avatar bg-azure-lt text-primary">
-                                <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
-                                    <path stroke=\"none\" d=\"M0 0h24v24H0z\" fill=\"none\" />
-                                    <circle cx=\"12\" cy=\"7\" r=\"4\" />
-                                    <path d=\"M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2\" />
-                                </svg>
-                            </span>
-                            <div>
-                                <div class="fw-semibold">${fullName}</div>
-                                <div class="text-secondary small">${documentId}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            async function loadProject() {
-                try {
-                    const response = await fetch(`${apiBase}/${projectId}`, { headers: { 'Accept': 'application/json' } });
-                    if (!response.ok) {
-                        throw new Error('No fue posible encontrar la información solicitada.');
-                    }
-
-                    const project = await response.json();
-                    titleElement.textContent = project.title ?? 'Proyecto sin título';
-                    metaElement.textContent = `ID interno: ${project.id ?? projectId}`;
-                    statusElement.textContent = project.project_status?.name ?? 'Sin estado';
-                    thematicAreaElement.textContent = project.thematic_area?.name ?? 'Sin área temática registrada';
-                    evaluationElement.textContent = project.evaluation_criteria ? project.evaluation_criteria : 'Sin criterios definidos.';
-                    updatedElement.textContent = formatDate(project.updated_at);
-                    createdElement.textContent = formatDate(project.created_at);
-
-                    professorsContainer.innerHTML = renderPeople(project.professors || [], 'Sin profesores asignados.');
-                    professorsBadge.textContent = Array.isArray(project.professors) ? project.professors.length : 0;
-
-                    studentsContainer.innerHTML = renderPeople(project.students || [], 'Sin estudiantes asociados.');
-                    studentsBadge.textContent = Array.isArray(project.students) ? project.students.length : 0;
-
-                    alertBox.classList.add('d-none');
-                    content.hidden = false;
-                } catch (error) {
-                    alertBox.className = 'alert alert-danger';
-                    alertBox.textContent = error.message || 'Ocurrió un error al cargar los datos del proyecto.';
-                }
-            }
-
-            loadProject();
-        });
-    </script>
-@endpush
-
 @push('css')
     <style>
+        .text-prewrap {
+            white-space: pre-wrap;
+        }
         .avatar {
             width: 36px;
             height: 36px;

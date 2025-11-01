@@ -1,8 +1,6 @@
-{{--
+{{-- 
     View path: projects/edit.blade.php.
-    Purpose: Displays the Tablar-styled edit screen for research projects using the shared form.
-    Expected variables:
-    - $projectId (int): identifier of the project to edit, provided via the route closure.
+    Purpose: Allows professors and students to update their project idea while generating a new version.
 --}}
 @extends('tablar::page')
 
@@ -26,9 +24,9 @@
                             <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
                             <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3z" />
                         </svg>
-                        Editar proyecto #{{ $projectId }}
+                        Editar proyecto #{{ $project->id }}
                     </h2>
-                    <p class="text-muted mb-0">Actualiza la información del proyecto y sus participantes asociados.</p>
+                    <p class="text-muted mb-0">Actualiza la propuesta manteniendo el historial de versiones.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
@@ -39,23 +37,47 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <div id="project-edit-alert" class="alert d-none" role="alert"></div>
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Datos generales</h3>
-                    <div class="card-actions">
-                        <span class="badge bg-success">ID {{ $projectId }}</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <form id="project-edit-form" novalidate autocomplete="off">
-                        @include('projects.form')
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('projects.index') }}" class="btn btn-link">Cancelar</a>
-                            <button type="submit" class="btn btn-success">Guardar cambios</button>
+            <div class="row g-3">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Datos generales</h3>
+                            <div class="card-actions">
+                                <span class="badge bg-success">ID {{ $project->id }}</span>
+                            </div>
                         </div>
-                    </form>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('projects.update', $project) }}" autocomplete="off" novalidate>
+                                @csrf
+                                @method('PUT')
+                                @include('projects.form', [
+                                    'project' => $project,
+                                    'prefill' => $prefill ?? [],
+                                    'contentValues' => $contentValues ?? [],
+                                    'isProfessor' => $isProfessor ?? false,
+                                    'isStudent' => $isStudent ?? false,
+                                    'cities' => $cities ?? collect(),
+                                    'programs' => $programs ?? collect(),
+                                    'investigationLines' => $investigationLines ?? collect(),
+                                    'thematicAreas' => $thematicAreas ?? collect(),
+                                    'availableStudents' => $availableStudents ?? collect(),
+                                    'availableProfessors' => $availableProfessors ?? collect(),
+                                ])
+
+                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                    <a href="{{ route('projects.index') }}" class="btn btn-link">Cancelar</a>
+                                    <button type="submit" class="btn btn-success">Guardar cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,258 +85,54 @@
 @endsection
 
 @push('js')
+    @php
+        // ✅ Prepare data for JSON safely to avoid Blade parse errors
+        $areasForJs = ($thematicAreas ?? collect())
+            ->map(function ($area) {
+                return [
+                    'id' => $area->id,
+                    'name' => $area->name,
+                    'investigation_line_id' => $area->investigation_line_id,
+                ];
+            })
+            ->values();
+    @endphp
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const apiBase = '{{ url('/api/projects') }}';
-            const metaUrl = '{{ url('/api/projects/meta') }}';
-            const indexUrl = '{{ route('projects.index') }}';
-            const projectId = {{ (int) $projectId }};
+            const investigationSelect = document.getElementById('investigation_line_id');
+            const thematicSelect = document.getElementById('thematic_area_id');
 
-            const form = document.getElementById('project-edit-form');
-            const alertBox = document.getElementById('project-edit-alert');
-            const submitButton = form.querySelector('button[type="submit"]');
+            // ✅ Use the precomputed PHP variable instead of mapping again
+            const areas = @json($areasForJs);
 
-            const titleInput = document.getElementById('project_title');
-            const thematicAreaSelect = document.getElementById('project_thematic_area');
-            const statusSelect = document.getElementById('project_status');
-            const evaluationTextarea = document.getElementById('project_evaluation');
-            const professorsSelect = document.getElementById('project_professors');
-            const studentsSelect = document.getElementById('project_students');
-
-            const metaState = {
-                thematicAreas: [],
-                statuses: [],
-                professors: [],
-                students: [],
-            };
-
-            // Displays contextual feedback above the edit form.
-            function showAlert(type, message) {
-                alertBox.className = `alert alert-${type}`;
-                alertBox.textContent = message;
-                alertBox.classList.remove('d-none');
-            }
-
-            // Clears the alert container to prepare for a fresh attempt.
-            function hideAlert() {
-                alertBox.classList.add('d-none');
-                alertBox.textContent = '';
-            }
-
-            // Removes validation markers from every control.
-            function resetFeedback() {
-                form.querySelectorAll('.is-invalid').forEach(element => element.classList.remove('is-invalid'));
-                form.querySelectorAll('.invalid-feedback').forEach(feedback => {
-                    feedback.classList.add('d-none');
-                    feedback.textContent = '';
-                });
-            }
-
-            // Associates the validation message with the correct field.
-            function setFieldError(fieldName, message) {
-                const feedback = form.querySelector(`[data-feedback-for="${fieldName}"]`);
-                let input;
-                switch (fieldName) {
-                    case 'title':
-                        input = titleInput;
-                        break;
-                    case 'thematic_area_id':
-                        input = thematicAreaSelect;
-                        break;
-                    case 'project_status_id':
-                        input = statusSelect;
-                        break;
-                    case 'evaluation_criteria':
-                        input = evaluationTextarea;
-                        break;
-                    case 'professor_ids':
-                        input = professorsSelect;
-                        break;
-                    case 'student_ids':
-                        input = studentsSelect;
-                        break;
-                    default:
-                        input = null;
-                        break;
-                }
-
-                if (input) {
-                    input.classList.add('is-invalid');
-                }
-
-                if (feedback) {
-                    feedback.classList.remove('d-none');
-                    feedback.textContent = message;
-                }
-            }
-
-            // Rebuilds the single-select control with the available catalog items.
-            function populateSelect(select, items, placeholder) {
-                if (!select) {
-                    return;
-                }
-                const current = select.value;
-                select.innerHTML = '';
-
-                if (placeholder !== null) {
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = '';
-                    defaultOption.textContent = placeholder;
-                    select.appendChild(defaultOption);
-                }
-
-                items.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = item.name;
-                    select.appendChild(option);
-                });
-
-                select.value = current;
-            }
-
-            // Rebuilds the multi-select control while preserving previous choices.
-            function populateMultiSelect(select, items) {
-                if (!select) {
-                    return;
-                }
-                const selectedValues = Array.from(select.selectedOptions || []).map(option => option.value);
-                select.innerHTML = '';
-
-                items.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = `${item.name} · ${item.card_id}`;
-                    if (selectedValues.includes(String(item.id))) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
-            }
-
-            // Converts the selected multi-value options into numeric identifiers.
-            function collectSelectedValues(select) {
-                return Array.from(select.selectedOptions || []).map(option => Number(option.value));
-            }
-
-            // Populates the form fields with the project data fetched from the API.
-            function applyProjectData(project) {
-                titleInput.value = project.title ?? '';
-                thematicAreaSelect.value = project.thematic_area_id ?? '';
-                statusSelect.value = project.project_status_id ?? '';
-                evaluationTextarea.value = project.evaluation_criteria ?? '';
-
-                const professorIds = Array.isArray(project.professors) ? project.professors.map(item => String(item.id)) : [];
-                Array.from(professorsSelect.options).forEach(option => {
-                    option.selected = professorIds.includes(option.value);
-                });
-
-                const studentIds = Array.isArray(project.students) ? project.students.map(item => String(item.id)) : [];
-                Array.from(studentsSelect.options).forEach(option => {
-                    option.selected = studentIds.includes(option.value);
-                });
-            }
-
-            async function fetchMeta() {
-                const response = await fetch(metaUrl, { headers: { 'Accept': 'application/json' } });
-                if (!response.ok) {
-                    throw new Error('No fue posible cargar los catálogos necesarios.');
-                }
-
-                const data = await response.json();
-                metaState.thematicAreas = Array.isArray(data.thematic_areas) ? data.thematic_areas : [];
-                metaState.statuses = Array.isArray(data.statuses) ? data.statuses : [];
-                metaState.professors = Array.isArray(data.professors) ? data.professors : [];
-                metaState.students = Array.isArray(data.students) ? data.students : [];
-
-                populateSelect(thematicAreaSelect, metaState.thematicAreas, 'Selecciona un área temática');
-                populateSelect(statusSelect, metaState.statuses, 'Selecciona un estado');
-                populateMultiSelect(professorsSelect, metaState.professors);
-                populateMultiSelect(studentsSelect, metaState.students);
-            }
-
-            async function loadProject() {
-                const response = await fetch(`${apiBase}/${projectId}`, { headers: { 'Accept': 'application/json' } });
-                if (!response.ok) {
-                    throw new Error('No fue posible cargar la información del proyecto solicitado.');
-                }
-                return response.json();
-            }
-
-            form.addEventListener('submit', async event => {
-                event.preventDefault();
-                hideAlert();
-                resetFeedback();
-
-                const payload = {
-                    title: titleInput.value.trim(),
-                    thematic_area_id: thematicAreaSelect.value ? Number(thematicAreaSelect.value) : null,
-                    project_status_id: statusSelect.value ? Number(statusSelect.value) : null,
-                    evaluation_criteria: evaluationTextarea.value.trim() || null,
-                    professor_ids: collectSelectedValues(professorsSelect),
-                    student_ids: collectSelectedValues(studentsSelect),
-                };
-
-                submitButton.disabled = true;
-                submitButton.classList.add('btn-loading');
-
-                try {
-                    const response = await fetch(`${apiBase}/${projectId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify(payload),
-                    });
-
-                    const body = await response.json().catch(() => ({}));
-
-                    if (!response.ok) {
-                        if (response.status === 422 && body?.errors) {
-                            Object.entries(body.errors).forEach(([key, messages]) => {
-                                const normalizedKey = key.startsWith('professor_ids') ? 'professor_ids'
-                                    : key.startsWith('student_ids') ? 'student_ids'
-                                    : key;
-                                setFieldError(normalizedKey, messages[0]);
-                            });
+            function renderAreas(lineId) {
+                thematicSelect.innerHTML = '<option value="">Selecciona un área temática</option>';
+                areas.forEach(area => {
+                    if (!lineId || Number(lineId) === Number(area.investigation_line_id)) {
+                        const option = document.createElement('option');
+                        option.value = area.id;
+                        option.textContent = area.name;
+                        if (String(area.id) === thematicSelect.dataset.selected) {
+                            option.selected = true;
                         }
-
-                        showAlert('danger', body.message ?? 'No fue posible actualizar el proyecto.');
-                        return;
+                        thematicSelect.appendChild(option);
                     }
+                });
+            }
 
-                    showAlert('success', body.message ?? 'Proyecto actualizado correctamente. Redirigiendo…');
-                    setTimeout(() => {
-                        window.location.href = indexUrl;
-                    }, 1200);
-                } catch (error) {
-                    showAlert('danger', error.message || 'Ocurrió un error inesperado.');
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.classList.remove('btn-loading');
-                }
-            });
+            if (thematicSelect) {
+                thematicSelect.dataset.selected = thematicSelect.value;
+            }
 
-            (async () => {
-                try {
-                    await fetchMeta();
-                    const project = await loadProject();
-                    applyProjectData(project);
-                } catch (error) {
-                    showAlert('danger', error.message || 'No fue posible cargar los datos iniciales.');
-                    submitButton.disabled = true;
-                    submitButton.classList.add('disabled');
-                }
-            })();
+            if (investigationSelect) {
+                investigationSelect.addEventListener('change', event => {
+                    thematicSelect.dataset.selected = '';
+                    renderAreas(event.target.value);
+                });
+
+                renderAreas(investigationSelect.value);
+            }
         });
     </script>
-@endpush
-
-@push('css')
-    <style>
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .08);
-        }
-    </style>
 @endpush

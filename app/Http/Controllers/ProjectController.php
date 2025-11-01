@@ -2,523 +2,809 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProjectRequest;
-use App\Models\Professor\ProfessorProfessor;
-use App\Models\Professor\ProfessorProject;
-use App\Models\Professor\ProfessorProjectStatus;
-use App\Models\Professor\ProfessorStudent;
-use App\Models\Professor\ProfessorThematicArea;
-use App\Models\ResearchStaff\ResearchStaffProfessor;
-use App\Models\ResearchStaff\ResearchStaffProject;
-use App\Models\ResearchStaff\ResearchStaffProjectStatus;
-use App\Models\ResearchStaff\ResearchStaffStudent;
-use App\Models\ResearchStaff\ResearchStaffThematicArea;
-use App\Models\Student\StudentProfessor;
-use App\Models\Student\StudentProject;
-use App\Models\Student\StudentProjectStatus;
-use App\Models\Student\StudentStudent;
-use App\Models\Student\StudentThematicArea;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\JsonResponse;
+use App\Models\City;
+use App\Models\Content;
+use App\Models\ContentVersion;
+use App\Models\InvestigationLine;
+use App\Models\Professor;
+use App\Models\Program;
+use App\Models\Project;
+use App\Models\ProjectStatus;
+use App\Models\Student;
+use App\Models\ThematicArea;
+use App\Models\Version;
+use Carbon\Carbon;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 /**
- * Controller responsible for managing research projects.
+ * Controller responsible for managing the project proposal lifecycle for students and professors.
  *
- * Exposes full CRUD capabilities plus filtering by status, thematic area,
- * and the professors or students assigned to each project.
+ * The controller renders the Tablar views already present in the application and enriches them
+ * with the business rules requested for RF01 and RF03.
  */
 class ProjectController extends Controller
 {
     /**
-     * Cached model map for the authenticated role.
+     * Cache of content identifiers keyed by their human readable name.
+     *
+     * @var array<string, int>
      */
-    protected ?array $resolvedModels = null;
+    protected array $contentCache = [];
 
     /**
-     * Return a paginated list of projects applying optional filters.
+     * Cached identifier for the "waiting evaluation" status to avoid repeated lookups.
      */
-    public function index(Request $request): JsonResponse
+    protected ?int $waitingStatusId = null;
+
+    /**
+     * Display a paginated list of projects for the authenticated user.
+     */
+    public function index(Request $request): View
     {
-        try {
-            $validated = $request->validate([
-                'per_page' => 'nullable|integer|min:1|max:100',
-                'search' => 'nullable|string|max:255',
-                'thematic_area_id' => [
-                    'nullable',
-                    'integer',
-                    Rule::exists('thematic_areas', 'id')->whereNull('deleted_at'),
-                ],
-                'project_status_id' => [
-                    'nullable',
-                    'integer',
-                    Rule::exists('project_statuses', 'id')->whereNull('deleted_at'),
-                ],
-                'professor_id' => [
-                    'nullable',
-                    'integer',
-                    Rule::exists('professors', 'id')->whereNull('deleted_at'),
-                ],
-                'student_id' => [
-                    'nullable',
-                    'integer',
-                    Rule::exists('students', 'id')->whereNull('deleted_at'),
-                ],
-                'include_deleted' => 'nullable|boolean',
-                'only_deleted' => 'nullable|boolean',
-            ]);
+        $user = Auth::user();
+        $query = Project::query()
+            ->with([
+                'thematicArea.investigationLine',
+                'projectStatus',
+                'professors' => static fn ($relation) => $relation->orderBy('last_name')->orderBy('name'),
+                'students' => static fn ($relation) => $relation->orderBy('last_name')->orderBy('name'),
+            ])
+            ->orderByDesc('created_at');
 
-            $perPage = (int) ($validated['per_page'] ?? 15);
-            $perPage = $perPage > 0 ? min($perPage, 100) : 15;
-
-            $query = $this->projectQuery()
-                ->with(['projectStatus', 'thematicArea', 'professors', 'students'])
-                ->orderByDesc('created_at');
-
-            if (! empty($validated['only_deleted'])) {
-                $query->onlyTrashed();
-            } elseif (! empty($validated['include_deleted'])) {
-                $query->withTrashed();
-            }
-
-            if (! empty($validated['search'])) {
-                $search = trim($validated['search']);
-                $query->where(function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%");
-
-                    if (is_numeric($search)) {
-                        $q->orWhere('id', (int) $search);
-                    }
-                });
-            }
-
-            if (! empty($validated['thematic_area_id'])) {
-                $query->where('thematic_area_id', $validated['thematic_area_id']);
-            }
-
-            if (! empty($validated['project_status_id'])) {
-                $query->where('project_status_id', $validated['project_status_id']);
-            }
-
-            if (! empty($validated['professor_id'])) {
-                $query->whereHas('professors', function ($q) use ($validated) {
-                    $q->where('professors.id', $validated['professor_id']);
-                });
-            }
-
-            if (! empty($validated['student_id'])) {
-                $query->whereHas('students', function ($q) use ($validated) {
-                    $q->where('students.id', $validated['student_id']);
-                });
-            }
-
-            $projects = $query
-                ->paginate($perPage)
-                ->withQueryString();
-
-            return response()->json($projects);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Los parámetros de búsqueda no son válidos.',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Error al listar proyectos: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'message' => 'Ocurrió un error al obtener los proyectos.',
-            ], 500);
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $query->where('title', 'like', "%{$search}%");
         }
+
+        if ($user?->role === 'professor' && $user->professor) {
+            $professorId = $user->professor->id;
+            $query->whereHas('professors', static function ($relation) use ($professorId) {
+                $relation->where('professors.id', $professorId);
+            });
+        } elseif ($user?->role === 'student' && $user->student) {
+            $studentId = $user->student->id;
+            $query->whereHas('students', static function ($relation) use ($studentId) {
+                $relation->where('students.id', $studentId);
+            });
+        }
+
+        /** @var LengthAwarePaginator $projects */
+        $projects = $query->paginate(10)->withQueryString();
+
+        return view('projects.index', [
+            'projects' => $projects,
+            'search' => $search,
+            'isProfessor' => $user?->role === 'professor',
+            'isStudent' => $user?->role === 'student',
+            'isResearchStaff' => $user?->role === 'research_staff',
+        ]);
     }
 
     /**
-     * Provide the catalog data required by the project management UI.
+     * Ensure the current user is allowed to interact with the projects module.
+     *
+     * @return array{0: \App\Models\User, 1: bool, 2: bool, 3: bool}
      */
-    public function meta(): JsonResponse
+    protected function ensureRoleAccess(bool $allowResearchStaff = false): array
     {
-        try {
-            $models = $this->models();
+        $user = Auth::user();
+        $isProfessor = $user?->role === 'professor';
+        $isStudent = $user?->role === 'student';
+        $isResearchStaff = $user?->role === 'research_staff';
 
-            $statuses = $models['status']::query()
-                ->select(['id', 'name'])
-                ->orderBy('name')
-                ->get();
+        if (! $isProfessor && ! $isStudent && ! ($allowResearchStaff && $isResearchStaff)) {
+            abort(403, 'This action is only available for professors or students.');
+        }
 
-            $thematicAreas = $models['thematic_area']::query()
-                ->select(['id', 'name'])
-                ->orderBy('name')
-                ->get();
+        return [$user, $isProfessor, $isStudent, $isResearchStaff];
+    }
 
-            $professors = $models['professor']::query()
-                ->select(['id', 'name', 'last_name', 'card_id', 'committee_leader'])
+    /**
+     * Show the form used to create a new project idea.
+     */
+    public function create(): View
+    {
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+
+        if ($isResearchStaff) {
+            abort(403, 'Research staff members cannot create project ideas.');
+        }
+
+        $cities = City::query()->orderBy('name')->get();
+        $programs = Program::query()->with('researchGroup')->orderBy('name')->get();
+        $investigationLines = InvestigationLine::query()->with('thematicAreas')->orderBy('name')->get();
+        $thematicAreas = ThematicArea::query()->orderBy('name')->get();
+
+        $prefill = [
+            'delivery_date' => Carbon::now()->format('Y-m-d'),
+        ];
+
+        $availableStudents = collect();
+        $availableProfessors = collect();
+
+        if ($isProfessor) {
+            $professor = $user->professor;
+            if (! $professor) {
+                abort(403, 'Professor profile required to submit proposals.');
+            }
+
+            $prefill = array_merge($prefill, [
+                'first_name' => $professor->name,
+                'last_name' => $professor->last_name,
+                'email' => $professor->mail ?? $user->email,
+                'phone' => $professor->phone,
+                'city_id' => optional($professor->cityProgram)->city_id,
+                'program_id' => optional($professor->cityProgram)->program_id,
+            ]);
+
+            $availableProfessors = Professor::query()
+                ->where('id', '!=', $professor->id)
                 ->orderBy('last_name')
                 ->orderBy('name')
-                ->get()
-                ->map(static function ($professor) {
-                    return [
-                        'id' => $professor->id,
-                        'name' => trim($professor->name . ' ' . $professor->last_name),
-                        'card_id' => $professor->card_id,
-                        'committee_leader' => (bool) $professor->committee_leader,
-                    ];
-                });
+                ->get();
+        } else {
+            $student = $user->student;
+            if (! $student) {
+                abort(403, 'Student profile required to submit proposals.');
+            }
 
-            $students = $models['student']::query()
-                ->select(['id', 'name', 'last_name', 'card_id', 'semester'])
+            $cityProgram = $student->cityProgram;
+            $program = $cityProgram?->program;
+            $researchGroup = $program?->researchGroup;
+
+            $prefill = array_merge($prefill, [
+                'first_name' => $student->name,
+                'last_name' => $student->last_name,
+                'card_id' => $student->card_id,
+                'email' => $user->email,
+                'phone' => $student->phone,
+                'city_id' => $cityProgram?->city_id,
+                'program_id' => $program?->id,
+                'research_group' => $researchGroup?->name,
+            ]);
+
+            $availableStudents = Student::query()
+                ->where('city_program_id', $student->city_program_id)
+                ->where('id', '!=', $student->id)
                 ->orderBy('last_name')
                 ->orderBy('name')
-                ->get()
-                ->map(static function ($student) {
-                    return [
-                        'id' => $student->id,
-                        'name' => trim($student->name . ' ' . $student->last_name),
-                        'card_id' => $student->card_id,
-                        'semester' => (int) $student->semester,
-                    ];
-                });
-
-            return response()->json([
-                'statuses' => $statuses,
-                'thematic_areas' => $thematicAreas,
-                'professors' => $professors,
-                'students' => $students,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error al obtener catálogos de proyectos: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'message' => 'Ocurrió un error al obtener los catálogos para proyectos.',
-            ], 500);
+                ->get();
         }
+
+        return view('projects.create', [
+            'cities' => $cities,
+            'programs' => $programs,
+            'investigationLines' => $investigationLines,
+            'thematicAreas' => $thematicAreas,
+            'prefill' => $prefill,
+            'isProfessor' => $isProfessor,
+            'isStudent' => $isStudent,
+            'availableStudents' => $availableStudents,
+            'availableProfessors' => $availableProfessors,
+        ]);
     }
 
     /**
-     * Create a new project and persist its participant assignments.
+     * Persist a new project idea following the role specific business rules.
      */
-    public function store(ProjectRequest $request): JsonResponse
+    public function store(Request $request): RedirectResponse
     {
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+
         try {
-            $data = $request->validated();
-            $relationData = Arr::only($data, ['professor_ids', 'student_ids']);
-            $projectData = Arr::except($data, ['professor_ids', 'student_ids']);
-
-            $projectClass = $this->writableProjectModel();
-
-            return DB::transaction(function () use ($projectClass, $projectData, $relationData) {
-                $project = $projectClass::create($projectData);
-
-                $project->professors()->sync($relationData['professor_ids'] ?? []);
-                $project->students()->sync($relationData['student_ids'] ?? []);
-
-                $project->load(['projectStatus', 'thematicArea', 'professors', 'students']);
-
-                Log::info('Proyecto creado', [
-                    'project_id' => $project->id,
-                    'user_id' => auth()->id(),
-                ]);
-
-                return response()->json([
-                    'message' => 'Proyecto creado correctamente.',
-                    'data' => $project,
-                ], 201);
-            });
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Los datos proporcionados no son válidos.',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Error al crear proyecto: ' . $e->getMessage(), [
-                'data' => $request->all(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'message' => 'Ocurrió un error al crear el proyecto.',
-            ], 500);
-        }
-    }
-
-    /**
-     * Display the full details of a project including its relationships.
-     */
-    public function show(int $projectId): JsonResponse
-    {
-        try {
-            $visibleProject = $this->projectQuery(true)->findOrFail($projectId);
-
-            $project = $this->writableProjectQuery(true)
-                ->with(['projectStatus', 'thematicArea', 'professors', 'students', 'versions'])
-                ->findOrFail($visibleProject->id);
-
-            if ($project->trashed()) {
-                return response()->json([
-                    'message' => 'El proyecto solicitado no está disponible.',
-                ], 404);
+            if ($isProfessor) {
+                return $this->persistProfessorProject($request, $user->professor);
             }
 
-            return response()->json($project);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'El proyecto solicitado no existe.',
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Error al mostrar proyecto: ' . $e->getMessage(), [
-                'project_id' => $projectId,
-                'trace' => $e->getTraceAsString(),
+            if ($isResearchStaff) {
+                abort(403, 'Research staff members cannot create project ideas.');
+            }
+
+            return $this->persistStudentProject($request, $user->student);
+        } catch (\Throwable $exception) {
+            Log::error('Failed to register project idea.', [
+                'exception' => $exception,
             ]);
 
-            return response()->json([
-                'message' => 'Ocurrió un error al obtener el proyecto.',
-            ], 500);
+            return back()
+                ->withInput()
+                ->with('error', 'Unexpected error. Please try again later.');
         }
+
+        return view('projects.edit', [
+            'project' => $project,
+            'cities' => $cities,
+            'programs' => $programs,
+            'investigationLines' => $investigationLines,
+            'thematicAreas' => $thematicAreas,
+            'prefill' => $prefill,
+            'contentValues' => $contentValues,
+            'isProfessor' => $isProfessor,
+            'isStudent' => $isStudent,
+            'availableStudents' => $availableStudents,
+            'availableProfessors' => $availableProfessors,
+        ]);
     }
 
     /**
-     * Update an existing project and optionally sync its assignments.
+     * Display the details of a project, including its latest version.
      */
-    public function update(ProjectRequest $request, int $projectId): JsonResponse
+    public function show(Project $project): View
     {
-        try {
-            $visibleProject = $this->projectQuery(true)->findOrFail($projectId);
-            $project = $this->writableProjectQuery()->findOrFail($visibleProject->id);
+        $project->load([
+            'thematicArea.investigationLine',
+            'projectStatus',
+            'professors',
+            'students',
+            'versions' => static fn ($relation) => $relation
+                ->with(['contentVersions.content'])
+                ->orderByDesc('created_at'),
+        ]);
 
-            if ($project->trashed()) {
-                return response()->json([
-                    'message' => 'No se puede actualizar un proyecto eliminado.',
-                ], 410);
+        $latestVersion = $project->versions->first();
+        $contentValues = $this->mapContentValues($latestVersion);
+
+        $user = Auth::user();
+
+        return view('projects.show', [
+            'project' => $project,
+            'latestVersion' => $latestVersion,
+            'contentValues' => $contentValues,
+            'isProfessor' => $user?->role === 'professor',
+            'isStudent' => $user?->role === 'student',
+        ]);
+    }
+
+    /**
+     * Display the edit form with the existing project information.
+     */
+    public function edit(Project $project): View
+    {
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+        $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
+
+        $project->load([
+            'thematicArea',
+            'professors',
+            'students',
+            'versions' => static fn ($relation) => $relation
+                ->with(['contentVersions.content'])
+                ->orderByDesc('created_at'),
+        ]);
+
+        $latestVersion = $project->versions->first();
+        $contentValues = $this->mapContentValues($latestVersion);
+
+        $cities = City::query()->orderBy('name')->get();
+        $programs = Program::query()->with('researchGroup')->orderBy('name')->get();
+        $investigationLines = InvestigationLine::query()->with('thematicAreas')->orderBy('name')->get();
+        $thematicAreas = ThematicArea::query()->orderBy('name')->get();
+
+        $prefill = [
+            'delivery_date' => Carbon::now()->format('Y-m-d'),
+        ];
+
+        $availableStudents = collect();
+        $availableProfessors = collect();
+
+        $hasProfessorParticipants = $project->professors->isNotEmpty();
+        $hasStudentParticipants = $project->students->isNotEmpty();
+
+        $useProfessorForm = $isProfessor || ($isResearchStaff && $hasProfessorParticipants);
+        $useStudentForm = $isStudent || ($isResearchStaff && ! $hasProfessorParticipants && $hasStudentParticipants);
+
+        if ($useProfessorForm) {
+            $contextProfessor = $isProfessor ? $user->professor : $project->professors->first();
+            if (! $contextProfessor) {
+                abort(403, 'Professor profile required to edit proposals.');
             }
 
-            $data = $request->validated();
-            $relationData = Arr::only($data, ['professor_ids', 'student_ids']);
-            $projectData = Arr::except($data, ['professor_ids', 'student_ids']);
+            $prefill = array_merge($prefill, [
+                'first_name' => $contextProfessor->name,
+                'last_name' => $contextProfessor->last_name,
+                'email' => $contextProfessor->mail ?? $contextProfessor->user?->email,
+                'phone' => $contextProfessor->phone,
+                'city_id' => optional($contextProfessor->cityProgram)->city_id,
+                'program_id' => optional($contextProfessor->cityProgram)->program_id,
+            ]);
 
-            return DB::transaction(function () use ($project, $projectData, $relationData) {
-                $project->update($projectData);
+            $availableProfessors = Professor::query()
+                ->where('id', '!=', $contextProfessor->id)
+                ->orderBy('last_name')
+                ->orderBy('name')
+                ->get();
+        } elseif ($useStudentForm) {
+            $contextStudent = $isStudent ? $user->student : $project->students->first();
+            if (! $contextStudent) {
+                abort(403, 'Student profile required to edit proposals.');
+            }
 
-                if (array_key_exists('professor_ids', $relationData)) {
-                    $project->professors()->sync($relationData['professor_ids']);
+            $cityProgram = $contextStudent->cityProgram;
+            $program = $cityProgram?->program;
+            $researchGroup = $program?->researchGroup;
+
+            $prefill = array_merge($prefill, [
+                'first_name' => $contextStudent->name,
+                'last_name' => $contextStudent->last_name,
+                'card_id' => $contextStudent->card_id,
+                'email' => $contextStudent->user?->email,
+                'phone' => $contextStudent->phone,
+                'city_id' => $cityProgram?->city_id,
+                'program_id' => $program?->id,
+                'research_group' => $researchGroup?->name,
+            ]);
+
+            $availableStudents = Student::query()
+                ->where('city_program_id', $contextStudent->city_program_id)
+                ->where('id', '!=', $contextStudent->id)
+                ->orderBy('last_name')
+                ->orderBy('name')
+                ->get();
+        } else {
+            abort(403, 'Project participants are required to edit this proposal.');
+        }
+
+        return view('projects.edit', [
+            'project' => $project,
+            'cities' => $cities,
+            'programs' => $programs,
+            'investigationLines' => $investigationLines,
+            'thematicAreas' => $thematicAreas,
+            'prefill' => $prefill,
+            'contentValues' => $contentValues,
+            'isProfessor' => $useProfessorForm,
+            'isStudent' => $useStudentForm,
+            'isResearchStaff' => $isResearchStaff,
+            'availableStudents' => $availableStudents,
+            'availableProfessors' => $availableProfessors,
+        ]);
+    }
+
+    /**
+     * Update the project information by creating a new version with the submitted content.
+     */
+    public function update(Request $request, Project $project): RedirectResponse
+    {
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+        $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
+
+        $project->loadMissing(['professors', 'students']);
+
+        try {
+            if ($isProfessor) {
+                return $this->persistProfessorProject($request, $user->professor, $project);
+            }
+
+            if ($isStudent) {
+                return $this->persistStudentProject($request, $user->student, $project);
+            }
+
+            if ($isResearchStaff) {
+                $primaryProfessor = $project->professors->first();
+                if ($primaryProfessor) {
+                    return $this->persistProfessorProject($request, $primaryProfessor, $project);
                 }
 
-                if (array_key_exists('student_ids', $relationData)) {
-                    $project->students()->sync($relationData['student_ids']);
+                $primaryStudent = $project->students->first();
+                if ($primaryStudent) {
+                    return $this->persistStudentProject($request, $primaryStudent, $project);
                 }
 
-                $project->load(['projectStatus', 'thematicArea', 'professors', 'students']);
-
-                Log::info('Proyecto actualizado', [
-                    'project_id' => $project->id,
-                    'user_id' => auth()->id(),
-                ]);
-
-                return response()->json([
-                    'message' => 'Proyecto actualizado correctamente.',
-                    'data' => $project,
-                ]);
-            });
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'No se encontró el proyecto especificado.',
-            ], 404);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Los datos proporcionados no son válidos.',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Error al actualizar proyecto: ' . $e->getMessage(), [
-                'project_id' => $projectId ?? null,
-                'trace' => $e->getTraceAsString(),
+                return back()
+                    ->withInput()
+                    ->with('error', 'The project has no participants to edit.');
+            }
+        } catch (\Throwable $exception) {
+            Log::error('Failed to update project idea.', [
+                'project_id' => $project->id,
+                'exception' => $exception,
             ]);
 
-            return response()->json([
-                'message' => 'Ocurrió un error al actualizar el proyecto.',
-            ], 500);
+            return back()
+                ->withInput()
+                ->with('error', 'Unexpected error. Please try again later.');
+        }
+
+        return $version->contentVersions
+            ->mapWithKeys(static function (ContentVersion $contentVersion) {
+                return [$contentVersion->content->name => $contentVersion->value];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Guard access to edit/update operations ensuring the user participates in the project.
+     */
+    protected function authorizeProjectAccess(Project $project, int $userId, bool $isProfessor, bool $isStudent, bool $isResearchStaff): void
+    {
+        if ($isResearchStaff) {
+            return;
+        }
+
+        if ($isProfessor) {
+            $professor = Auth::user()?->professor;
+            if (! $professor || ! $project->professors->contains('id', $professor->id)) {
+                abort(403, 'You are not assigned to this project.');
+            }
+        } elseif ($isStudent) {
+            $student = Auth::user()?->student;
+            if (! $student || ! $project->students->contains('id', $student->id)) {
+                abort(403, 'You are not assigned to this project.');
+            }
+        } else {
+            abort(403, 'Unauthorized access.');
         }
     }
 
     /**
-     * Soft delete a project provided it has no registered versions.
+     * Normalize a project title using the same rules as the Project model mutator.
      */
-    public function destroy(int $projectId): JsonResponse
+    protected function normalizeTitle(string $title): string
     {
-        try {
-            $visibleProject = $this->projectQuery(true)->findOrFail($projectId);
-            $project = $this->writableProjectQuery()->findOrFail($visibleProject->id);
+        return Str::of($title)->squish()->title()->toString();
+    }
 
-            if ($project->trashed()) {
-                return response()->json([
-                    'message' => 'El proyecto ya fue eliminado.',
-                ], 410);
+    /**
+     * Retrieve the content identifier by name and cache the lookup.
+     */
+    protected function contentId(string $name): int
+    {
+        if (! array_key_exists($name, $this->contentCache)) {
+            $content = Content::query()->where('name', $name)->first();
+            if (! $content) {
+                throw new \RuntimeException("Content '{$name}' not found in catalog.");
+            }
+            $this->contentCache[$name] = $content->id;
+        }
+
+        return $this->contentCache[$name];
+    }
+
+    /**
+     * Resolve the identifier for the status representing "waiting evaluation".
+     */
+    protected function waitingEvaluationStatusId(): int
+    {
+        if ($this->waitingStatusId !== null) {
+            return $this->waitingStatusId;
+        }
+
+        $status = ProjectStatus::query()
+            ->whereIn('name', ['waiting evaluation', 'Pendiente de aprobación'])
+            ->orderByRaw("CASE WHEN name = 'waiting evaluation' THEN 0 ELSE 1 END")
+            ->first();
+
+        if (! $status) {
+            throw new \RuntimeException('Waiting evaluation status is missing from the catalog.');
+        }
+
+        $this->waitingStatusId = $status->id;
+
+        return $this->waitingStatusId;
+    }
+
+    /**
+     * Map the content values for the provided version into a keyed collection.
+     *
+     * @return array<string, string>
+     */
+    protected function mapContentValues(?Version $version): array
+    {
+        if (! $version) {
+            return [];
+        }
+
+        return $version->contentVersions
+            ->mapWithKeys(static function (ContentVersion $contentVersion) {
+                return [$contentVersion->content->name => $contentVersion->value];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Persist the project data for a professor either creating or updating a record.
+     */
+    protected function persistProfessorProject(Request $request, ?Professor $professor, ?Project $project = null): RedirectResponse
+    {
+        if (! $professor) {
+            abort(403, 'Professor profile required to complete this action.');
+        }
+
+        $baseRules = [
+            'city_id' => ['required', 'exists:cities,id'],
+            'program_id' => ['required', 'exists:programs,id'],
+            'investigation_line_id' => ['required', 'exists:investigation_lines,id'],
+            'thematic_area_id' => [
+                'required',
+                Rule::exists('thematic_areas', 'id')->where(fn ($query) => $query->where('investigation_line_id', $request->integer('investigation_line_id'))),
+            ],
+            'title' => ['required', 'string', 'max:255'],
+            'evaluation_criteria' => ['required', 'string'],
+            'students_count' => ['required', 'integer', 'min:1', 'max:3'],
+            'execution_time' => ['required', 'string', 'max:255'],
+            'viability' => ['required', 'string'],
+            'relevance' => ['required', 'string'],
+            'teacher_availability' => ['required', 'string'],
+            'title_objectives_quality' => ['required', 'string'],
+            'general_objective' => ['required', 'string'],
+            'description' => ['required', 'string'],
+            'contact_first_name' => ['required', 'string', 'max:50'],
+            'contact_last_name' => ['required', 'string', 'max:50'],
+            'contact_email' => ['required', 'email', 'max:255'],
+            'contact_phone' => ['required', 'string', 'max:20'],
+            'co_professor_ids' => ['nullable', 'array'],
+            'co_professor_ids.*' => ['integer', Rule::exists('professors', 'id')],
+        ];
+
+        $validated = $request->validate($baseRules);
+        $isUpdate = $project !== null;
+        $normalizedTitle = $this->normalizeTitle($validated['title']);
+
+        $professorIds = collect($validated['co_professor_ids'] ?? [])
+            ->push($professor->id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $sortedProfessorIds = $professorIds;
+        sort($sortedProfessorIds);
+
+        $duplicateProject = Project::query()
+            ->when($project, static fn ($query) => $query->where('id', '!=', $project->id))
+            ->where('title', $normalizedTitle)
+            ->get()
+            ->first(static function (Project $existing) use ($sortedProfessorIds) {
+                $existingProfessorIds = $existing->professors()->pluck('professors.id')->sort()->values()->all();
+
+                return $existingProfessorIds === $sortedProfessorIds;
+            });
+
+        if ($duplicateProject) {
+            return back()
+                ->withInput()
+                ->with('error', 'A project with the same title and professor team already exists.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $professor->fill([
+                'name' => $validated['contact_first_name'],
+                'last_name' => $validated['contact_last_name'],
+                'mail' => $validated['contact_email'],
+                'phone' => $validated['contact_phone'],
+            ])->save();
+
+            if ($professor->user && $professor->user->email !== $validated['contact_email']) {
+                $professor->user->email = $validated['contact_email'];
+                $professor->user->save();
             }
 
-            if ($project->versions()->exists()) {
-                return response()->json([
-                    'message' => 'No es posible eliminar el proyecto porque tiene versiones registradas.',
-                ], 409);
+            if ($project) {
+                $project->fill([
+                    'title' => $normalizedTitle,
+                    'evaluation_criteria' => $validated['evaluation_criteria'],
+                    'thematic_area_id' => $validated['thematic_area_id'],
+                    'project_status_id' => $this->waitingEvaluationStatusId(),
+                ])->save();
+            } else {
+                $project = Project::create([
+                    'title' => $normalizedTitle,
+                    'evaluation_criteria' => $validated['evaluation_criteria'],
+                    'thematic_area_id' => $validated['thematic_area_id'],
+                    'project_status_id' => $this->waitingEvaluationStatusId(),
+                ]);
             }
 
-            return DB::transaction(function () use ($project) {
-                $project->delete();
+            $project->professors()->sync($professorIds);
 
-                Log::info('Proyecto eliminado', [
-                    'project_id' => $project->id,
-                    'user_id' => auth()->id(),
-                ]);
+            $version = $project->versions()->create();
 
-                return response()->json(null, 204);
-            });
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'No se encontró el proyecto especificado.',
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Error al eliminar proyecto: ' . $e->getMessage(), [
-                'project_id' => $projectId ?? null,
-                'trace' => $e->getTraceAsString(),
-            ]);
+            $contentMap = [
+                'Título' => $project->title,
+                'Cantidad de estudiantes' => (string) $validated['students_count'],
+                'Tiempo de ejecución' => $validated['execution_time'],
+                'Viabilidad' => $validated['viability'],
+                'Pertinencia con el grupo de investigación y con el programa' => $validated['relevance'],
+                'Disponibilidad de docentes para su dirección y calificación' => $validated['teacher_availability'],
+                'Calidad y correspondencia entre título y objetivo' => $validated['title_objectives_quality'],
+                'Objetivo general del proyecto' => $validated['general_objective'],
+                'Descripción del proyecto de investigación' => $validated['description'],
+            ];
 
-            return response()->json([
-                'message' => 'Ocurrió un error al eliminar el proyecto.',
-            ], 500);
+            $this->storeContentValues($version, $contentMap);
+
+            DB::commit();
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            throw $exception;
         }
+
+        $message = $isUpdate
+            ? 'Project idea updated and set to waiting evaluation'
+            : 'Project idea registered and set to waiting evaluation';
+
+        return redirect()
+            ->route('projects.index')
+            ->with('success', $message);
     }
 
     /**
-     * Restore a previously soft-deleted project instance.
+     * Persist the project data for a student either creating or updating a record.
      */
-    public function restore(int $id): JsonResponse
+    protected function persistStudentProject(Request $request, ?Student $student, ?Project $project = null): RedirectResponse
     {
+        if (! $student) {
+            abort(403, 'Student profile required to complete this action.');
+        }
+
+        $baseRules = [
+            'city_id' => ['required', 'exists:cities,id'],
+            'investigation_line_id' => ['required', 'exists:investigation_lines,id'],
+            'thematic_area_id' => [
+                'required',
+                Rule::exists('thematic_areas', 'id')->where(fn ($query) => $query->where('investigation_line_id', $request->integer('investigation_line_id'))),
+            ],
+            'title' => ['required', 'string', 'max:255'],
+            'general_objective' => ['required', 'string'],
+            'description' => ['required', 'string'],
+            'teammate_ids' => ['nullable', 'array', 'max:2'],
+            'teammate_ids.*' => [
+                'integer',
+                Rule::exists('students', 'id')->where(static function ($query) use ($student) {
+                    $query->where('city_program_id', $student->city_program_id);
+                }),
+            ],
+            'student_first_name' => ['required', 'string', 'max:50'],
+            'student_last_name' => ['required', 'string', 'max:50'],
+            'student_card_id' => [
+                'required',
+                'string',
+                'max:25',
+                Rule::unique('students', 'card_id')->ignore($student->id),
+            ],
+            'student_email' => ['required', 'email', 'max:255'],
+            'student_phone' => ['nullable', 'string', 'max:20'],
+        ];
+
+        $validated = $request->validate($baseRules);
+        $isUpdate = $project !== null;
+
+        $cityProgram = $student->cityProgram;
+        if ($cityProgram && (int) $validated['city_id'] !== (int) $cityProgram->city_id) {
+            return back()
+                ->withInput()
+                ->with('error', 'The selected city does not match your program assignment.');
+        }
+
+        $normalizedTitle = $this->normalizeTitle($validated['title']);
+        $studentIds = collect($validated['teammate_ids'] ?? [])
+            ->push($student->id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $sortedStudentIds = $studentIds;
+        sort($sortedStudentIds);
+
+        if (count($studentIds) > 3) {
+            return back()
+                ->withInput()
+                ->with('error', 'A project can only have up to 3 participating students.');
+        }
+
+        $activeStatusIds = ProjectStatus::query()
+            ->whereIn('name', ['waiting evaluation', 'Pendiente de aprobación'])
+            ->pluck('id');
+
+        $hasActive = $student->projects()
+            ->when($project, static fn ($query) => $query->where('projects.id', '!=', $project->id))
+            ->whereIn('project_status_id', $activeStatusIds)
+            ->exists();
+
+        if ($hasActive) {
+            return back()
+                ->withInput()
+                ->with('error', 'You already have a project idea waiting evaluation.');
+        }
+
+        $duplicateProject = Project::query()
+            ->when($project, static fn ($query) => $query->where('id', '!=', $project->id))
+            ->where('title', $normalizedTitle)
+            ->get()
+            ->first(static function (Project $existing) use ($sortedStudentIds) {
+                $existingStudentIds = $existing->students()->pluck('students.id')->sort()->values()->all();
+
+                return $existingStudentIds === $sortedStudentIds;
+            });
+
+        if ($duplicateProject) {
+            return back()
+                ->withInput()
+                ->with('error', 'A project with the same title and student team already exists.');
+        }
+
+        DB::beginTransaction();
+
         try {
-            return DB::transaction(function () use ($id) {
-                $visibleProject = $this->projectQuery(true)->findOrFail($id);
-                $project = $this->writableProjectQuery(true)->findOrFail($visibleProject->id);
+            $student->fill([
+                'name' => $validated['student_first_name'],
+                'last_name' => $validated['student_last_name'],
+                'card_id' => $validated['student_card_id'],
+                'phone' => $validated['student_phone'],
+            ])->save();
 
-                if (! $project->trashed()) {
-                    return response()->json([
-                        'message' => 'El proyecto no está eliminado.',
-                    ], 400);
-                }
+            if ($student->user && $student->user->email !== $validated['student_email']) {
+                $student->user->email = $validated['student_email'];
+                $student->user->save();
+            }
 
-                $project->restore();
-                $project->load(['projectStatus', 'thematicArea', 'professors', 'students']);
-
-                Log::info('Proyecto restaurado', [
-                    'project_id' => $project->id,
-                    'user_id' => auth()->id(),
+            if ($project) {
+                $project->fill([
+                    'title' => $normalizedTitle,
+                    'evaluation_criteria' => null,
+                    'thematic_area_id' => $validated['thematic_area_id'],
+                    'project_status_id' => $this->waitingEvaluationStatusId(),
+                ])->save();
+            } else {
+                $project = Project::create([
+                    'title' => $normalizedTitle,
+                    'evaluation_criteria' => null,
+                    'thematic_area_id' => $validated['thematic_area_id'],
+                    'project_status_id' => $this->waitingEvaluationStatusId(),
                 ]);
+            }
 
-                return response()->json([
-                    'message' => 'Proyecto restaurado correctamente.',
-                    'data' => $project,
-                ]);
-            });
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'No se encontró el proyecto especificado.',
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Error al restaurar proyecto: ' . $e->getMessage(), [
-                'project_id' => $id,
-                'trace' => $e->getTraceAsString(),
+            $project->students()->sync($studentIds);
+
+            $version = $project->versions()->create();
+
+            $contentMap = [
+                'Título' => $project->title,
+                'Objetivo general del proyecto' => $validated['general_objective'],
+                'Descripción del proyecto de investigación' => $validated['description'],
+            ];
+
+            $this->storeContentValues($version, $contentMap);
+
+            DB::commit();
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            throw $exception;
+        }
+
+        $message = $isUpdate
+            ? 'Project idea updated and set to waiting evaluation'
+            : 'Project idea registered and set to waiting evaluation';
+
+        return redirect()
+            ->route('projects.index')
+            ->with('success', $message);
+    }
+
+    /**
+     * Persist each content value in the content_version table.
+     */
+    protected function storeContentValues(Version $version, array $contentMap): void
+    {
+        foreach ($contentMap as $name => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            ContentVersion::create([
+                'content_id' => $this->contentId($name),
+                'version_id' => $version->id,
+                'value' => (string) $value,
             ]);
-
-            return response()->json([
-                'message' => 'Ocurrió un error al restaurar el proyecto.',
-            ], 500);
         }
-    }
-
-    /**
-     * Resolve the model classes for the authenticated user's role.
-     */
-    protected function resolveModelsForRole(?string $role): array
-    {
-        return match ($role) {
-            'professor', 'committee_leader' => [
-                'project' => ProfessorProject::class,
-                'status' => ProfessorProjectStatus::class,
-                'thematic_area' => ProfessorThematicArea::class,
-                'professor' => ProfessorProfessor::class,
-                'student' => ProfessorStudent::class,
-            ],
-            'student' => [
-                'project' => StudentProject::class,
-                'status' => StudentProjectStatus::class,
-                'thematic_area' => StudentThematicArea::class,
-                'professor' => StudentProfessor::class,
-                'student' => StudentStudent::class,
-            ],
-            default => [
-                'project' => ResearchStaffProject::class,
-                'status' => ResearchStaffProjectStatus::class,
-                'thematic_area' => ResearchStaffThematicArea::class,
-                'professor' => ResearchStaffProfessor::class,
-                'student' => ResearchStaffStudent::class,
-            ],
-        };
-    }
-
-    /**
-     * Retrieve the model class that has permission to write project data.
-     */
-    protected function writableProjectModel(): string
-    {
-        return ResearchStaffProject::class;
-    }
-
-    /**
-     * Build a query builder using the privileged project model.
-     */
-    protected function writableProjectQuery(bool $withTrashed = false): Builder
-    {
-        $model = $this->writableProjectModel();
-
-        $query = $model::query();
-
-        if ($withTrashed) {
-            $query->withTrashed();
-        }
-
-        return $query;
-    }
-
-    /**
-     * Build the base query for projects, optionally including soft deleted rows.
-     */
-    protected function projectQuery(bool $withTrashed = false): Builder
-    {
-        $model = $this->models()['project'];
-
-        $query = $model::query();
-
-        if ($withTrashed) {
-            $query->withTrashed();
-        }
-
-        return $query;
-    }
-
-    /**
-     * Retrieve the cached model map for the current request.
-     */
-    protected function models(): array
-    {
-        if ($this->resolvedModels === null) {
-            $this->resolvedModels = $this->resolveModelsForRole(Auth::user()?->role);
-        }
-
-        return $this->resolvedModels;
     }
 }

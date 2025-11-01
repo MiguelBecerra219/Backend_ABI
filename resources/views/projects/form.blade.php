@@ -1,70 +1,305 @@
 {{--
     Partial path: projects/form.blade.php.
-    Purpose: Shared Tablar form fragment for project create and edit screens.
-    Expected variables:
-    - $project (optional): existing project information provided by the controller or the view.
+    Purpose: Shared form fields for create and edit operations.
 --}}
 @php
     $projectModel = $project ?? null;
+    $contentValues = $contentValues ?? [];
+    $prefill = $prefill ?? [];
+    $cities = $cities ?? collect();
+    $programs = $programs ?? collect();
+    $investigationLines = $investigationLines ?? collect();
+    $thematicAreas = $thematicAreas ?? collect();
+    $availableStudents = $availableStudents ?? collect();
+    $availableProfessors = $availableProfessors ?? collect();
 @endphp
-
-<div class="mb-3">
-    <label for="project_title" class="form-label required">Título del proyecto</label>
-    <input
-        type="text"
-        id="project_title"
-        name="title"
-        maxlength="255"
-        class="form-control"
-        value="{{ old('title', $projectModel->title ?? '') }}"
-        placeholder="Ej. Desarrollo de plataforma educativa"
-        required
-        autocomplete="off"
-    >
-    <small class="form-hint">El título se ajustará automáticamente siguiendo la normalización académica.</small>
-    <div class="invalid-feedback d-none" data-feedback-for="title"></div>
-</div>
 
 <div class="row g-3">
     <div class="col-12 col-md-6">
-        <label for="project_thematic_area" class="form-label required">Área temática</label>
-        <select id="project_thematic_area" name="thematic_area_id" class="form-select" required>
-            <option value="">Selecciona un área temática</option>
-        </select>
-        <div class="invalid-feedback d-none" data-feedback-for="thematic_area_id"></div>
+        <label class="form-label">Fecha de entrega</label>
+        <input type="text" class="form-control" value="{{ $prefill['delivery_date'] ?? now()->format('Y-m-d') }}" readonly>
+        <small class="form-hint">Se registra automáticamente con la fecha actual.</small>
     </div>
     <div class="col-12 col-md-6">
-        <label for="project_status" class="form-label required">Estado del proyecto</label>
-        <select id="project_status" name="project_status_id" class="form-select" required>
-            <option value="">Selecciona un estado</option>
+        <label for="city_id" class="form-label required">Ciudad</label>
+        <select id="city_id" name="city_id" class="form-select @error('city_id') is-invalid @enderror" required>
+            <option value="">Selecciona una ciudad</option>
+            @foreach ($cities as $city)
+                <option value="{{ $city->id }}" {{ (string) old('city_id', $prefill['city_id'] ?? '') === (string) $city->id ? 'selected' : '' }}>
+                    {{ $city->name }}
+                </option>
+            @endforeach
         </select>
-        <div class="invalid-feedback d-none" data-feedback-for="project_status_id"></div>
+        @error('city_id')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+@if ($isProfessor)
+    <div class="row g-3 mt-0">
+        <div class="col-12 col-md-6">
+            <label for="program_id" class="form-label required">Programa académico</label>
+            <select id="program_id" name="program_id" class="form-select @error('program_id') is-invalid @enderror" required>
+                <option value="">Selecciona un programa</option>
+                @foreach ($programs as $program)
+                    <option value="{{ $program->id }}" {{ (string) old('program_id', $prefill['program_id'] ?? '') === (string) $program->id ? 'selected' : '' }}>
+                        {{ $program->name }}
+                    </option>
+                @endforeach
+            </select>
+            @error('program_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="co_professor_ids" class="form-label">Profesores asociados</label>
+            <select id="co_professor_ids" name="co_professor_ids[]" class="form-select @error('co_professor_ids') is-invalid @enderror" multiple size="6">
+                @php
+                    $currentProfessorId = optional(auth()->user()->professor)->id;
+                    $selectedProfessors = collect(old('co_professor_ids', $projectModel?->professors?->pluck('id')->reject(fn ($id) => $id === $currentProfessorId)->all() ?? []));
+                @endphp
+                @foreach ($availableProfessors as $professorOption)
+                    <option value="{{ $professorOption->id }}" {{ $selectedProfessors->contains($professorOption->id) ? 'selected' : '' }}>
+                        {{ $professorOption->name }} {{ $professorOption->last_name }}
+                    </option>
+                @endforeach
+            </select>
+            <small class="form-hint">Selecciona colegas que acompañarán la propuesta.</small>
+            @error('co_professor_ids')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            @error('co_professor_ids.*')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+@else
+    <div class="row g-3 mt-0">
+        <div class="col-12 col-md-6">
+            <label class="form-label">Programa académico</label>
+            <input type="text" class="form-control" value="{{ $programs->firstWhere('id', $prefill['program_id'] ?? null)->name ?? 'No asignado' }}" readonly>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">Grupo de investigación</label>
+            <input type="text" class="form-control" value="{{ $prefill['research_group'] ?? 'No asignado' }}" readonly>
+        </div>
+    </div>
+@endif
+
+<div class="row g-3 mt-0">
+    <div class="col-12 col-md-6">
+        <label for="investigation_line_id" class="form-label required">Línea de investigación</label>
+        <select id="investigation_line_id" name="investigation_line_id" class="form-select @error('investigation_line_id') is-invalid @enderror" required>
+            <option value="">Selecciona una línea</option>
+            @foreach ($investigationLines as $line)
+                <option value="{{ $line->id }}" {{ (string) old('investigation_line_id', $projectModel?->thematicArea?->investigation_line_id ?? '') === (string) $line->id ? 'selected' : '' }}>
+                    {{ $line->name }}
+                </option>
+            @endforeach
+        </select>
+        @error('investigation_line_id')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-12 col-md-6">
+        <label for="thematic_area_id" class="form-label required">Área temática</label>
+        <select id="thematic_area_id" name="thematic_area_id" class="form-select @error('thematic_area_id') is-invalid @enderror" required>
+            <option value="">Selecciona un área temática</option>
+            @foreach ($thematicAreas as $area)
+                <option value="{{ $area->id }}" data-line="{{ $area->investigation_line_id }}" {{ (string) old('thematic_area_id', $projectModel?->thematic_area_id ?? '') === (string) $area->id ? 'selected' : '' }}>
+                    {{ $area->name }}
+                </option>
+            @endforeach
+        </select>
+        @error('thematic_area_id')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 </div>
 
 <div class="mb-3 mt-3">
-    <label for="project_evaluation" class="form-label">Criterios de evaluación</label>
-    <textarea
-        id="project_evaluation"
-        name="evaluation_criteria"
-        class="form-control"
-        rows="4"
-        placeholder="Describe los requisitos y rúbricas que deben cumplir los postulantes."
-    >{{ old('evaluation_criteria', $projectModel->evaluation_criteria ?? '') }}</textarea>
-    <div class="invalid-feedback d-none" data-feedback-for="evaluation_criteria"></div>
+    <label for="title" class="form-label required">Título del proyecto</label>
+    <input type="text" id="title" name="title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title', $projectModel->title ?? '') }}" maxlength="255" required>
+    @error('title')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
 </div>
 
-<div class="row g-3">
-    <div class="col-12 col-lg-6">
-        <label for="project_professors" class="form-label">Profesores asignados</label>
-        <select id="project_professors" name="professor_ids[]" class="form-select" multiple size="8"></select>
-        <small class="form-hint">Usa Ctrl o Cmd para seleccionar múltiples docentes.</small>
-        <div class="invalid-feedback d-none" data-feedback-for="professor_ids"></div>
+@if ($isProfessor)
+    <div class="mb-3">
+        <label for="evaluation_criteria" class="form-label required">Criterios de evaluación</label>
+        <textarea id="evaluation_criteria" name="evaluation_criteria" class="form-control @error('evaluation_criteria') is-invalid @enderror" rows="3" required>{{ old('evaluation_criteria', $projectModel->evaluation_criteria ?? '') }}</textarea>
+        @error('evaluation_criteria')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
-    <div class="col-12 col-lg-6">
-        <label for="project_students" class="form-label">Estudiantes participantes</label>
-        <select id="project_students" name="student_ids[]" class="form-select" multiple size="8"></select>
-        <small class="form-hint">Solo se listan estudiantes activos del programa correspondiente.</small>
-        <div class="invalid-feedback d-none" data-feedback-for="student_ids"></div>
+@endif
+
+@if ($isProfessor)
+    <div class="row g-3">
+        <div class="col-12 col-md-4">
+            <label for="students_count" class="form-label required">Cantidad de estudiantes</label>
+            <input type="number" min="1" max="3" id="students_count" name="students_count" class="form-control @error('students_count') is-invalid @enderror" value="{{ old('students_count', $contentValues['Cantidad de estudiantes'] ?? '') }}" required>
+            @error('students_count')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="col-12 col-md-8">
+            <label for="execution_time" class="form-label required">Tiempo de ejecución</label>
+            <input type="text" id="execution_time" name="execution_time" class="form-control @error('execution_time') is-invalid @enderror" value="{{ old('execution_time', $contentValues['Tiempo de ejecución'] ?? '') }}" required>
+            @error('execution_time')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
     </div>
+
+    <div class="mb-3 mt-3">
+        <label for="viability" class="form-label required">Viabilidad</label>
+        <textarea id="viability" name="viability" class="form-control @error('viability') is-invalid @enderror" rows="3" required>{{ old('viability', $contentValues['Viabilidad'] ?? '') }}</textarea>
+        @error('viability')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <div class="mb-3">
+        <label for="relevance" class="form-label required">Pertinencia con el grupo y programa</label>
+        <textarea id="relevance" name="relevance" class="form-control @error('relevance') is-invalid @enderror" rows="3" required>{{ old('relevance', $contentValues['Pertinencia con el grupo de investigación y con el programa'] ?? '') }}</textarea>
+        @error('relevance')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <div class="mb-3">
+        <label for="teacher_availability" class="form-label required">Disponibilidad de docentes</label>
+        <textarea id="teacher_availability" name="teacher_availability" class="form-control @error('teacher_availability') is-invalid @enderror" rows="3" required>{{ old('teacher_availability', $contentValues['Disponibilidad de docentes para su dirección y calificación'] ?? '') }}</textarea>
+        @error('teacher_availability')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <div class="mb-3">
+        <label for="title_objectives_quality" class="form-label required">Calidad y correspondencia título – objetivos</label>
+        <textarea id="title_objectives_quality" name="title_objectives_quality" class="form-control @error('title_objectives_quality') is-invalid @enderror" rows="3" required>{{ old('title_objectives_quality', $contentValues['Calidad y correspondencia entre título y objetivo'] ?? '') }}</textarea>
+        @error('title_objectives_quality')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+@endif
+
+<div class="mb-3">
+    <label for="general_objective" class="form-label required">Objetivo general</label>
+    <textarea id="general_objective" name="general_objective" class="form-control @error('general_objective') is-invalid @enderror" rows="3" required>{{ old('general_objective', $contentValues['Objetivo general del proyecto'] ?? '') }}</textarea>
+    @error('general_objective')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
 </div>
+
+<div class="mb-3">
+    <label for="description" class="form-label required">Descripción del proyecto</label>
+    <textarea id="description" name="description" class="form-control @error('description') is-invalid @enderror" rows="4" required>{{ old('description', $contentValues['Descripción del proyecto de investigación'] ?? '') }}</textarea>
+    @error('description')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+
+@if ($isStudent)
+    <div class="mb-3">
+        <label for="teammate_ids" class="form-label">Compañeros (máximo 2 adicionales)</label>
+        <select id="teammate_ids" name="teammate_ids[]" class="form-select @error('teammate_ids') is-invalid @enderror" multiple size="6">
+            @php
+                $selectedTeammates = collect(old('teammate_ids', $projectModel?->students?->pluck('id')->filter(fn ($id) => $id !== optional(auth()->user()->student)->id)->all() ?? []));
+            @endphp
+            @foreach ($availableStudents as $studentOption)
+                <option value="{{ $studentOption->id }}" {{ $selectedTeammates->contains($studentOption->id) ? 'selected' : '' }}>
+                    {{ $studentOption->name }} {{ $studentOption->last_name }} - {{ $studentOption->card_id }}
+                </option>
+            @endforeach
+        </select>
+        <small class="form-hint">Selecciona estudiantes del mismo programa para conformar el equipo.</small>
+        @error('teammate_ids')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        @error('teammate_ids.*')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+@endif
+
+<h4 class="mt-4">Datos de contacto</h4>
+@if ($isProfessor)
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label for="contact_first_name" class="form-label required">Nombres</label>
+            <input type="text" id="contact_first_name" name="contact_first_name" class="form-control @error('contact_first_name') is-invalid @enderror" value="{{ old('contact_first_name', $prefill['first_name'] ?? '') }}" required>
+            @error('contact_first_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="contact_last_name" class="form-label required">Apellidos</label>
+            <input type="text" id="contact_last_name" name="contact_last_name" class="form-control @error('contact_last_name') is-invalid @enderror" value="{{ old('contact_last_name', $prefill['last_name'] ?? '') }}" required>
+            @error('contact_last_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+    <div class="row g-3 mt-0">
+        <div class="col-12 col-md-6">
+            <label for="contact_email" class="form-label required">Correo electrónico</label>
+            <input type="email" id="contact_email" name="contact_email" class="form-control @error('contact_email') is-invalid @enderror" value="{{ old('contact_email', $prefill['email'] ?? '') }}" required>
+            @error('contact_email')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="contact_phone" class="form-label required">Teléfono</label>
+            <input type="text" id="contact_phone" name="contact_phone" class="form-control @error('contact_phone') is-invalid @enderror" value="{{ old('contact_phone', $prefill['phone'] ?? '') }}" required>
+            @error('contact_phone')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+@else
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label for="student_first_name" class="form-label required">Nombres</label>
+            <input type="text" id="student_first_name" name="student_first_name" class="form-control @error('student_first_name') is-invalid @enderror" value="{{ old('student_first_name', $prefill['first_name'] ?? '') }}" required>
+            @error('student_first_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="student_last_name" class="form-label required">Apellidos</label>
+            <input type="text" id="student_last_name" name="student_last_name" class="form-control @error('student_last_name') is-invalid @enderror" value="{{ old('student_last_name', $prefill['last_name'] ?? '') }}" required>
+            @error('student_last_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+    <div class="row g-3 mt-0">
+        <div class="col-12 col-md-6">
+            <label for="student_card_id" class="form-label required">Cédula</label>
+            <input type="text" id="student_card_id" name="student_card_id" class="form-control @error('student_card_id') is-invalid @enderror" value="{{ old('student_card_id', $prefill['card_id'] ?? '') }}" required>
+            @error('student_card_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="student_email" class="form-label required">Correo electrónico</label>
+            <input type="email" id="student_email" name="student_email" class="form-control @error('student_email') is-invalid @enderror" value="{{ old('student_email', $prefill['email'] ?? '') }}" required>
+            @error('student_email')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+    <div class="row g-3 mt-0">
+        <div class="col-12 col-md-6">
+            <label for="student_phone" class="form-label">Teléfono</label>
+            <input type="text" id="student_phone" name="student_phone" class="form-control @error('student_phone') is-invalid @enderror" value="{{ old('student_phone', $prefill['phone'] ?? '') }}">
+            @error('student_phone')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+@endif
