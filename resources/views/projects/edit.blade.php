@@ -1,4 +1,4 @@
-{{--
+{{-- 
     View path: projects/edit.blade.php.
     Purpose: Allows professors and students to update their project idea while generating a new version.
 --}}
@@ -85,17 +85,24 @@
 @endsection
 
 @push('js')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const investigationSelect = document.getElementById('investigation_line_id');
-            const thematicSelect = document.getElementById('thematic_area_id');
-            const areas = @json(($thematicAreas ?? collect())->map(function ($area) {
+    @php
+        // Prepare data for JSON safely to avoid Blade parse errors
+        $areasForJs = ($thematicAreas ?? collect())
+            ->map(function ($area) {
                 return [
                     'id' => $area->id,
                     'name' => $area->name,
                     'investigation_line_id' => $area->investigation_line_id,
                 ];
-            })->values());
+            })
+            ->values();
+    @endphp
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const investigationSelect = document.getElementById('investigation_line_id');
+            const thematicSelect = document.getElementById('thematic_area_id');
+            const areas = @json($areasForJs);
 
             function renderAreas(lineId) {
                 thematicSelect.innerHTML = '<option value="">Selecciona un área temática</option>';
