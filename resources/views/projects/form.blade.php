@@ -20,21 +20,18 @@
         <input type="text" class="form-control" value="{{ $prefill['delivery_date'] ?? now()->format('Y-m-d') }}" readonly>
         <small class="form-hint">Se registra automáticamente con la fecha actual.</small>
     </div>
+
     <div class="col-12 col-md-6">
-        <label for="city_id" class="form-label required">Ciudad</label>
-        <select id="city_id" name="city_id" class="form-select @error('city_id') is-invalid @enderror" required>
-            <option value="">Selecciona una ciudad</option>
-            @foreach ($cities as $city)
-                <option value="{{ $city->id }}" {{ (string) old('city_id', $prefill['city_id'] ?? '') === (string) $city->id ? 'selected' : '' }}>
-                    {{ $city->name }}
-                </option>
-            @endforeach
-        </select>
-        @error('city_id')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
+        <label class="form-label">Ciudad</label>
+        <input type="text"
+               class="form-control"
+               value="{{ $cities->firstWhere('id', $prefill['city_id'])->name ?? 'Ciudad no disponible' }}"
+               readonly>
+        <input type="hidden" name="city_id" value="{{ $prefill['city_id'] }}">
+        <small class="form-hint">Asignada automáticamente según tu usuario.</small>
     </div>
 </div>
+
 
 @if ($isProfessor)
     <div class="row g-3 mt-0">
@@ -56,7 +53,8 @@
             <label for="co_professor_ids" class="form-label">Profesores asociados</label>
             <select id="co_professor_ids" name="co_professor_ids[]" class="form-select @error('co_professor_ids') is-invalid @enderror" multiple size="6">
                 @php
-                    $currentProfessorId = optional(auth()->user()->professor)->id;
+                    $fullUser = \App\Helpers\AuthUserHelper::fullUser();
+                    $currentProfessorId = optional($fullUser?->professor)->id;
                     $selectedProfessors = collect(old('co_professor_ids', $projectModel?->professors?->pluck('id')->reject(fn ($id) => $id === $currentProfessorId)->all() ?? []));
                 @endphp
                 @foreach ($availableProfessors as $professorOption)
@@ -90,10 +88,12 @@
 <div class="row g-3 mt-0">
     <div class="col-12 col-md-6">
         <label for="investigation_line_id" class="form-label required">Línea de investigación</label>
-        <select id="investigation_line_id" name="investigation_line_id" class="form-select @error('investigation_line_id') is-invalid @enderror" required>
+        <select id="investigation_line_id" name="investigation_line_id"
+                class="form-select @error('investigation_line_id') is-invalid @enderror" required>
             <option value="">Selecciona una línea</option>
             @foreach ($investigationLines as $line)
-                <option value="{{ $line->id }}" {{ (string) old('investigation_line_id', $projectModel?->thematicArea?->investigation_line_id ?? '') === (string) $line->id ? 'selected' : '' }}>
+                <option value="{{ $line->id }}"
+                    {{ (string) old('investigation_line_id', $projectModel?->thematicArea?->investigation_line_id ?? '') === (string) $line->id ? 'selected' : '' }}>
                     {{ $line->name }}
                 </option>
             @endforeach
@@ -102,21 +102,27 @@
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
+
     <div class="col-12 col-md-6">
         <label for="thematic_area_id" class="form-label required">Área temática</label>
-        <select id="thematic_area_id" name="thematic_area_id" class="form-select @error('thematic_area_id') is-invalid @enderror" required>
+        <select id="thematic_area_id" name="thematic_area_id"
+                class="form-select @error('thematic_area_id') is-invalid @enderror" required disabled>
             <option value="">Selecciona un área temática</option>
             @foreach ($thematicAreas as $area)
-                <option value="{{ $area->id }}" data-line="{{ $area->investigation_line_id }}" {{ (string) old('thematic_area_id', $projectModel?->thematic_area_id ?? '') === (string) $area->id ? 'selected' : '' }}>
+                <option value="{{ $area->id }}"
+                        data-line="{{ $area->investigation_line_id }}"
+                        {{ (string) old('thematic_area_id', $projectModel?->thematic_area_id ?? '') === (string) $area->id ? 'selected' : '' }}>
                     {{ $area->name }}
                 </option>
             @endforeach
         </select>
+        <small class="form-hint">Selecciona primero una linea de investigación.</small>
         @error('thematic_area_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
 </div>
+
 
 <div class="mb-3 mt-3">
     <label for="title" class="form-label required">Título del proyecto</label>
@@ -208,7 +214,11 @@
         <label for="teammate_ids" class="form-label">Compañeros (máximo 2 adicionales)</label>
         <select id="teammate_ids" name="teammate_ids[]" class="form-select @error('teammate_ids') is-invalid @enderror" multiple size="6">
             @php
-                $selectedTeammates = collect(old('teammate_ids', $projectModel?->students?->pluck('id')->filter(fn ($id) => $id !== optional(auth()->user()->student)->id)->all() ?? []));
+                $fullUser = $fullUser ?? \App\Helpers\AuthUserHelper::fullUser();
+                $currentStudentId = optional($fullUser?->student)->id;
+                $selectedTeammates = collect(
+                    old('teammate_ids', $projectModel?->students?->pluck('id')->filter(fn ($id) => $id !== $currentStudentId)->all() ?? [])
+                );
             @endphp
             @foreach ($availableStudents as $studentOption)
                 <option value="{{ $studentOption->id }}" {{ $selectedTeammates->contains($studentOption->id) ? 'selected' : '' }}>
@@ -303,3 +313,37 @@
         </div>
     </div>
 @endif
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const lineSelect = document.getElementById('investigation_line_id');
+    const areaSelect = document.getElementById('thematic_area_id');
+    const allAreas = [...areaSelect.options];
+
+    function filterAreas() {
+        const selectedLine = lineSelect.value;
+
+        // Reset
+        areaSelect.innerHTML = '<option value="">Selecciona un área temática</option>';
+
+        if (!selectedLine) {
+            areaSelect.disabled = true;
+            return;
+        }
+
+        // Filtrar opciones válidas
+        const filtered = allAreas.filter(opt => opt.dataset.line === selectedLine);
+
+        filtered.forEach(opt => areaSelect.appendChild(opt));
+
+        areaSelect.disabled = filtered.length === 0;
+    }
+
+    // Cuando cambia la línea, filtramos áreas
+    lineSelect.addEventListener('change', filterAreas);
+
+    // Si venimos del edit, filtramos automáticamente
+    filterAreas();
+});
+</script>

@@ -12,17 +12,19 @@ use App\Models\Project;
 use App\Models\ProjectStatus;
 use App\Models\Student;
 use App\Models\ThematicArea;
+use App\Models\User;
 use App\Models\Version;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use App\Helpers\AuthUserHelper;
+
 
 /**
  * Controller responsible for managing the project proposal lifecycle for students and professors.
@@ -49,7 +51,7 @@ class ProjectController extends Controller
      */
     public function index(Request $request): View
     {
-        $user = Auth::user();
+        $user = AuthUserHelper::fullUser();
         $query = Project::query()
             ->with([
                 'thematicArea.investigationLine',
@@ -95,7 +97,7 @@ class ProjectController extends Controller
      */
     protected function ensureRoleAccess(bool $allowResearchStaff = false): array
     {
-        $user = Auth::user();
+        $user = AuthUserHelper::fullUser();
         $isProfessor = $user?->role === 'professor';
         $isStudent = $user?->role === 'student';
         $isResearchStaff = $user?->role === 'research_staff';
@@ -118,9 +120,17 @@ class ProjectController extends Controller
             abort(403, 'Research staff members cannot create project ideas.');
         }
 
+        if ($isProfessor) {
+            $researchGroupId = $user->professor?->cityProgram?->program?->research_group_id;
+        } else {
+            $researchGroupId = $user->student?->cityProgram?->program?->research_group_id;
+        }
+
         $cities = City::query()->orderBy('name')->get();
         $programs = Program::query()->with('researchGroup')->orderBy('name')->get();
-        $investigationLines = InvestigationLine::query()->with('thematicAreas')->orderBy('name')->get();
+        $investigationLines = InvestigationLine::where('research_group_id', $researchGroupId)
+        ->whereNull('deleted_at')
+        ->get();
         $thematicAreas = ThematicArea::query()->orderBy('name')->get();
 
         $prefill = [
@@ -252,7 +262,7 @@ class ProjectController extends Controller
         $latestVersion = $project->versions->first();
         $contentValues = $this->mapContentValues($latestVersion);
 
-        $user = Auth::user();
+        $user = AuthUserHelper::fullUser();
 
         return view('projects.show', [
             'project' => $project,
@@ -430,12 +440,16 @@ class ProjectController extends Controller
         }
 
         if ($isProfessor) {
-            $professor = Auth::user()?->professor;
+            $user =  AuthUserHelper::fullUser();
+            $professor = $user->professor;
+            
             if (! $professor || ! $project->professors->contains('id', $professor->id)) {
                 abort(403, 'You are not assigned to this project.');
             }
         } elseif ($isStudent) {
-            $student = Auth::user()?->student;
+            $user =  AuthUserHelper::fullUser();
+            $student = $user->student;
+
             if (! $student || ! $project->students->contains('id', $student->id)) {
                 abort(403, 'You are not assigned to this project.');
             }

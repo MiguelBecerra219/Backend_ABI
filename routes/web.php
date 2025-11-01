@@ -17,10 +17,11 @@ use App\Http\Controllers\ThematicAreaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectEvaluationController;
-
+use App\Http\Controllers\BankApprovedIdeasForStudentsController; 
+use App\Http\Controllers\BankApprovedIdeasForProfessorsController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::get('/home', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -30,12 +31,6 @@ Route::get('/home', [\App\Http\Controllers\HomeController::class, 'index'])->nam
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
-
-Route::middleware(['auth', ' :user'])->group(function () {
-    // Routes to obtain cities by department
-    Route::get('obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
-    Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);
-});
 
 // Protected routes for research_staff role
 Route::middleware(['auth', 'role:research_staff'])->group(function () {
@@ -95,29 +90,38 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
         return view('content-versions.show', ['contentVersionId' => $contentVersionId]);
     })->name('content-versions.show');
 
+    // Public routes for departments and cities (if you need them without authentication)
+    Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
+    Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);
+    Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
+    //Framework routes and content framework project
+    Route::resource('frameworks', FrameworkController::class);
+    Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
 });
-
-
-Route::middleware(['auth', 'role:committee_leader'])->prefix('projects/evaluation')->name('projects.evaluation.')->group(function () {
-    Route::get('/', [ProjectEvaluationController::class, 'index'])->name('index');
-    Route::get('/{project}', [ProjectEvaluationController::class, 'show'])->name('show');
-    Route::post('/{project}/evaluate', [ProjectEvaluationController::class, 'evaluate'])->name('evaluate');
-});
-
 
 Route::middleware(['auth'])->group(function () {
     Route::resource('projects', ProjectController::class)->except(['destroy']);
 });
 
+Route::middleware(['auth', 'role:committee_leader'])->prefix('comite/project/evaluation')->name('projects.evaluation.')->group(function () {
+    Route::get('/', [ProjectEvaluationController::class, 'index'])->name('index');
+    Route::get('/{project}', [ProjectEvaluationController::class, 'show'])->name('show');
+    Route::post('/{project}/evaluate', [ProjectEvaluationController::class, 'evaluate'])->name('evaluate');
+});
 
-    
+Route::middleware(['auth', 'role:student'])->group(function () {
+    Route::get('student/projects/approved', [BankApprovedIdeasForStudentsController::class, 'index'])
+        ->name('student.projects.approved.index');
 
+    Route::get('student/projects/approved/{project}', [BankApprovedIdeasForStudentsController::class, 'show'])
+        ->name('student.projects.approved.show');
 
-// Public routes for departments and cities (if you need them without authentication)
-Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
-Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);
-Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
-//Framework routes and content framework project
-Route::resource('frameworks', FrameworkController::class);
-Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
+});
 
+Route::middleware(['auth', 'role:professor, committee_leader'])->group(function () {
+    Route::get('professor/projects/approved', [BankApprovedIdeasForProfessorsController::class, 'index'])
+        ->name('professor.projects.approved.index');
+
+    Route::get('professor/projects/approved/{project}', [BankApprovedIdeasForProfessorsController::class, 'show'])
+        ->name('professor.projects.approved.show');
+});
