@@ -84,25 +84,27 @@ class ProjectController extends Controller
             'search' => $search,
             'isProfessor' => $user?->role === 'professor',
             'isStudent' => $user?->role === 'student',
+            'isResearchStaff' => $user?->role === 'research_staff',
         ]);
     }
 
     /**
-     * Ensure the current user is either a professor or a student.
+     * Ensure the current user is allowed to interact with the projects module.
      *
-     * @return array{0: \App\Models\User, 1: bool, 2: bool}
+     * @return array{0: \App\Models\User, 1: bool, 2: bool, 3: bool}
      */
-    protected function ensureRoleAccess(): array
+    protected function ensureRoleAccess(bool $allowResearchStaff = false): array
     {
         $user = Auth::user();
         $isProfessor = $user?->role === 'professor';
         $isStudent = $user?->role === 'student';
+        $isResearchStaff = $user?->role === 'research_staff';
 
-        if (! $isProfessor && ! $isStudent) {
+        if (! $isProfessor && ! $isStudent && ! ($allowResearchStaff && $isResearchStaff)) {
             abort(403, 'This action is only available for professors or students.');
         }
 
-        return [$user, $isProfessor, $isStudent];
+        return [$user, $isProfessor, $isStudent, $isResearchStaff];
     }
 
     /**
@@ -110,7 +112,11 @@ class ProjectController extends Controller
      */
     public function create(): View
     {
-        [$user, $isProfessor, $isStudent] = $this->ensureRoleAccess();
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+
+        if ($isResearchStaff) {
+            abort(403, 'Research staff members cannot create project ideas.');
+        }
 
         $cities = City::query()->orderBy('name')->get();
         $programs = Program::query()->with('researchGroup')->orderBy('name')->get();
@@ -191,11 +197,15 @@ class ProjectController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        [$user, $isProfessor, $isStudent] = $this->ensureRoleAccess();
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
 
         try {
             if ($isProfessor) {
                 return $this->persistProfessorProject($request, $user->professor);
+            }
+
+            if ($isResearchStaff) {
+                abort(403, 'Research staff members cannot create project ideas.');
             }
 
             return $this->persistStudentProject($request, $user->student);
@@ -208,6 +218,20 @@ class ProjectController extends Controller
                 ->withInput()
                 ->with('error', 'Unexpected error. Please try again later.');
         }
+
+        return view('projects.edit', [
+            'project' => $project,
+            'cities' => $cities,
+            'programs' => $programs,
+            'investigationLines' => $investigationLines,
+            'thematicAreas' => $thematicAreas,
+            'prefill' => $prefill,
+            'contentValues' => $contentValues,
+            'isProfessor' => $isProfessor,
+            'isStudent' => $isStudent,
+            'availableStudents' => $availableStudents,
+            'availableProfessors' => $availableProfessors,
+        ]);
     }
 
     /**
@@ -244,8 +268,8 @@ class ProjectController extends Controller
      */
     public function edit(Project $project): View
     {
-        [$user, $isProfessor, $isStudent] = $this->ensureRoleAccess();
-        $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent);
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+        $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
 
         $project->load([
             'thematicArea',
@@ -271,53 +295,61 @@ class ProjectController extends Controller
         $availableStudents = collect();
         $availableProfessors = collect();
 
-        if ($isProfessor) {
-            $professor = $user->professor;
-            if (! $professor) {
+        $hasProfessorParticipants = $project->professors->isNotEmpty();
+        $hasStudentParticipants = $project->students->isNotEmpty();
+
+        $useProfessorForm = $isProfessor || ($isResearchStaff && $hasProfessorParticipants);
+        $useStudentForm = $isStudent || ($isResearchStaff && ! $hasProfessorParticipants && $hasStudentParticipants);
+
+        if ($useProfessorForm) {
+            $contextProfessor = $isProfessor ? $user->professor : $project->professors->first();
+            if (! $contextProfessor) {
                 abort(403, 'Professor profile required to edit proposals.');
             }
 
             $prefill = array_merge($prefill, [
-                'first_name' => $professor->name,
-                'last_name' => $professor->last_name,
-                'email' => $professor->mail ?? $user->email,
-                'phone' => $professor->phone,
-                'city_id' => optional($professor->cityProgram)->city_id,
-                'program_id' => optional($professor->cityProgram)->program_id,
+                'first_name' => $contextProfessor->name,
+                'last_name' => $contextProfessor->last_name,
+                'email' => $contextProfessor->mail ?? $contextProfessor->user?->email,
+                'phone' => $contextProfessor->phone,
+                'city_id' => optional($contextProfessor->cityProgram)->city_id,
+                'program_id' => optional($contextProfessor->cityProgram)->program_id,
             ]);
 
             $availableProfessors = Professor::query()
-                ->where('id', '!=', $professor->id)
+                ->where('id', '!=', $contextProfessor->id)
                 ->orderBy('last_name')
                 ->orderBy('name')
                 ->get();
-        } else {
-            $student = $user->student;
-            if (! $student) {
+        } elseif ($useStudentForm) {
+            $contextStudent = $isStudent ? $user->student : $project->students->first();
+            if (! $contextStudent) {
                 abort(403, 'Student profile required to edit proposals.');
             }
 
-            $cityProgram = $student->cityProgram;
+            $cityProgram = $contextStudent->cityProgram;
             $program = $cityProgram?->program;
             $researchGroup = $program?->researchGroup;
 
             $prefill = array_merge($prefill, [
-                'first_name' => $student->name,
-                'last_name' => $student->last_name,
-                'card_id' => $student->card_id,
-                'email' => $user->email,
-                'phone' => $student->phone,
+                'first_name' => $contextStudent->name,
+                'last_name' => $contextStudent->last_name,
+                'card_id' => $contextStudent->card_id,
+                'email' => $contextStudent->user?->email,
+                'phone' => $contextStudent->phone,
                 'city_id' => $cityProgram?->city_id,
                 'program_id' => $program?->id,
                 'research_group' => $researchGroup?->name,
             ]);
 
             $availableStudents = Student::query()
-                ->where('city_program_id', $student->city_program_id)
-                ->where('id', '!=', $student->id)
+                ->where('city_program_id', $contextStudent->city_program_id)
+                ->where('id', '!=', $contextStudent->id)
                 ->orderBy('last_name')
                 ->orderBy('name')
                 ->get();
+        } else {
+            abort(403, 'Project participants are required to edit this proposal.');
         }
 
         return view('projects.edit', [
@@ -328,8 +360,9 @@ class ProjectController extends Controller
             'thematicAreas' => $thematicAreas,
             'prefill' => $prefill,
             'contentValues' => $contentValues,
-            'isProfessor' => $isProfessor,
-            'isStudent' => $isStudent,
+            'isProfessor' => $useProfessorForm,
+            'isStudent' => $useStudentForm,
+            'isResearchStaff' => $isResearchStaff,
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
         ]);
@@ -340,15 +373,35 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project): RedirectResponse
     {
-        [$user, $isProfessor, $isStudent] = $this->ensureRoleAccess();
-        $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent);
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+        $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
+
+        $project->loadMissing(['professors', 'students']);
 
         try {
             if ($isProfessor) {
                 return $this->persistProfessorProject($request, $user->professor, $project);
             }
 
-            return $this->persistStudentProject($request, $user->student, $project);
+            if ($isStudent) {
+                return $this->persistStudentProject($request, $user->student, $project);
+            }
+
+            if ($isResearchStaff) {
+                $primaryProfessor = $project->professors->first();
+                if ($primaryProfessor) {
+                    return $this->persistProfessorProject($request, $primaryProfessor, $project);
+                }
+
+                $primaryStudent = $project->students->first();
+                if ($primaryStudent) {
+                    return $this->persistStudentProject($request, $primaryStudent, $project);
+                }
+
+                return back()
+                    ->withInput()
+                    ->with('error', 'The project has no participants to edit.');
+            }
         } catch (\Throwable $exception) {
             Log::error('Failed to update project idea.', [
                 'project_id' => $project->id,
@@ -359,13 +412,23 @@ class ProjectController extends Controller
                 ->withInput()
                 ->with('error', 'Unexpected error. Please try again later.');
         }
+
+        return $version->contentVersions
+            ->mapWithKeys(static function (ContentVersion $contentVersion) {
+                return [$contentVersion->content->name => $contentVersion->value];
+            })
+            ->toArray();
     }
 
     /**
      * Guard access to edit/update operations ensuring the user participates in the project.
      */
-    protected function authorizeProjectAccess(Project $project, int $userId, bool $isProfessor, bool $isStudent): void
+    protected function authorizeProjectAccess(Project $project, int $userId, bool $isProfessor, bool $isStudent, bool $isResearchStaff): void
     {
+        if ($isResearchStaff) {
+            return;
+        }
+
         if ($isProfessor) {
             $professor = Auth::user()?->professor;
             if (! $professor || ! $project->professors->contains('id', $professor->id)) {
@@ -484,7 +547,6 @@ class ProjectController extends Controller
         $validated = $request->validate($baseRules);
         $isUpdate = $project !== null;
         $normalizedTitle = $this->normalizeTitle($validated['title']);
-        $isUpdate = $project !== null;
 
         $professorIds = collect($validated['co_professor_ids'] ?? [])
             ->push($professor->id)
@@ -614,9 +676,10 @@ class ProjectController extends Controller
         ];
 
         $validated = $request->validate($baseRules);
+        $isUpdate = $project !== null;
 
         $cityProgram = $student->cityProgram;
-        if ($cityProgram && $validated['city_id'] !== $cityProgram->city_id) {
+        if ($cityProgram && (int) $validated['city_id'] !== (int) $cityProgram->city_id) {
             return back()
                 ->withInput()
                 ->with('error', 'The selected city does not match your program assignment.');

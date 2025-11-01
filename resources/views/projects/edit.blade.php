@@ -102,7 +102,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             const investigationSelect = document.getElementById('investigation_line_id');
             const thematicSelect = document.getElementById('thematic_area_id');
-            const areas = @json($areasForJs);
+            const areas = @json(($thematicAreas ?? collect())->map(function ($area) {
+                return [
+                    'id' => $area->id,
+                    'name' => $area->name,
+                    'investigation_line_id' => $area->investigation_line_id,
+                ];
+            })->values());
 
             function renderAreas(lineId) {
                 thematicSelect.innerHTML = '<option value="">Selecciona un área temática</option>';
