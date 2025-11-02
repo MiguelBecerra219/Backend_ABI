@@ -1,10 +1,10 @@
 {{--
-    View path: content-framework-project/create.blade.php.
-    Purpose: Presents the screen to create a new link between a project and a content framework entry.
+    View path: content-frameworks/create.blade.php.
+    Purpose: Presents the create screen for framework contents using the shared form fragment.
 --}}
 @extends('tablar::page')
 
-@section('title', 'Asignar contenido a proyecto')
+@section('title', 'Registrar contenido de framework')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -14,7 +14,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('content-framework-project.index') }}">Asignaciones de contenidos</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-frameworks.index') }}">Contenidos de framework</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Crear</li>
                         </ol>
                     </nav>
@@ -24,12 +24,12 @@
                             <path d="M12 5v14" />
                             <path d="M5 12h14" />
                         </svg>
-                        Asignar contenido a proyecto
+                        Registrar contenido de framework
                     </h2>
-                    <p class="text-muted mb-0">Selecciona un proyecto y un contenido para relacionarlos.</p>
+                    <p class="text-muted mb-0">Captura la información del contenido y relaciónala con el framework correspondiente.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
-                    <a href="{{ route('content-framework-project.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
+                    <a href="{{ route('content-frameworks.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
                 </div>
             </div>
         </div>
@@ -45,20 +45,19 @@
                 <div class="col-12 col-lg-8">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Datos de la asignación</h3>
+                            <h3 class="card-title">Información del contenido</h3>
                             <div class="card-actions">
                                 <small class="text-secondary">Los campos marcados con * son obligatorios</small>
                             </div>
                         </div>
                         <div class="card-body">
-                            <form method="POST" action="{{ route('content-framework-project.store') }}" novalidate>
+                            <form method="POST" action="{{ route('content-frameworks.store') }}" novalidate>
                                 @csrf
-                                @include('content-framework-project.form', [
-                                    'contentFrameworkProject' => $contentFrameworkProject,
-                                    'projects' => $projects,
-                                    'contentFrameworks' => $contentFrameworks,
-                                    'projectId' => $projectId,
-                                    'contentFrameworkId' => $contentFrameworkId,
+                                @php($prefw = $prefw ?? request('framework_id'))
+                                @include('content-frameworks.form', [
+                                    'contentFramework' => $contentFramework ?? null,
+                                    'frameworks' => $frameworks ?? null,
+                                    'prefw' => $prefw,
                                 ])
                             </form>
                         </div>

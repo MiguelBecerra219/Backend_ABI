@@ -8,6 +8,7 @@ use App\Http\Controllers\FormularioController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\FrameworkController;
+use App\Http\Controllers\ContentFrameworkController;
 use App\Http\Controllers\ContentFrameworkProjectController;
 use App\Http\Controllers\InvestigationLineController;
 use App\Http\Controllers\ProgramController;
@@ -93,9 +94,10 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
     Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);
     Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
-    //Framework routes and content framework project
+    // Framework routes and content framework resources
     Route::resource('frameworks', FrameworkController::class);
-    Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
+    Route::resource('content-frameworks', ContentFrameworkController::class)->names('content-frameworks');
+    Route::resource('content-framework-project', ContentFrameworkProjectController::class)->names('content-framework-project');
 });
 
 Route::middleware(['auth'])->group(function () {

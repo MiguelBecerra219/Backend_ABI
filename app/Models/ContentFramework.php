@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -30,8 +32,16 @@ class ContentFramework extends Model
     /**
      * Get the framework associated with this content framework.
      */
-    public function framework()
+    public function framework(): BelongsTo
     {
         return $this->belongsTo(Framework::class, 'framework_id', 'id');
+    }
+
+    /**
+     * Get the assignments that link this content with projects.
+     */
+    public function contentFrameworkProjects(): HasMany
+    {
+        return $this->hasMany(ContentFrameworkProject::class, 'content_framework_id', 'id');
     }
 }

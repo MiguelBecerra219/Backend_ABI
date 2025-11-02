@@ -2,119 +2,134 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ContentFrameworkRequest;
-use App\Models\ResearchStaff\ResearchStaffContentFramework;
-use App\Models\ResearchStaff\ResearchStaffFramework;
+use App\Models\ContentFramework;
+use App\Models\ContentFrameworkProject;
+use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-/**
- * Class ContentFrameworkProjectController
- * @package App\Http\Controllers
- */
 class ContentFrameworkProjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request): View
     {
         $search = trim((string) $request->get('search', ''));
-        if ($search === '') {
-            $search = null;
-        }
+        $projectId = $request->get('project_id');
+        $contentFrameworkId = $request->get('content_framework_id');
 
-        $frameworkId = $request->get('framework_id');
+        $query = ContentFrameworkProject::query()
+            ->with(['project', 'contentFramework'])
+            ->orderByDesc('id');
 
-        $query = ResearchStaffContentFramework::with('framework')
-            ->orderByDesc('created_at');
-
-        if ($search !== null) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-
-                if (is_numeric($search)) {
-                    $q->orWhere('id', (int) $search);
-                }
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder
+                    ->whereHas('project', function ($relation) use ($search) {
+                        $relation->where('title', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('contentFramework', function ($relation) use ($search) {
+                        $relation->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
-        if (!empty($frameworkId)) {
-            $query->where('framework_id', $frameworkId);
+        if (!empty($projectId)) {
+            $query->where('project_id', $projectId);
         }
 
-        $contentFrameworkProjects = $query->paginate(10)->withQueryString();
+        if (!empty($contentFrameworkId)) {
+            $query->where('content_framework_id', $contentFrameworkId);
+        }
 
-        $frameworkOptions = ResearchStaffFramework::orderBy('name')->pluck('name', 'id');
+        $contentFrameworkProjects = $query->paginate(15)->withQueryString();
 
-        return view('content-framework-project.index', compact('contentFrameworkProjects', 'frameworkOptions'))
+        $projectOptions = Project::orderBy('title')->pluck('title', 'id');
+        $contentFrameworkOptions = ContentFramework::orderBy('name')->pluck('name', 'id');
+
+        return view('content-framework-project.index', compact('contentFrameworkProjects', 'projectOptions', 'contentFrameworkOptions'))
             ->with('search', $search)
-            ->with('framework_id', $frameworkId);
+            ->with('projectId', $projectId)
+            ->with('contentFrameworkId', $contentFrameworkId);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create(Request $request): View
     {
-        $contentFrameworkProject = new ResearchStaffContentFramework();
-        $frameworks = ResearchStaffFramework::orderBy('name')->pluck('name', 'id');
-        $prefw = $request->get('framework_id');
+        $contentFrameworkProject = new ContentFrameworkProject();
+        $projects = Project::orderBy('title')->pluck('title', 'id');
+        $contentFrameworks = ContentFramework::orderBy('name')->pluck('name', 'id');
+        $projectId = $request->get('project_id');
+        $contentFrameworkId = $request->get('content_framework_id');
 
-        return view('content-framework-project.create', compact('contentFrameworkProject', 'frameworks', 'prefw'));
+        return view('content-framework-project.create', compact(
+            'contentFrameworkProject',
+            'projects',
+            'contentFrameworks',
+            'projectId',
+            'contentFrameworkId'
+        ));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(ContentFrameworkRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $contentFrameworkProject = ResearchStaffContentFramework::create($request->validated());
+        $data = $request->validate([
+            'project_id' => ['required', 'exists:projects,id'],
+            'content_framework_id' => [
+                'required',
+                'exists:content_frameworks,id',
+                Rule::unique('content_framework_project', 'content_framework_id')
+                    ->where(fn ($query) => $query->where('project_id', $request->input('project_id'))),
+            ],
+        ]);
 
-        return redirect()->route('content-framework-projects.index')
-            ->with('success', "Contenido '{$contentFrameworkProject->name}' creado correctamente.");
+        $contentFrameworkProject = ContentFrameworkProject::create($data);
+
+        return redirect()
+            ->route('content-framework-project.index')
+            ->with('success', 'Asignación creada correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(ResearchStaffContentFramework $contentFrameworkProject): View
+    public function show(ContentFrameworkProject $contentFrameworkProject): View
     {
+        $contentFrameworkProject->load(['project', 'contentFramework']);
+
         return view('content-framework-project.show', compact('contentFrameworkProject'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ResearchStaffContentFramework $contentFrameworkProject): View
+    public function edit(ContentFrameworkProject $contentFrameworkProject): View
     {
-        $frameworks = ResearchStaffFramework::orderBy('name')->pluck('name', 'id');
+        $projects = Project::orderBy('title')->pluck('title', 'id');
+        $contentFrameworks = ContentFramework::orderBy('name')->pluck('name', 'id');
 
-        return view('content-framework-project.edit', compact('contentFrameworkProject', 'frameworks'));
+        return view('content-framework-project.edit', compact('contentFrameworkProject', 'projects', 'contentFrameworks'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(ContentFrameworkRequest $request, ResearchStaffContentFramework $contentFrameworkProject): RedirectResponse
+    public function update(Request $request, ContentFrameworkProject $contentFrameworkProject): RedirectResponse
     {
-        $contentFrameworkProject->update($request->validated());
+        $data = $request->validate([
+            'project_id' => ['required', 'exists:projects,id'],
+            'content_framework_id' => [
+                'required',
+                'exists:content_frameworks,id',
+                Rule::unique('content_framework_project', 'content_framework_id')
+                    ->where(fn ($query) => $query->where('project_id', $request->input('project_id')))
+                    ->ignore($contentFrameworkProject->id),
+            ],
+        ]);
 
-        return redirect()->route('content-framework-projects.index')
-            ->with('success', "Contenido '{$contentFrameworkProject->name}' actualizado correctamente.");
+        $contentFrameworkProject->update($data);
+
+        return redirect()
+            ->route('content-framework-project.index')
+            ->with('success', 'Asignación actualizada correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(ResearchStaffContentFramework $contentFrameworkProject): RedirectResponse
+    public function destroy(ContentFrameworkProject $contentFrameworkProject): RedirectResponse
     {
-        $nombre = $contentFrameworkProject->name;
         $contentFrameworkProject->delete();
 
-        return redirect()->route('content-framework-projects.index')
-            ->with('success', "Contenido '{$nombre}' eliminado correctamente.");
+        return redirect()
+            ->route('content-framework-project.index')
+            ->with('success', 'Asignación eliminada correctamente.');
     }
 }

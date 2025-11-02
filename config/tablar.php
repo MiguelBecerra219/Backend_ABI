@@ -212,9 +212,14 @@ return [
                 'route' => 'frameworks.index',
             ],
             [
+                'text' => 'Contenidos de framework',
+                'icon' => 'ti ti-folders',
+                'route' => 'content-frameworks.index',
+            ],
+            [
                 'text' => 'Asignacion de contenidos',
                 'icon' => 'ti ti-circle-dashed',
-                'route' => 'content-framework-projects.index',
+                'route' => 'content-framework-project.index',
             ],
         ],
     ],

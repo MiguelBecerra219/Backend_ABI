@@ -1,87 +1,61 @@
 {{--
     View path: content-framework-project/form.blade.php.
-    Purpose: Shared form fragment used on create and edit screens for framework contents.
-    Expected variables: $contentFrameworkProject (optional), $frameworks (optional), $prefw (optional).
+    Purpose: Shared form fragment for linking projects with content frameworks.
+    Expected variables: $contentFrameworkProject (optional), $projects (array), $contentFrameworks (array), $projectId (optional), $contentFrameworkId (optional).
 --}}
 @php
     $record = $contentFrameworkProject ?? null;
-    $preselectedFrameworkId = old('framework_id', $prefw ?? ($record->framework_id ?? null));
-
-    if (!isset($frameworks)) {
-        try {
-            $frameworks = \App\Models\Framework::orderBy('name')->pluck('name', 'id')->toArray();
-        } catch (\Throwable $exception) {
-            $frameworks = [];
-        }
-    }
+    $selectedProjectId = old('project_id', $projectId ?? ($record->project_id ?? null));
+    $selectedContentFrameworkId = old('content_framework_id', $contentFrameworkId ?? ($record->content_framework_id ?? null));
 @endphp
 
 <div class="row g-3">
-    <div class="col-12">
-        <label for="name" class="form-label required">Nombre del contenido</label>
-        <input
-            type="text"
-            id="name"
-            name="name"
-            class="form-control {{ $errors->has('name') ? 'is-invalid' : '' }}"
-            placeholder="Ej: Competencias comunicativas"
-            value="{{ old('name', $record->name ?? '') }}"
-            maxlength="255"
-            required
-        >
-        @error('name')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-        <small class="form-hint">Utiliza un nombre breve y descriptivo.</small>
-    </div>
-
-    <div class="col-12">
-        <label for="description" class="form-label required">Descripción</label>
-        <textarea
-            id="description"
-            name="description"
-            class="form-control {{ $errors->has('description') ? 'is-invalid' : '' }}"
-            rows="4"
-            placeholder="Describe el objetivo del contenido dentro del framework."
-            maxlength="1000"
-            required
-        >{{ old('description', $record->description ?? '') }}</textarea>
-        @error('description')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-        <small class="form-hint">Explica en qué contexto se aplicará este contenido.</small>
-    </div>
-
     <div class="col-12 col-lg-6">
-        <label for="framework_id" class="form-label required">Framework asociado</label>
+        <label for="project_id" class="form-label required">Proyecto</label>
         <select
-            id="framework_id"
-            name="framework_id"
-            class="form-select {{ $errors->has('framework_id') ? 'is-invalid' : '' }}"
+            id="project_id"
+            name="project_id"
+            class="form-select {{ $errors->has('project_id') ? 'is-invalid' : '' }}"
             required
         >
-            <option value="" disabled {{ $preselectedFrameworkId ? '' : 'selected' }}>Selecciona un framework…</option>
-            @foreach($frameworks as $frameworkId => $frameworkName)
-                <option value="{{ $frameworkId }}" {{ (string)$preselectedFrameworkId === (string)$frameworkId ? 'selected' : '' }}>
-                    {{ $frameworkName }}
+            <option value="" disabled {{ $selectedProjectId ? '' : 'selected' }}>Selecciona un proyecto…</option>
+            @foreach($projects as $id => $title)
+                <option value="{{ $id }}" {{ (string)$selectedProjectId === (string)$id ? 'selected' : '' }}>
+                    {{ $title }}
                 </option>
             @endforeach
         </select>
-        @error('framework_id')
+        @error('project_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
-        <small class="form-hint">El contenido quedará vinculado a este framework.</small>
-        @if($preselectedFrameworkId)
-            <div class="mt-2">
-                <a class="badge bg-azure-lt text-decoration-none" href="{{ route('frameworks.show', $preselectedFrameworkId) }}">Ver framework seleccionado</a>
-            </div>
-        @endif
+        <small class="form-hint">Elige el proyecto al que deseas asociar el contenido.</small>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <label for="content_framework_id" class="form-label required">Contenido del framework</label>
+        <select
+            id="content_framework_id"
+            name="content_framework_id"
+            class="form-select {{ $errors->has('content_framework_id') ? 'is-invalid' : '' }}"
+            required
+        >
+            <option value="" disabled {{ $selectedContentFrameworkId ? '' : 'selected' }}>Selecciona un contenido…</option>
+            @foreach($contentFrameworks as $id => $name)
+                <option value="{{ $id }}" {{ (string)$selectedContentFrameworkId === (string)$id ? 'selected' : '' }}>
+                    {{ $name }}
+                </option>
+            @endforeach
+        </select>
+        @error('content_framework_id')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-hint">Este contenido quedará vinculado al proyecto seleccionado.</small>
     </div>
 
     @if($record?->id)
-        <div class="col-12 col-lg-6">
-            <div class="alert alert-info h-100 mb-0">
-                <h4 class="alert-title">Información del registro</h4>
+        <div class="col-12">
+            <div class="alert alert-info mb-0">
+                <h4 class="alert-title">Información de la asignación</h4>
                 <p class="mb-1">ID: #{{ $record->id }}</p>
                 <p class="mb-1">Creado: {{ $record->created_at?->format('d/m/Y H:i') ?? '—' }}</p>
                 <p class="mb-0">Actualizado: {{ $record->updated_at?->format('d/m/Y H:i') ?? '—' }}</p>
@@ -91,9 +65,9 @@
 
     <div class="col-12">
         <div class="d-flex justify-content-between flex-column flex-sm-row gap-2">
-            <a href="{{ route('content-framework-projects.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+            <a href="{{ route('content-framework-project.index') }}" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">
-                {{ $record?->id ? 'Actualizar contenido' : 'Guardar contenido' }}
+                {{ $record?->id ? 'Actualizar asignación' : 'Guardar asignación' }}
             </button>
         </div>
     </div>
