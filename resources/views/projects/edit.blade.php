@@ -69,6 +69,7 @@
                                     'thematicAreas' => $thematicAreas ?? collect(),
                                     'availableStudents' => $availableStudents ?? collect(),
                                     'availableProfessors' => $availableProfessors ?? collect(),
+                                    'availableProfessorsPagination' => $availableProfessorsPagination ?? ['current_page' => 1, 'next_page' => null, 'per_page' => 10], // Ensure the edit view shares the same pagination contract as the create screen.
                                 ])
 
                                 <div class="d-flex justify-content-end gap-2 mt-4">

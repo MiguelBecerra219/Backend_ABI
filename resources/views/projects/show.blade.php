@@ -168,7 +168,10 @@
                                     </span>
                                     <div>
                                         <div class="fw-semibold">{{ $professor->name }} {{ $professor->last_name }}</div>
-                                        <div class="text-secondary small">{{ $professor->mail ?? 'Correo no registrado' }}</div>
+                                        @php
+                                            $professorEmail = $professor->mail ?? $professor->user?->email; // Prefer the profile email but fallback to the linked user account when available.
+                                        @endphp
+                                        <div class="text-secondary small">{{ $professorEmail ?? 'Correo no disponible' }}</div>
                                     </div>
                                 </div>
                             @empty

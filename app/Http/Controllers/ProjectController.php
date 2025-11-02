@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\Version;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder; // Added to share the participants base query between the HTML preload and the JSON endpoint.
 use Illuminate\Http\JsonResponse; // Added to type-hint JSON responses for the professor search endpoint.
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,16 +56,31 @@ class ProjectController extends Controller
         $user = AuthUserHelper::fullUser();
         $query = Project::query()
             ->with([
-                'thematicArea.investigationLine',
-                'projectStatus',
-                'professors' => static fn ($relation) => $relation->orderBy('last_name')->orderBy('name'),
-                'students' => static fn ($relation) => $relation->orderBy('last_name')->orderBy('name'),
-            ])
-            ->orderByDesc('created_at');
+            'thematicArea.investigationLine',
+            'projectStatus',
+            'professors' => static fn ($relation) => $relation
+                ->with(['user', 'cityProgram.program']) // Added eager loading to reuse the program relationship for committee leader filtering and email display.
+                ->orderBy('last_name')
+                ->orderBy('name'),
+            'students' => static fn ($relation) => $relation->orderBy('last_name')->orderBy('name'),
+        ])
+        ->orderByDesc('created_at');
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
             $query->where('title', 'like', "%{$search}%");
+        }
+
+        $programFilter = null; // Initialize the variable so we can pass the selected value back to the view with a comment explaining its purpose.
+
+        if ($user?->role === 'committee_leader') {
+            $programFilter = $request->integer('program_id'); // Capture the desired program filter to keep the pagination query string stable.
+
+            if ($programFilter) {
+                $query->whereHas('professors.cityProgram', static function (Builder $builder) use ($programFilter) {
+                    $builder->where('program_id', $programFilter); // Narrow the project listing to the chosen academic program when a committee leader is browsing.
+                });
+            }
         }
 
         if ($user?->role === 'professor' && $user->professor) {
@@ -82,6 +98,12 @@ class ProjectController extends Controller
         /** @var LengthAwarePaginator $projects */
         $projects = $query->paginate(10)->withQueryString();
 
+        $programCatalog = collect(); // Provide an empty fallback to avoid leaking program listings to other roles.
+
+        if ($user?->role === 'committee_leader') {
+            $programCatalog = Program::query()->orderBy('name')->get(); // Preload the programs list so committee leaders can filter projects without extra queries from the Blade view.
+        }
+
         return view('projects.index', [
             'projects' => $projects,
             'search' => $search,
@@ -89,6 +111,8 @@ class ProjectController extends Controller
             'isStudent' => $user?->role === 'student',
             'isCommitteeLeader' => $user?->role === 'committee_leader', // Expose the role explicitly to toggle UI elements when needed.
             'isResearchStaff' => $user?->role === 'research_staff',
+            'programCatalog' => $programCatalog, // Pass the catalog so the Blade can render the new drop-down in the filters section.
+            'selectedProgram' => $programFilter, // Keep the current filter selected during pagination.
         ]);
     }
 
@@ -150,6 +174,7 @@ class ProjectController extends Controller
 
         $availableStudents = collect();
         $availableProfessors = collect();
+        $availableProfessorsPagination = ['current_page' => 1, 'next_page' => null, 'per_page' => 10]; // Initialize pagination data so the Blade template can rely on predictable keys.
 
         if ($isProfessor) {
             $professor = $user->professor;
@@ -166,7 +191,13 @@ class ProjectController extends Controller
                 'program_id' => optional($professor->cityProgram)->program_id,
             ]);
 
-            $availableProfessors = collect(); // The dynamic search endpoint now provides professor options on demand.
+            $availableProfessorsPaginator = $this->paginateParticipants(optional($user->professor)->id); // Preload the first batch of eligible professors and committee leaders to populate the picker without extra SQL from the view.
+            $availableProfessors = $availableProfessorsPaginator->getCollection()->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Normalize the payload so the Blade template and the JS widget receive consistent fields.
+            $availableProfessorsPagination = [
+                'current_page' => $availableProfessorsPaginator->currentPage(),
+                'next_page' => $availableProfessorsPaginator->hasMorePages() ? $availableProfessorsPaginator->currentPage() + 1 : null,
+                'per_page' => $availableProfessorsPaginator->perPage(),
+            ]; // Expose pagination metadata for the load more button in the interface.
         } else {
             $student = $user->student;
             if (! $student) {
@@ -209,6 +240,7 @@ class ProjectController extends Controller
             'isCommitteeLeader' => $isCommitteeLeader, // Expose the new role so the Blade template can adjust the UI consistently.
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
+            'availableProfessorsPagination' => $availableProfessorsPagination ?? ['current_page' => 1, 'next_page' => null, 'per_page' => 10], // Provide default pagination info when the picker is not visible (students).
         ]);
     }
 
@@ -263,7 +295,8 @@ class ProjectController extends Controller
         $project->load([
             'thematicArea.investigationLine',
             'projectStatus',
-            'professors',
+            'professors.user', // Eager load the user to expose a reliable email address on the detail page.
+            'professors.cityProgram.program', // Preload the program so committee leaders can see contextual data without extra queries.
             'students',
             'contentFrameworks.framework', // ← Añadido
             'versions' => static fn ($relation) => $relation
@@ -288,67 +321,100 @@ class ProjectController extends Controller
     }
 
     /**
-     * Provide an AJAX friendly list of professors to associate with a project.
+     * Provide an AJAX friendly list of professors and committee leaders to associate with a project.
      */
-    public function searchProfessors(Request $request): JsonResponse
+    public function participants(Request $request): JsonResponse
     {
-        [$user, $isProfessor] = array_slice($this->ensureRoleAccess(), 0, 2); // Reuse the shared guard to ensure only professors or committee leaders reach this endpoint.
+        [$user, $isProfessor] = array_slice($this->ensureRoleAccess(), 0, 2); // Reuse the shared guard to ensure only professors and committee leaders reach this endpoint.
 
         if (! $isProfessor) {
-            abort(403, 'Only professors can search for colleagues.'); // Harden the endpoint against unauthorized roles.
+            abort(403, 'Only professors and committee leaders can browse participants.'); // Keep unauthorized roles from enumerating the catalog.
         }
-
-        $currentProfessorId = $user?->professor?->id; // Capture the authenticated professor record to avoid suggesting themselves.
 
         $requestedIds = collect($request->input('ids', []))
             ->filter(static fn ($id) => is_numeric($id))
             ->map(static fn ($id) => (int) $id)
-            ->values();
-
-        $query = Professor::query()
-            ->select(['id', 'name', 'last_name', 'card_id'])
-            ->when($currentProfessorId, static fn ($builder) => $builder->where('id', '!=', $currentProfessorId)); // Exclude the requester to prevent duplicate assignments.
+            ->unique();
 
         if ($requestedIds->isNotEmpty()) {
-            $professors = $query
-                ->whereIn('id', $requestedIds)
-                ->orderBy('last_name')
-                ->orderBy('name')
+            $prefetched = $this->participantQuery(null)
+                ->whereIn('professors.id', $requestedIds)
                 ->get();
 
-            return response()->json($professors->map(static function (Professor $professor) {
-                return [
-                    'id' => $professor->id,
-                    'name' => trim($professor->name . ' ' . $professor->last_name),
-                    'document' => $professor->card_id,
-                ];
-            }));
+            return response()->json([
+                'data' => $prefetched->map(fn (Professor $professor) => $this->presentParticipant($professor)),
+                'meta' => null,
+            ]); // Return a flat payload so the client can restore selections after validation errors.
         }
+
+        $excludeId = optional($user->professor)->id; // Exclude the authenticated profile from the suggestion list to avoid redundant chips.
+        $perPage = (int) $request->integer('per_page', 10);
+        $perPage = max(1, min($perPage, 25)); // Cap the pagination size to protect the endpoint from excessive loads.
+        $page = max(1, (int) $request->integer('page', 1));
 
         $term = trim((string) $request->input('q', ''));
 
-        if ($term === '') {
-            return response()->json([]); // Avoid running unnecessary queries when the user has not entered a search term.
+        $query = $this->participantQuery($excludeId);
+
+        if ($term !== '') {
+            $query->where(static function (Builder $builder) use ($term) {
+                $builder->where('professors.name', 'like', "%{$term}%")
+                    ->orWhere('professors.last_name', 'like', "%{$term}%")
+                    ->orWhere('professors.card_id', 'like', "%{$term}%");
+            }); // Allow filtering by name or document as requested.
         }
 
-        $professors = $query
-            ->where(static function ($builder) use ($term) {
-                $builder->where('name', 'like', "%{$term}%")
-                    ->orWhere('last_name', 'like', "%{$term}%")
-                    ->orWhere('card_id', 'like', "%{$term}%");
-            })
-            ->orderBy('last_name')
-            ->orderBy('name')
-            ->limit(10)
-            ->get();
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json($professors->map(static function (Professor $professor) {
-            return [
-                'id' => $professor->id,
-                'name' => trim($professor->name . ' ' . $professor->last_name),
-                'document' => $professor->card_id,
-            ];
-        }));
+        return response()->json([
+            'data' => $paginator->getCollection()->map(fn (Professor $professor) => $this->presentParticipant($professor)),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'next_page' => $paginator->hasMorePages() ? $paginator->currentPage() + 1 : null,
+                'per_page' => $paginator->perPage(),
+            ],
+        ]); // Provide pagination metadata so the UI can keep requesting additional batches.
+    }
+
+    /**
+     * Build the base query for participants, optionally excluding the authenticated profile.
+     */
+    protected function participantQuery(?int $excludeProfessorId = null): Builder
+    {
+        return Professor::query()
+            ->select('professors.*')
+            ->with(['user', 'cityProgram.program'])
+            ->whereHas('user', static function (Builder $builder) {
+                $builder->whereIn('role', ['professor', 'committee_leader']);
+            })
+            ->whereNull('professors.deleted_at') // Skip soft-deleted records so they do not appear in the picker or JSON endpoint.
+            ->when($excludeProfessorId, static function (Builder $builder, int $exclude) {
+                $builder->where('professors.id', '!=', $exclude);
+            })
+            ->orderBy('professors.last_name')
+            ->orderBy('professors.name'); // Keep ordering consistent between the initial HTML payload and the AJAX requests.
+    }
+
+    /**
+     * Paginate the participants catalog so both the controller and the JSON endpoint reuse the same defaults.
+     */
+    protected function paginateParticipants(?int $excludeProfessorId = null, int $page = 1, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->participantQuery($excludeProfessorId)->paginate($perPage, ['*'], 'page', max(1, $page));
+    }
+
+    /**
+     * Normalize the participant payload so the Blade and JS layers consume the same shape.
+     */
+    protected function presentParticipant(Professor $professor): array
+    {
+        return [
+            'id' => $professor->id,
+            'name' => trim(($professor->name ?? '') . ' ' . ($professor->last_name ?? '')),
+            'document' => $professor->card_id,
+            'email' => $professor->mail ?? $professor->user?->email,
+            'program' => optional($professor->cityProgram?->program)->name,
+        ]; // Include the email and program so the interface can display richer context while selecting collaborators.
     }
 
 
@@ -437,7 +503,13 @@ class ProjectController extends Controller
                 'program_id' => optional($contextProfessor->cityProgram)->program_id,
             ]);
 
-            $availableProfessors = collect(); // The chips interface fetches professors lazily, so we no longer need to preload them.
+            $availableProfessorsPaginator = $this->paginateParticipants(optional($contextProfessor)->id); // Load the first page of potential collaborators while excluding the active editor.
+            $availableProfessors = $availableProfessorsPaginator->getCollection()->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Transform the collection into lightweight arrays for the component.
+            $availableProfessorsPagination = [
+                'current_page' => $availableProfessorsPaginator->currentPage(),
+                'next_page' => $availableProfessorsPaginator->hasMorePages() ? $availableProfessorsPaginator->currentPage() + 1 : null,
+                'per_page' => $availableProfessorsPaginator->perPage(),
+            ]; // Forward pagination metadata to support the "load more" action in the view.
         } elseif ($useStudentForm) {
             $contextStudent = $isStudent ? $user->student : $project->students->first();
             if (! $contextStudent) {
@@ -497,6 +569,7 @@ class ProjectController extends Controller
             'isResearchStaff' => $isResearchStaff,
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
+            'availableProfessorsPagination' => $availableProfessorsPagination, // Share pagination info so the component behaves the same in edit mode.
             'frameworks' => $frameworks,
             'selectedContentFrameworkIds' => $selectedContentFrameworkIds,
             'selectedInvestigationLineId' => $selectedInvestigationLineId,

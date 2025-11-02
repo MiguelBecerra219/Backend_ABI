@@ -76,6 +76,21 @@
                                 <input type="search" id="search" name="search" value="{{ $search }}" class="form-control" placeholder="Título del proyecto">
                             </div>
                         </div>
+                        {{-- Added program selector so committee leaders can narrow the listing by academic program. --}}
+                        @if ($isCommitteeLeader)
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <label for="program_id" class="form-label">Programa académico</label>
+                                <select id="program_id" name="program_id" class="form-select">
+                                    <option value="">Todos los programas</option>
+                                    @foreach ($programCatalog as $program)
+                                        <option value="{{ $program->id }}" {{ (string) ($selectedProgram ?? '') === (string) $program->id ? 'selected' : '' }}>
+                                            {{ $program->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="form-hint">Filtra los proyectos según el programa del comité.</small>
+                            </div>
+                        @endif
                         <div class="col-12 col-md-4 col-lg-2">
                             <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                         </div>

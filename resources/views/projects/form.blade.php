@@ -11,7 +11,14 @@
     $investigationLines = $investigationLines ?? collect();
     $thematicAreas = $thematicAreas ?? collect();
     $availableStudents = $availableStudents ?? collect();
-    $availableProfessors = $availableProfessors ?? collect();
+    $availableProfessors = collect($availableProfessors ?? []); // Coerce the initial participants into a collection so helper methods like ->values() are available consistently.
+    $availableProfessorsPagination = $availableProfessorsPagination ?? ['current_page' => 1, 'next_page' => null, 'per_page' => 10]; // Provide sane defaults for the pagination metadata when the picker is hidden.
+    $initialProfessorOptions = $availableProfessors->values(); // Cache a zero-indexed copy to feed the data attribute used by JavaScript.
+    $paginationForJs = [
+        'current_page' => $availableProfessorsPagination['current_page'] ?? 1,
+        'next_page' => $availableProfessorsPagination['next_page'] ?? null,
+        'per_page' => $availableProfessorsPagination['per_page'] ?? 10,
+    ]; // Normalize the pagination structure before serializing it into HTML.
 @endphp
 
 @if (!empty($versionComment))
@@ -90,9 +97,11 @@
                     : collect();
             @endphp
             <div class="mb-2" data-professor-search
-                 data-search-endpoint="{{ route('projects.professors.search') }}"
+                 data-search-endpoint="{{ route('projects.participants.index') }}" {{-- Updated endpoint to include committee leaders in the catalog. --}}
                  data-initial-ids='@json($initialProfessorIds)'
-                 data-initial-professors='@json($initialProfessorData)'>
+                 data-initial-professors='@json($initialProfessorData)'
+                 data-initial-options='@json($initialProfessorOptions)'
+                 data-pagination='@json($paginationForJs)'>
                 <div class="input-icon mb-2">
                     <span class="input-icon-addon">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -104,6 +113,33 @@
                     <input type="search" class="form-control" placeholder="Busca por nombre o cédula" autocomplete="off" data-professor-search-input>
                 </div>
                 <div class="list-group shadow-sm d-none" data-professor-search-results></div>
+                <div class="card border mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="card-title mb-0">Docentes disponibles</span>
+                        <span class="badge bg-secondary" data-professor-available-count>{{ $availableProfessors->count() }}</span>
+                    </div>
+                    <div class="list-group list-group-flush" data-professor-initial-list>
+                        @forelse ($availableProfessors as $option)
+                            <button type="button"
+                                    class="list-group-item list-group-item-action text-start"
+                                    data-professor-option="{{ $option['id'] }}"
+                                    data-professor-option-name="{{ $option['name'] }}"
+                                    data-professor-option-document="{{ $option['document'] }}"
+                                    data-professor-option-email="{{ $option['email'] }}">
+                                <span class="fw-semibold d-block">{{ $option['name'] }}</span>
+                                <span class="text-secondary small d-block">{{ $option['document'] ?? 'Sin documento' }}</span>
+                                @if(!empty($option['email']))
+                                    <span class="text-secondary small d-block">{{ $option['email'] }}</span>
+                                @endif
+                            </button>
+                        @empty
+                            <div class="text-secondary small px-3 py-2">No hay participantes disponibles.</div>
+                        @endforelse
+                    </div>
+                    <div class="card-footer text-center {{ ($availableProfessorsPagination['next_page'] ?? null) ? '' : 'd-none' }}" data-professor-load-more-wrapper>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-professor-load-more>Ver más</button>
+                    </div>
+                </div>
                 <div class="d-flex flex-wrap gap-2" data-professor-selected>
                     <span class="text-secondary small" data-professor-empty-hint>Sin profesores asociados todavía.</span>
                 </div>
@@ -177,14 +213,50 @@
                     const endpoint = container.dataset.searchEndpoint;
 
                     if (!endpoint) {
-                        return; // Skip initialization when the endpoint is not available in the DOM.
+                        return; // Abort when the endpoint is unavailable to prevent runtime errors in older views.
                     }
 
                     const searchInput = container.querySelector('[data-professor-search-input]');
                     const resultsList = container.querySelector('[data-professor-search-results]');
+                    const initialList = container.querySelector('[data-professor-initial-list]');
+                    const loadMoreWrapper = container.querySelector('[data-professor-load-more-wrapper]');
+                    const loadMoreButton = container.querySelector('[data-professor-load-more]');
+                    const countBadge = container.querySelector('[data-professor-available-count]');
                     const selectedWrapper = container.querySelector('[data-professor-selected]');
                     const emptyHint = container.querySelector('[data-professor-empty-hint]');
-                    const selectedMap = new Map(); // Track the selected professors for quick lookups.
+                    const selectedMap = new Map(); // Track selected participants to keep chips and payloads in sync.
+
+                    let paginationState = {};
+                    try {
+                        paginationState = JSON.parse(container.dataset.pagination || '{}') || {};
+                    } catch (error) {
+                        console.warn('Failed to parse pagination metadata', error); // Keep working even if the dataset is malformed.
+                        paginationState = {};
+                    }
+
+                    let initialOptions = [];
+                    try {
+                        initialOptions = JSON.parse(container.dataset.initialOptions || '[]');
+                    } catch (error) {
+                        console.warn('Failed to parse initial participant options', error); // Log instead of breaking the picker.
+                        initialOptions = [];
+                    }
+
+                    const normalizeProfessor = raw => ({
+                        id: Number.parseInt(raw?.id ?? raw, 10),
+                        name: raw?.name ?? '',
+                        document: raw?.document ?? '',
+                        email: raw?.email ?? '',
+                    });
+
+                    const updateCountBadge = () => {
+                        if (!countBadge || !initialList) {
+                            return;
+                        }
+
+                        const options = initialList.querySelectorAll('[data-professor-option]').length;
+                        countBadge.textContent = options.toString();
+                    };
 
                     const toggleEmptyHint = () => {
                         if (!emptyHint) {
@@ -194,8 +266,20 @@
                         emptyHint.classList.toggle('d-none', selectedMap.size > 0);
                     };
 
+                    const removeOptionButton = id => {
+                        [initialList, resultsList].forEach(list => {
+                            const option = list?.querySelector(`[data-professor-option="${id}"]`);
+
+                            if (option) {
+                                option.remove();
+                            }
+                        });
+
+                        updateCountBadge();
+                    };
+
                     const removeProfessor = id => {
-                        const chip = selectedWrapper.querySelector(`[data-professor-chip="${id}"]`);
+                        const chip = selectedWrapper?.querySelector(`[data-professor-chip="${id}"]`);
 
                         if (chip) {
                             chip.remove();
@@ -209,89 +293,135 @@
                         const chip = document.createElement('span');
                         chip.className = 'badge bg-primary text-white d-inline-flex align-items-center gap-2';
                         chip.dataset.professorChip = professor.id;
-                        chip.innerHTML = `
-                            <span class="fw-semibold">${professor.name}</span>
-                            <span class="badge bg-white text-primary">${professor.document ?? 'Sin documento'}</span>
-                        `;
+
+                        const nameSegment = document.createElement('span');
+                        nameSegment.className = 'fw-semibold';
+                        nameSegment.textContent = professor.name;
+                        chip.appendChild(nameSegment);
+
+                        const documentBadge = document.createElement('span');
+                        documentBadge.className = 'badge bg-white text-primary';
+                        documentBadge.textContent = professor.document || 'Sin documento';
+                        chip.appendChild(documentBadge);
 
                         const removeButton = document.createElement('button');
                         removeButton.type = 'button';
                         removeButton.className = 'btn-close btn-close-white';
                         removeButton.setAttribute('aria-label', 'Eliminar profesor asociado');
                         removeButton.addEventListener('click', () => removeProfessor(professor.id));
+                        chip.appendChild(removeButton);
 
                         const hiddenInput = document.createElement('input');
                         hiddenInput.type = 'hidden';
                         hiddenInput.name = 'associated_professors[]';
                         hiddenInput.value = professor.id;
-
-                        chip.appendChild(removeButton);
                         chip.appendChild(hiddenInput);
 
                         return chip;
                     };
 
                     const addProfessor = professor => {
-                        if (!professor || selectedMap.has(professor.id)) {
-                            return; // Avoid duplicating chips in the UI or accepting incomplete data.
+                        if (!professor || !Number.isInteger(professor.id) || selectedMap.has(professor.id)) {
+                            return; // Skip invalid data or repeated selections.
                         }
 
                         selectedMap.set(professor.id, professor);
-                        selectedWrapper.appendChild(createChip(professor));
+                        selectedWrapper?.appendChild(createChip(professor));
+                        removeOptionButton(professor.id);
                         toggleEmptyHint();
                     };
 
-                    const renderResults = professors => {
-                        if (!resultsList) {
+                    const renderProfessorList = (listElement, professors, { replace = false, showActionBadge = false } = {}) => {
+                        if (!listElement) {
                             return;
                         }
 
-                        resultsList.innerHTML = '';
-
-                        if (!Array.isArray(professors) || professors.length === 0) {
-                            resultsList.classList.add('d-none');
-                            return;
+                        if (replace) {
+                            listElement.innerHTML = '';
                         }
 
-                        professors.forEach(professor => {
-                            if (selectedMap.has(professor.id)) {
-                                return; // Skip already selected professors to avoid confusing duplicates.
-                            }
+                        const source = Array.isArray(professors) ? professors : []; // Normalize non-array payloads to keep the renderer resilient against API changes.
 
-                            const item = document.createElement('button');
-                            item.type = 'button';
-                            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-                            item.dataset.professorResult = professor.id;
-                            item.innerHTML = `
-                                <span>
-                                    <span class="fw-semibold d-block">${professor.name}</span>
-                                    <span class="text-secondary small">${professor.document ?? 'Sin documento'}</span>
-                                </span>
-                                <span class="badge bg-primary text-white">Agregar</span>
-                            `;
+                        source
+                            .map(normalizeProfessor)
+                            .forEach(professor => {
+                                if (!Number.isInteger(professor.id) || selectedMap.has(professor.id)) {
+                                    return; // Ignore invalid entries and already selected participants.
+                                }
 
-                            resultsList.appendChild(item);
-                        });
+                                const item = document.createElement('button');
+                                item.type = 'button';
+                                item.className = 'list-group-item list-group-item-action text-start';
+                                item.dataset.professorOption = professor.id;
+                                item.dataset.professorOptionName = professor.name;
+                                item.dataset.professorOptionDocument = professor.document ?? '';
+                                item.dataset.professorOptionEmail = professor.email ?? '';
 
-                        resultsList.classList.toggle('d-none', resultsList.children.length === 0);
+                                const infoWrapper = document.createElement('span');
+                                infoWrapper.className = 'd-block';
+
+                                const nameLine = document.createElement('span');
+                                nameLine.className = 'fw-semibold d-block';
+                                nameLine.textContent = professor.name || 'Sin nombre';
+                                infoWrapper.appendChild(nameLine);
+
+                                const documentLine = document.createElement('span');
+                                documentLine.className = 'text-secondary small d-block';
+                                documentLine.textContent = professor.document || 'Sin documento';
+                                infoWrapper.appendChild(documentLine);
+
+                                if (professor.email) {
+                                    const emailLine = document.createElement('span');
+                                    emailLine.className = 'text-secondary small d-block';
+                                    emailLine.textContent = professor.email;
+                                    infoWrapper.appendChild(emailLine);
+                                }
+
+                                if (showActionBadge) {
+                                    item.classList.add('d-flex', 'justify-content-between', 'align-items-center');
+                                    item.appendChild(infoWrapper);
+
+                                    const badge = document.createElement('span');
+                                    badge.className = 'badge bg-primary text-white ms-2';
+                                    badge.textContent = 'Agregar';
+                                    item.appendChild(badge);
+                                } else {
+                                    item.appendChild(infoWrapper);
+                                }
+
+                                listElement.appendChild(item);
+                            });
+
+                        if (listElement === resultsList) {
+                            listElement.classList.toggle('d-none', listElement.children.length === 0);
+                        }
+
+                        updateCountBadge();
                     };
 
                     const runFetch = configureParams => {
                         const url = new URL(endpoint, window.location.origin);
-                        configureParams(url.searchParams);
+
+                        if (typeof configureParams === 'function') {
+                            configureParams(url.searchParams);
+                        }
 
                         return fetch(url.toString(), {
                             headers: {
                                 Accept: 'application/json',
                             },
                         })
-                            .then(response => (response.ok ? response.json() : []))
-                            .catch(() => []); // Swallow network errors to keep the form responsive even offline.
+                            .then(response => (response.ok ? response.json() : { data: [] }))
+                            .then(payload => (Array.isArray(payload) ? { data: payload, meta: null } : payload))
+                            .catch(() => ({ data: [], meta: null })); // Swallow network errors to keep the UI responsive offline.
                     };
 
                     const searchByTerm = term => runFetch(params => {
                         params.set('q', term);
-                    }).then(renderResults);
+                        params.set('per_page', paginationState.per_page ?? 10);
+                    }).then(({ data }) => {
+                        renderProfessorList(resultsList, data, { replace: true, showActionBadge: true });
+                    });
 
                     const preloadByIds = ids => {
                         if (!ids.length) {
@@ -300,14 +430,14 @@
 
                         return runFetch(params => {
                             ids.forEach(id => params.append('ids[]', id));
-                        }).then(fetched => {
-                            fetched.forEach(addProfessor);
+                        }).then(({ data }) => {
+                            data.forEach(item => addProfessor(normalizeProfessor(item)));
                         });
                     };
 
                     let debounceTimer = null;
 
-                    if (searchInput && resultsList) {
+                    if (searchInput) {
                         searchInput.addEventListener('input', event => {
                             const term = event.target.value.trim();
 
@@ -316,8 +446,11 @@
                             }
 
                             if (term.length < 2) {
-                                resultsList.classList.add('d-none');
-                                resultsList.innerHTML = '';
+                                if (resultsList) {
+                                    resultsList.classList.add('d-none');
+                                    resultsList.innerHTML = '';
+                                }
+
                                 return; // Require at least two characters to reduce noisy queries.
                             }
 
@@ -327,30 +460,56 @@
                         });
                     }
 
-                    resultsList?.addEventListener('click', event => {
-                        const target = event.target.closest('[data-professor-result]');
+                    const handleOptionClick = event => {
+                        const target = event.target.closest('[data-professor-option]');
 
                         if (!target) {
                             return;
                         }
 
-                        const professorId = Number.parseInt(target.dataset.professorResult, 10);
+                        const professor = normalizeProfessor({
+                            id: target.dataset.professorOption,
+                            name: target.dataset.professorOptionName,
+                            document: target.dataset.professorOptionDocument,
+                            email: target.dataset.professorOptionEmail,
+                        });
 
-                        const professorData = Array.from(resultsList.querySelectorAll('[data-professor-result]'))
-                            .map(button => ({
-                                id: Number.parseInt(button.dataset.professorResult, 10),
-                                name: button.querySelector('.fw-semibold')?.textContent?.trim() ?? '',
-                                document: button.querySelector('.text-secondary')?.textContent?.trim() ?? '',
-                            }))
-                            .find(item => item.id === professorId);
+                        addProfessor(professor);
+                    };
 
-                        if (professorData) {
-                            addProfessor(professorData);
-                        }
+                    initialList?.addEventListener('click', handleOptionClick);
 
-                        resultsList.classList.add('d-none');
-                        resultsList.innerHTML = '';
-                    });
+                    if (resultsList) {
+                        resultsList.addEventListener('click', event => {
+                            handleOptionClick(event);
+
+                            if (resultsList.children.length === 0) {
+                                resultsList.classList.add('d-none');
+                            }
+                        });
+                    }
+
+                    if (loadMoreButton) {
+                        loadMoreButton.addEventListener('click', () => {
+                            const activeSearch = searchInput?.value.trim().length >= 2;
+
+                            if (!paginationState.next_page || activeSearch) {
+                                return; // Avoid loading the catalog while a filtered search is in progress.
+                            }
+
+                            runFetch(params => {
+                                params.set('page', paginationState.next_page);
+                                params.set('per_page', paginationState.per_page ?? 10);
+                            }).then(({ data, meta }) => {
+                                renderProfessorList(initialList, data, { replace: false });
+                                paginationState = { ...(paginationState || {}), ...(meta || {}) };
+                                loadMoreWrapper?.classList.toggle('d-none', !paginationState.next_page);
+                            });
+                        });
+                    }
+
+                    renderProfessorList(initialList, initialOptions, { replace: true });
+                    loadMoreWrapper?.classList.toggle('d-none', !paginationState.next_page);
 
                     let initialProfessors = [];
                     let initialIds = [];
@@ -358,22 +517,25 @@
                     try {
                         initialProfessors = JSON.parse(container.dataset.initialProfessors || '[]');
                     } catch (error) {
-                        console.warn('Failed to parse initial professor data', error); // Log parsing errors without breaking the form.
+                        console.warn('Failed to parse initial professor data', error); // Keep going so the form remains usable.
+                        initialProfessors = [];
                     }
 
                     try {
                         initialIds = JSON.parse(container.dataset.initialIds || '[]');
                     } catch (error) {
                         console.warn('Failed to parse initial professor ids', error);
+                        initialIds = [];
                     }
 
-                    initialProfessors.forEach(addProfessor);
+                    initialProfessors.forEach(professor => addProfessor(normalizeProfessor(professor)));
 
                     const missingIds = initialIds
                         .map(id => Number.parseInt(id, 10))
                         .filter(id => Number.isInteger(id) && !selectedMap.has(id));
 
                     preloadByIds(missingIds).finally(toggleEmptyHint);
+                    toggleEmptyHint();
                 });
             });
         </script>
