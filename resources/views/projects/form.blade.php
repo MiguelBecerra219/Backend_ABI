@@ -14,6 +14,22 @@
     $availableProfessors = $availableProfessors ?? collect();
 @endphp
 
+@if (!empty($versionComment))
+    <div class="card border-danger mb-3">
+        <div class="card-header bg-danger text-white">
+            Comentarios del revisor
+        </div>
+        <div class="card-body">
+            <div class="p-2 border-start border-3 border-danger rounded">
+                {!! nl2br(e($versionComment)) !!}
+            </div>
+            <small class="text-muted d-block mt-2">
+                *Corrige tu propuesta según estos comentarios antes de reenviar.
+            </small>
+        </div>
+    </div>
+@endif
+
 <div class="row g-3">
     <div class="col-12 col-md-6">
         <label class="form-label">Fecha de entrega</label>
@@ -30,6 +46,7 @@
         <input type="hidden" name="city_id" value="{{ $prefill['city_id'] }}">
         <small class="form-hint">Asignada automáticamente según tu usuario.</small>
     </div>
+
 </div>
 
 

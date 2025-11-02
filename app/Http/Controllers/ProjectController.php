@@ -319,6 +319,15 @@ class ProjectController extends Controller
         $latestVersion = $project->versions->first();
         $contentValues = $this->mapContentValues($latestVersion);
 
+        // Extraer comentario si existe
+        $versionComment = null;
+        if ($latestVersion) {
+            $commentContent = $latestVersion->contentVersions
+                ->firstWhere(fn ($cv) => $cv->content->name === 'Comentarios');
+
+            $versionComment = $commentContent->value ?? null;
+        }
+
         $cities = City::query()->orderBy('name')->get();
         $programs = Program::query()->with('researchGroup')->orderBy('name')->get();
         $investigationLines = InvestigationLine::where('research_group_id', $researchGroupId)
@@ -424,6 +433,7 @@ class ProjectController extends Controller
             'selectedContentFrameworkIds' => $selectedContentFrameworkIds,
             'selectedInvestigationLineId' => $selectedInvestigationLineId,
             'selectedThematicAreaId' => $selectedThematicAreaId,
+            'versionComment' => $versionComment,
         ]);
     }
 
