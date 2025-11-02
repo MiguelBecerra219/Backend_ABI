@@ -130,7 +130,11 @@
                                     <td>
                                         <div class="btn-list flex-nowrap">
                                             <a href="{{ route('projects.show', $project) }}" class="btn btn-outline-secondary btn-sm">Ver</a>
-                                            <a href="{{ route('projects.edit', $project) }}" class="btn btn-outline-primary btn-sm">Editar</a>
+                                            @if($project->projectStatus?->name === 'Devuelto para corrección')
+                                                <a href="{{ route('projects.edit', $project) }}" class="btn btn-outline-primary btn-sm">
+                                                    Editar
+                                                </a>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

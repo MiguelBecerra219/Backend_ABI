@@ -192,6 +192,7 @@ class ProjectController extends Controller
             $availableStudents = Student::query()
                 ->where('city_program_id', $student->city_program_id)
                 ->where('id', '!=', $student->id)
+                ->whereDoesntHave('projects')
                 ->orderBy('last_name')
                 ->orderBy('name')
                 ->get();
@@ -291,6 +292,11 @@ class ProjectController extends Controller
      */
     public function edit(Project $project): View
     {
+
+        if($project->projectStatus?->name !== 'Devuelto para corrección') {
+            abort(403, 'Solo los proyectos devueltos para corrección pueden ser editados.');
+        }
+
         [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
         $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
 
@@ -392,9 +398,11 @@ class ProjectController extends Controller
             $availableStudents = Student::query()
                 ->where('city_program_id', $contextStudent->city_program_id)
                 ->where('id', '!=', $contextStudent->id)
+                ->whereDoesntHave('projects')
                 ->orderBy('last_name')
                 ->orderBy('name')
                 ->get();
+
         } else {
             abort(403, 'Project participants are required to edit this proposal.');
         }
@@ -424,6 +432,10 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project): RedirectResponse
     {
+        if($project->projectStatus?->name !== 'Devuelto para corrección') {
+            abort(403, 'Solo los proyectos devueltos para corrección pueden ser editados.');
+        }
+
         [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
         $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
 
@@ -463,12 +475,6 @@ class ProjectController extends Controller
                 ->withInput()
                 ->with('error', 'Unexpected error. Please try again later.');
         }
-
-        return $version->contentVersions
-            ->mapWithKeys(static function (ContentVersion $contentVersion) {
-                return [$contentVersion->content->name => $contentVersion->value];
-            })
-            ->toArray();
     }
 
     /**
@@ -740,6 +746,22 @@ class ProjectController extends Controller
 
         $validated = $request->validate($baseRules);
         $isUpdate = $project !== null;
+
+        // Validar que los compañeros no tengan otros proyectos vinculados
+        if (!empty($validated['teammate_ids'])) {
+            $hasOtherProjects = Student::query()
+                ->whereIn('id', $validated['teammate_ids'])
+                ->whereHas('projects', function ($query) use ($project) {
+                    $query->where('project_id', '!=', $project?->id); // distinto del que está editando
+                })
+                ->exists();
+
+            if ($hasOtherProjects) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Uno o más compañeros seleccionados ya tienen un proyecto registrado.');
+            }
+        }
 
         $cityProgram = $student->cityProgram;
         if ($cityProgram && (int) $validated['city_id'] !== (int) $cityProgram->city_id) {

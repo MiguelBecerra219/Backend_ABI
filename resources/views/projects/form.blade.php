@@ -210,31 +210,39 @@
 </div>
 
 @if ($isStudent)
-    <div class="mb-3">
-        <label for="teammate_ids" class="form-label">Compañeros (máximo 2 adicionales)</label>
-        <select id="teammate_ids" name="teammate_ids[]" class="form-select @error('teammate_ids') is-invalid @enderror" multiple size="6">
-            @php
-                $fullUser = $fullUser ?? \App\Helpers\AuthUserHelper::fullUser();
-                $currentStudentId = optional($fullUser?->student)->id;
-                $selectedTeammates = collect(
-                    old('teammate_ids', $projectModel?->students?->pluck('id')->filter(fn ($id) => $id !== $currentStudentId)->all() ?? [])
-                );
-            @endphp
-            @foreach ($availableStudents as $studentOption)
-                <option value="{{ $studentOption->id }}" {{ $selectedTeammates->contains($studentOption->id) ? 'selected' : '' }}>
-                    {{ $studentOption->name }} {{ $studentOption->last_name }} - {{ $studentOption->card_id }}
-                </option>
-            @endforeach
-        </select>
-        <small class="form-hint">Selecciona estudiantes del mismo programa para conformar el equipo.</small>
-        @error('teammate_ids')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-        @error('teammate_ids.*')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
+<div class="mb-3">
+    <label class="form-label">Compañeros (máximo 2 adicionales)</label>
+
+    {{-- Campo de búsqueda --}}
+    <input type="text" id="student-search" class="form-control mb-2" placeholder="Buscar por nombre o cédula...">
+
+    {{-- Lista filtrable --}}
+    <div id="student-list" class="list-group" style="max-height: 180px; overflow-y: auto;">
+        @foreach ($availableStudents as $s)
+            <button type="button"
+                class="list-group-item list-group-item-action student-option"
+                data-id="{{ $s->id }}"
+                data-name="{{ $s->name }} {{ $s->last_name }}"
+                data-card="{{ $s->card_id }}">
+                {{ $s->name }} {{ $s->last_name }} - {{ $s->card_id }}
+            </button>
+        @endforeach
     </div>
+
+    {{-- Seleccionados --}}
+    <div id="selected-students" class="mt-3"></div>
+
+    {{-- Inputs hidden serán insertados aquí --}}
+    <div id="selected-students-inputs"></div>
+
+    <small class="form-hint">Busca y selecciona estudiantes del mismo programa. Máximo 2.</small>
+    @error('teammate_ids')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
 @endif
+
+
 
 <hr class="mt-4 mb-3">
 <h4 class="mt-3">Marcos</h4>
@@ -408,4 +416,79 @@ document.addEventListener('DOMContentLoaded', function () {
     // Si venimos del edit, filtramos automáticamente
     filterAreas();
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    const searchInput = document.getElementById('student-search');
+    const studentList = document.getElementById('student-list');
+    const selectedContainer = document.getElementById('selected-students');
+    const hiddenInputsContainer = document.getElementById('selected-students-inputs');
+
+    let selected = [];
+
+    // Renderizar los seleccionados y los inputs hidden
+    function renderSelected() {
+        selectedContainer.innerHTML = '';
+        hiddenInputsContainer.innerHTML = '';
+
+        selected.forEach(student => {
+
+            // Mostrar chip visual
+            const chip = document.createElement('div');
+            chip.className = "d-flex align-items-center justify-content-between p-2 mb-2 border rounded bg-body-secondary text-body";
+            chip.innerHTML = `
+                <span>${student.name} - ${student.card}</span>
+                <button type="button" class="btn btn-sm btn-danger remove-student" data-id="${student.id}">X</button>
+            `;
+            selectedContainer.appendChild(chip);
+
+            // Input hidden que se envía al servidor
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'teammate_ids[]';
+            input.value = student.id;
+            hiddenInputsContainer.appendChild(input);
+        });
+    }
+
+    // Filtrar listados
+    searchInput.addEventListener('input', function () {
+        const filter = this.value.toLowerCase();
+        document.querySelectorAll('.student-option').forEach(btn => {
+            const text = btn.textContent.toLowerCase();
+            btn.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+
+    // Seleccionar estudiante
+    document.querySelectorAll('.student-option').forEach(button => {
+        button.addEventListener('click', function () {
+            const id = this.dataset.id;
+
+            if (selected.length >= 2) {
+                alert("Solo puedes seleccionar hasta 2 compañeros.");
+                return;
+            }
+
+            if (!selected.find(s => s.id === id)) {
+                selected.push({
+                    id,
+                    name: this.dataset.name,
+                    card: this.dataset.card
+                });
+                renderSelected();
+            }
+        });
+    });
+
+    // Eliminar estudiante
+    selectedContainer.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-student')) {
+            const id = e.target.dataset.id;
+            selected = selected.filter(s => s.id !== id);
+            renderSelected();
+        }
+    });
+});
+
 </script>
