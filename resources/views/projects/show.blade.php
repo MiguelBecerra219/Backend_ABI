@@ -100,6 +100,36 @@
                             @endif
                         </div>
                     </div>
+
+                    {{-- Frameworks aplicados --}}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3 class="card-title">Marcos aplicados</h3>
+                        </div>
+                        <div class="card-body">
+                            @if(isset($frameworksSelected) && $frameworksSelected->count())
+                                <div class="row g-3">
+                                    @foreach ($frameworksSelected as $contentFramework)
+                                        <div class="col-12">
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-semibold">
+                                                    {{ $contentFramework->framework->name ?? 'Marco' }}
+                                                </span>
+
+                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2" style="width: fit-content;">
+                                                    {{ $contentFramework->name }}
+                                                </span>
+
+                                            </div>
+                                            <hr class="my-2">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-secondary mb-0">No se han registrado marcos para este proyecto.</p>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-12 col-lg-4">

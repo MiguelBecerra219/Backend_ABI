@@ -236,6 +236,68 @@
     </div>
 @endif
 
+<hr class="mt-4 mb-3">
+<h4 class="mt-3">Marcos</h4>
+<p class="text-muted mb-2">
+    Selecciona el enfoque correspondiente para cada marco.
+</p>
+
+@foreach ($frameworks as $framework)
+    <div class="mb-3">
+        <label class="form-label required d-flex align-items-center gap-1">
+            {{ $framework->name }}
+            
+            {{-- Ícono con tooltip --}}
+            <span 
+                class="text-muted" 
+                data-bs-toggle="tooltip" 
+                data-bs-placement="right" 
+                title="{{ $framework->description }}"
+                style="cursor: pointer;"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" fill="none"/>
+                    <path d="M9.5 9.5a2.5 2.5 0 0 1 5 0 2.4 2.4 0 0 1-2 2.5 2 2 0 0 0-2 2v1" stroke="currentColor" fill="none"/>
+                    <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none"/>
+                </svg>
+            </span>
+        </label>
+
+        <select 
+            name="content_frameworks[{{ $framework->id }}]" 
+            class="form-select @error('content_frameworks.' . $framework->id) is-invalid @enderror" 
+            required
+        >
+            <option value="">Selecciona una opción</option>
+
+            @foreach ($framework->contentFrameworks as $content)
+                <option value="{{ $content->id }}"
+                    @if (old('content_frameworks.' . $framework->id, $projectModel?->contentFrameworkProjects?->firstWhere('content_framework_id', $content->id)?->content_framework_id ?? '') == $content->id) 
+                        selected 
+                    @endif
+                >
+                    {{ $content->name }}
+                </option>
+            @endforeach
+        </select>
+
+        @error('content_frameworks.' . $framework->id)
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+@endforeach
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
+    });
+</script>
+
+
+
 <h4 class="mt-4">Datos de contacto</h4>
 @if ($isProfessor)
     <div class="row g-3">

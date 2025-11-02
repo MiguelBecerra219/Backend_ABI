@@ -94,5 +94,16 @@ class Project extends Model
     {
         return $this->hasMany(ContentFrameworkProject::class, 'project_id', 'id');
     }
+
+    public function contentFrameworks()
+    {
+        return $this->belongsToMany(
+            ContentFramework::class,
+            'content_framework_project',
+            'project_id',
+            'content_framework_id'
+        );
+    }
+
 }
 

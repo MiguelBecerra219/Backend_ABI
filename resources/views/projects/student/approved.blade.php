@@ -33,11 +33,11 @@
     </div>
 </div>
 
-<div class="card mb-3">
+<div class="card mb-3 container-xl">
     <div class="card-header">
         <h3 class="card-title">Filtros</h3>
     </div>
-    <div class="card-body">
+    <div class="card-body container-xl">
         <form method="GET" action="{{ route(Route::currentRouteName()) }}" class="row g-3 align-items-end">
             <div class="col-md-6">
                 <label for="thematic_area_id" class="form-label">Área temática</label>

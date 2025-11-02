@@ -24,7 +24,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use App\Helpers\AuthUserHelper;
-
+use App\Models\Framework;
 
 /**
  * Controller responsible for managing the project proposal lifecycle for students and professors.
@@ -129,9 +129,17 @@ class ProjectController extends Controller
         $cities = City::query()->orderBy('name')->get();
         $programs = Program::query()->with('researchGroup')->orderBy('name')->get();
         $investigationLines = InvestigationLine::where('research_group_id', $researchGroupId)
-        ->whereNull('deleted_at')
-        ->get();
+            ->whereNull('deleted_at')
+            ->get();
         $thematicAreas = ThematicArea::query()->orderBy('name')->get();
+
+        $year = now()->year;
+
+        $frameworks = \App\Models\Framework::with('contentFrameworks')
+            ->where('start_year', '<=', $year)
+            ->where('end_year', '>=', $year)
+            ->orderBy('name')
+            ->get();
 
         $prefill = [
             'delivery_date' => Carbon::now()->format('Y-m-d'),
@@ -194,6 +202,7 @@ class ProjectController extends Controller
             'programs' => $programs,
             'investigationLines' => $investigationLines,
             'thematicAreas' => $thematicAreas,
+            'frameworks' => $frameworks,
             'prefill' => $prefill,
             'isProfessor' => $isProfessor,
             'isStudent' => $isStudent,
@@ -201,6 +210,7 @@ class ProjectController extends Controller
             'availableProfessors' => $availableProfessors,
         ]);
     }
+
 
     /**
      * Persist a new project idea following the role specific business rules.
@@ -254,6 +264,7 @@ class ProjectController extends Controller
             'projectStatus',
             'professors',
             'students',
+            'contentFrameworks.framework', // ← Añadido
             'versions' => static fn ($relation) => $relation
                 ->with(['contentVersions.content'])
                 ->orderByDesc('created_at'),
@@ -268,10 +279,12 @@ class ProjectController extends Controller
             'project' => $project,
             'latestVersion' => $latestVersion,
             'contentValues' => $contentValues,
+            'frameworksSelected' => $project->contentFrameworks,
             'isProfessor' => $user?->role === 'professor',
             'isStudent' => $user?->role === 'student',
         ]);
     }
+
 
     /**
      * Display the edit form with the existing project information.
@@ -281,6 +294,13 @@ class ProjectController extends Controller
         [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
         $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
 
+        if ($isProfessor) {
+            $researchGroupId = $user->professor?->cityProgram?->program?->research_group_id;
+        } else {
+            $researchGroupId = $user->student?->cityProgram?->program?->research_group_id;
+        }
+
+        
         $project->load([
             'thematicArea',
             'professors',
@@ -295,8 +315,13 @@ class ProjectController extends Controller
 
         $cities = City::query()->orderBy('name')->get();
         $programs = Program::query()->with('researchGroup')->orderBy('name')->get();
-        $investigationLines = InvestigationLine::query()->with('thematicAreas')->orderBy('name')->get();
+        $investigationLines = InvestigationLine::where('research_group_id', $researchGroupId)
+            ->whereNull('deleted_at')
+            ->get();
         $thematicAreas = ThematicArea::query()->orderBy('name')->get();
+        $selectedInvestigationLineId = $project->thematicArea->investigation_line_id ?? null;
+        $selectedThematicAreaId = $project->thematic_area_id ?? null;
+
 
         $prefill = [
             'delivery_date' => Carbon::now()->format('Y-m-d'),
@@ -341,6 +366,18 @@ class ProjectController extends Controller
             $program = $cityProgram?->program;
             $researchGroup = $program?->researchGroup;
 
+            // Frameworks disponibles
+            $frameworks = Framework::with('contentFrameworks')
+                ->where('end_year', '>=', now()->year)
+                ->orderBy('name')
+                ->get();
+
+            // Content frameworks seleccionados del proyecto
+            $selectedContentFrameworkIds = $project
+                ->contentFrameworkProjects()
+                ->pluck('content_framework_id')
+                ->toArray();
+
             $prefill = array_merge($prefill, [
                 'first_name' => $contextStudent->name,
                 'last_name' => $contextStudent->last_name,
@@ -375,6 +412,10 @@ class ProjectController extends Controller
             'isResearchStaff' => $isResearchStaff,
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
+            'frameworks' => $frameworks,
+            'selectedContentFrameworkIds' => $selectedContentFrameworkIds,
+            'selectedInvestigationLineId' => $selectedInvestigationLineId,
+            'selectedThematicAreaId' => $selectedThematicAreaId,
         ]);
     }
 
@@ -556,6 +597,8 @@ class ProjectController extends Controller
             'contact_phone' => ['required', 'string', 'max:20'],
             'co_professor_ids' => ['nullable', 'array'],
             'co_professor_ids.*' => ['integer', Rule::exists('professors', 'id')],
+            'content_frameworks' => ['required', 'array'],
+            'content_frameworks.*' => ['required', Rule::exists('content_frameworks', 'id')],
         ];
 
         $validated = $request->validate($baseRules);
@@ -619,6 +662,10 @@ class ProjectController extends Controller
             }
 
             $project->professors()->sync($professorIds);
+
+            // Guardar los content frameworks
+            $contentFrameworkIds = array_values(array_filter($validated['content_frameworks'] ?? []));
+            $project->contentFrameworks()->sync($contentFrameworkIds);
 
             $version = $project->versions()->create();
 
@@ -687,6 +734,8 @@ class ProjectController extends Controller
             ],
             'student_email' => ['required', 'email', 'max:255'],
             'student_phone' => ['nullable', 'string', 'max:20'],
+            'content_frameworks' => ['required', 'array'],
+            'content_frameworks.*' => ['required', Rule::exists('content_frameworks', 'id')],
         ];
 
         $validated = $request->validate($baseRules);
@@ -778,6 +827,10 @@ class ProjectController extends Controller
             }
 
             $project->students()->sync($studentIds);
+
+            // Guardar los content frameworks
+            $contentFrameworkIds = array_values(array_filter($validated['content_frameworks'] ?? []));
+            $project->contentFrameworks()->sync($contentFrameworkIds);
 
             $version = $project->versions()->create();
 

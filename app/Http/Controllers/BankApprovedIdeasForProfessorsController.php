@@ -24,21 +24,34 @@ class BankApprovedIdeasForProfessorsController extends Controller
         }
 
         $perPage = $request->input('per_page', 10);
-
         $cityProgramId = $professor->city_program_id;
+        $thematicAreaId = $request->input('thematic_area_id');
 
-        // 3️⃣ Filtrar proyectos con estado "Aprobado"
-        $projects = Project::whereHas('projectStatus', function ($query) {
-                $query->where('name', 'Aprobado');
-            })
-            ->where(function ($query) use ($cityProgramId, $professor) {
-                // Proyectos del mismo programa del profesor
-                $query->whereHas('students', function ($sub) use ($cityProgramId) {
-                    $sub->where('city_program_id', $cityProgramId);
+        // 1️⃣ Obtener el registro CityProgram
+        $cityProgram = \App\Models\CityProgram::find($cityProgramId);
+
+        // 2️⃣ Obtener el programa asociado
+        $program = $cityProgram?->program;
+
+        // 3️⃣ Obtener el grupo de investigación
+        $researchGroup = $program?->researchGroup;
+
+        // 4️⃣ Obtener las áreas temáticas del grupo
+        $thematicAreas = collect(); // default
+        if ($researchGroup) {
+            $thematicAreas = \App\Models\ThematicArea::whereHas('investigationLine', function ($q) use ($researchGroup) {
+                    $q->where('research_group_id', $researchGroup->id);
                 })
-                ->orWhereHas('professors', function ($sub) use ($cityProgramId) {
-                    $sub->where('city_program_id', $cityProgramId);
-                });
+                ->whereNull('deleted_at')
+                ->orderBy('name')
+                ->get();
+        }
+
+        // Filtrar proyectos aprobados
+        $projects = Project::whereHas('projectStatus', fn($q) => $q->where('name', 'Aprobado'))
+            ->where(function ($query) use ($cityProgramId) {
+                $query->whereHas('students', fn($sub) => $sub->where('city_program_id', $cityProgramId))
+                    ->orWhereHas('professors', fn($sub) => $sub->where('city_program_id', $cityProgramId));
             })
             ->with([
                 'projectStatus',
@@ -50,10 +63,14 @@ class BankApprovedIdeasForProfessorsController extends Controller
             ])
             ->paginate($perPage);
 
-        // 4️⃣ Retornar la vista
-        return view('projects.professor.approved', compact('projects'));
+        return view('projects.student.approved', [
+            'projects' => $projects,
+            'thematicAreas' => $thematicAreas,
+            'thematicAreaId' => $thematicAreaId,
+            'perPage' => $perPage
+        ]);
     }
-
+    
     public function show(Project $project)
     {
         // Obtener el profesor autenticado

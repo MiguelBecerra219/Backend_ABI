@@ -6,7 +6,6 @@ use App\Http\Controllers\CityController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FormularioController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\FrameworkController;
 use App\Http\Controllers\ContentFrameworkProjectController;
@@ -103,7 +102,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('projects', ProjectController::class)->except(['destroy']);
 });
 
-Route::middleware(['auth', 'role:committee_leader'])->prefix('comite/project/evaluation')->name('projects.evaluation.')->group(function () {
+Route::middleware(['auth', 'role:committee_leader'])->prefix('comite/projects/evaluation')->name('projects.evaluation.')->group(function () {
     Route::get('/', [ProjectEvaluationController::class, 'index'])->name('index');
     Route::get('/{project}', [ProjectEvaluationController::class, 'show'])->name('show');
     Route::post('/{project}/evaluate', [ProjectEvaluationController::class, 'evaluate'])->name('evaluate');
