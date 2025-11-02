@@ -181,6 +181,11 @@ return [
                 'route' => 'cities.index',
             ],
             [
+                'text' => 'Asignacion Ciudad y Programa',
+                'icon' => 'ti ti-map-search',
+                'route' => 'city-program.index',
+            ],
+            [
                 'text' => 'Programas',
                 'icon' => 'ti ti-certificate',
                 'route' => 'programs.index',
