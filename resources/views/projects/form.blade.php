@@ -122,7 +122,7 @@
                                             <line x1="21" y1="21" x2="15" y2="15" />
                                         </svg>
                                     </span>
-                                    <input type="search" class="form-control form-control-sm" placeholder="Buscar por nombre o cédula" autocomplete="off" data-professor-search-input>
+                                    <input id="associate-search" type="search" class="form-control form-control-sm" placeholder="Buscar por nombre o cédula" autocomplete="off" data-professor-search-input>
                                 </div>
 
                                 {{-- resultados desplegables dentro del mismo recuadro --}}
@@ -384,11 +384,12 @@
                                 item.dataset.professorOptionEmail = professor.email ?? '';
 
                                 const layout = document.createElement('div');
-                                layout.className = 'd-flex align-items-start gap-3';
+                                layout.className = 'd-flex align-items-start gap-3 w-100';
                                 item.appendChild(layout);
 
                                 const infoWrapper = document.createElement('div');
                                 infoWrapper.className = 'flex-grow-1 overflow-hidden';
+                                infoWrapper.style.minWidth = '0';
                                 layout.appendChild(infoWrapper);
 
                                 const nameLine = document.createElement('span');
@@ -413,7 +414,7 @@
 
                                 if (showActionBadge) {
                                     const actionWrapper = document.createElement('div');
-                                    actionWrapper.className = 'flex-shrink-0';
+                                    actionWrapper.className = 'flex-shrink-0 ms-auto';
 
                                     const badge = document.createElement('span');
                                     badge.className = 'btn btn-primary btn-sm';
@@ -832,6 +833,11 @@
 document.addEventListener('DOMContentLoaded', function () {
     const lineSelect = document.getElementById('investigation_line_id');
     const areaSelect = document.getElementById('thematic_area_id');
+
+    if (!lineSelect || !areaSelect) {
+        return;
+    }
+
     const allAreas = [...areaSelect.options];
 
     function filterAreas() {
@@ -861,11 +867,14 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-
     const searchInput = document.getElementById('student-search');
     const studentList = document.getElementById('student-list');
     const selectedContainer = document.getElementById('selected-students');
     const hiddenInputsContainer = document.getElementById('selected-students-inputs');
+
+    if (!searchInput || !studentList || !selectedContainer || !hiddenInputsContainer) {
+        return;
+    }
 
     let selected = [];
 

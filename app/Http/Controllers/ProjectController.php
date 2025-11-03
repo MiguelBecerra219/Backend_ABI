@@ -328,7 +328,7 @@ class ProjectController extends Controller
      */
     public function participants(Request $request): JsonResponse
     {
-        [$user, $isProfessor] = array_slice($this->ensureRoleAccess(), 0, 2); // Reuse the shared guard to ensure only professors and committee leaders reach this endpoint.
+        [$user, $isProfessor] = $this->ensureRoleAccess(); // Reuse the shared guard to ensure only professors and committee leaders reach this endpoint.
 
         if (! $isProfessor) {
             abort(403, 'Only professors and committee leaders can browse participants.'); // Keep unauthorized roles from enumerating the catalog.
@@ -350,7 +350,8 @@ class ProjectController extends Controller
             ]); // Return a flat payload so the client can restore selections after validation errors.
         }
 
-        $excludeId = optional($user->professor)->id; // Exclude the authenticated profile from the suggestion list to avoid redundant chips.
+        $activeProfessor = $this->resolveProfessorProfile($user); // Resolve the shared professor profile so committee leaders also receive consistent exclusions.
+        $excludeId = $activeProfessor?->id; // Exclude the authenticated profile from the suggestion list to avoid redundant chips.
         $perPage = (int) $request->integer('per_page', 10);
         $perPage = max(1, min($perPage, 25)); // Cap the pagination size to protect the endpoint from excessive loads.
         $page = max(1, (int) $request->integer('page', 1));
