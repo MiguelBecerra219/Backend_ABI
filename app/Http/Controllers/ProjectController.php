@@ -142,13 +142,14 @@ class ProjectController extends Controller
     public function create(): View
     {
         [$user, $isProfessor, $isStudent, $isResearchStaff, $isCommitteeLeader] = $this->ensureRoleAccess(true); // Capture the committee leader flag to mirror professor permissions later.
+        $activeProfessor = $this->resolveProfessorProfile($user); // Locate the professor profile even when the relationship is not eager loaded (committee leaders share the same model).
 
         if ($isResearchStaff) {
             abort(403, 'Research staff members cannot create project ideas.');
         }
 
         if ($isProfessor) {
-            $researchGroupId = $user->professor?->cityProgram?->program?->research_group_id;
+            $researchGroupId = $activeProfessor?->cityProgram?->program?->research_group_id;
         } else {
             $researchGroupId = $user->student?->cityProgram?->program?->research_group_id;
         }
@@ -177,7 +178,7 @@ class ProjectController extends Controller
         $availableProfessorsPagination = ['current_page' => 1, 'next_page' => null, 'per_page' => 10]; // Initialize pagination data so the Blade template can rely on predictable keys.
 
         if ($isProfessor) {
-            $professor = $user->professor;
+            $professor = $activeProfessor;
             if (! $professor) {
                 abort(403, 'Professor profile required to submit proposals.');
             }
@@ -191,7 +192,7 @@ class ProjectController extends Controller
                 'program_id' => optional($professor->cityProgram)->program_id,
             ]);
 
-            $availableProfessorsPaginator = $this->paginateParticipants(optional($user->professor)->id); // Preload the first batch of eligible professors and committee leaders to populate the picker without extra SQL from the view.
+            $availableProfessorsPaginator = $this->paginateParticipants($professor->id); // Preload the first batch of eligible professors and committee leaders to populate the picker without extra SQL from the view.
             $availableProfessors = $availableProfessorsPaginator->getCollection()->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Normalize the payload so the Blade template and the JS widget receive consistent fields.
             $availableProfessorsPagination = [
                 'current_page' => $availableProfessorsPaginator->currentPage(),
@@ -254,7 +255,9 @@ class ProjectController extends Controller
 
         try {
             if ($isProfessor) {
-                return $this->persistProfessorProject($request, $user->professor);
+                $professorProfile = $this->resolveProfessorProfile($user); // Ensure committee leaders leverage the same professor record to persist the project.
+
+                return $this->persistProfessorProject($request, $professorProfile);
             }
 
             if ($isResearchStaff) {
@@ -417,6 +420,24 @@ class ProjectController extends Controller
         ]; // Include the email and program so the interface can display richer context while selecting collaborators.
     }
 
+    /**
+     * Resolve the professor profile associated with the authenticated user, covering committee leaders too.
+     */
+    protected function resolveProfessorProfile(?User $user): ?Professor
+    {
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->relationLoaded('professor') || array_key_exists('professor', $user->getRelations())) {
+            if ($user->professor) {
+                return $user->professor;
+            }
+        }
+
+        return Professor::query()->where('user_id', $user->id)->first();
+    }
+
 
     /**
      * Display the edit form with the existing project information.
@@ -435,10 +456,11 @@ class ProjectController extends Controller
         }
 
         [$user, $isProfessor, $isStudent, $isResearchStaff, $isCommitteeLeader] = $this->ensureRoleAccess(true); // Include committee leaders in the edit flow to mirror professor capabilities.
+        $activeProfessor = $this->resolveProfessorProfile($user); // Resolve the shared professor profile so committee leaders can reuse the same datasets without additional queries.
         $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
 
         if ($isProfessor) {
-            $researchGroupId = $user->professor?->cityProgram?->program?->research_group_id;
+            $researchGroupId = $activeProfessor?->cityProgram?->program?->research_group_id;
         } else {
             $researchGroupId = $user->student?->cityProgram?->program?->research_group_id;
         }
@@ -489,7 +511,7 @@ class ProjectController extends Controller
         $useStudentForm = $isStudent || ($isResearchStaff && ! $hasProfessorParticipants && $hasStudentParticipants);
 
         if ($useProfessorForm) {
-            $contextProfessor = $isProfessor ? $user->professor : $project->professors->first();
+            $contextProfessor = $isProfessor ? $activeProfessor : $project->professors->first();
             if (! $contextProfessor) {
                 abort(403, 'Professor profile required to edit proposals.');
             }

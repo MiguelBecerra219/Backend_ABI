@@ -383,36 +383,45 @@
                                 item.dataset.professorOptionDocument = professor.document ?? '';
                                 item.dataset.professorOptionEmail = professor.email ?? '';
 
-                                const infoWrapper = document.createElement('span');
-                                infoWrapper.className = 'd-block';
+                                const layout = document.createElement('div');
+                                layout.className = 'd-flex align-items-start gap-3';
+                                item.appendChild(layout);
+
+                                const infoWrapper = document.createElement('div');
+                                infoWrapper.className = 'flex-grow-1 overflow-hidden';
+                                layout.appendChild(infoWrapper);
 
                                 const nameLine = document.createElement('span');
-                                nameLine.className = 'fw-semibold d-block';
+                                nameLine.className = 'fw-semibold d-block text-truncate';
                                 nameLine.textContent = professor.name || 'Sin nombre';
+                                nameLine.title = professor.name || 'Sin nombre';
                                 infoWrapper.appendChild(nameLine);
 
                                 const documentLine = document.createElement('span');
-                                documentLine.className = 'text-secondary small d-block';
+                                documentLine.className = 'text-secondary small d-block text-truncate';
                                 documentLine.textContent = professor.document || 'Sin documento';
+                                documentLine.title = professor.document || 'Sin documento';
                                 infoWrapper.appendChild(documentLine);
 
                                 if (professor.email) {
                                     const emailLine = document.createElement('span');
-                                    emailLine.className = 'text-secondary small d-block';
+                                    emailLine.className = 'text-secondary small d-block text-truncate';
                                     emailLine.textContent = professor.email;
+                                    emailLine.title = professor.email;
                                     infoWrapper.appendChild(emailLine);
                                 }
 
                                 if (showActionBadge) {
-                                    item.classList.add('d-flex', 'justify-content-between', 'align-items-center');
-                                    item.appendChild(infoWrapper);
+                                    const actionWrapper = document.createElement('div');
+                                    actionWrapper.className = 'flex-shrink-0';
 
                                     const badge = document.createElement('span');
-                                    badge.className = 'badge bg-primary text-white ms-2';
-                                    badge.textContent = 'Agregar';
-                                    item.appendChild(badge);
-                                } else {
-                                    item.appendChild(infoWrapper);
+                                    badge.className = 'btn btn-primary btn-sm';
+                                    badge.textContent = 'Añadir';
+                                    badge.style.pointerEvents = 'none';
+
+                                    actionWrapper.appendChild(badge);
+                                    layout.appendChild(actionWrapper);
                                 }
 
                                 listElement.appendChild(item);
