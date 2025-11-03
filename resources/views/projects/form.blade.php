@@ -1,4 +1,4 @@
-{{--
+{{-- 
     Partial path: projects/form.blade.php.
     Purpose: Shared form fields for create and edit operations.
 --}}
@@ -11,7 +11,8 @@
     $investigationLines = $investigationLines ?? collect();
     $thematicAreas = $thematicAreas ?? collect();
     $availableStudents = $availableStudents ?? collect();
-    $availableProfessors = $availableProfessors ?? collect();
+    $availableProfessors = collect($availableProfessors ?? []); // Coerce the initial participants into a collection so helper methods like ->values() are available consistently.
+    $initialProfessorOptions = $availableProfessors->values(); // Cache a zero-indexed copy to feed the data attribute used by JavaScript.
 @endphp
 
 @if (!empty($versionComment))
@@ -54,38 +55,116 @@
     <div class="row g-3 mt-0">
         <div class="col-12 col-md-6">
             <label for="program_id" class="form-label required">Programa académico</label>
-            <select id="program_id" name="program_id" class="form-select @error('program_id') is-invalid @enderror" required>
-                <option value="">Selecciona un programa</option>
-                @foreach ($programs as $program)
-                    <option value="{{ $program->id }}" {{ (string) old('program_id', $prefill['program_id'] ?? '') === (string) $program->id ? 'selected' : '' }}>
-                        {{ $program->name }}
-                    </option>
-                @endforeach
-            </select>
+            @php
+                // Resolve the program name using the prefilled identifier so the field can stay read-only.
+                $lockedProgramId = old('program_id', $prefill['program_id'] ?? null);
+                $lockedProgramName = optional($programs->firstWhere('id', $lockedProgramId))->name ?? 'Programa no disponible';
+            @endphp
+            <input type="text" id="program_id_display" class="form-control" value="{{ $lockedProgramName }}" readonly disabled>
+            <input type="hidden" id="program_id" name="program_id" value="{{ $lockedProgramId }}">
+            <small class="form-hint">El programa se fija según tu perfil y no puede modificarse.</small>
             @error('program_id')
-                <div class="invalid-feedback">{{ $message }}</div>
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
+
         <div class="col-12 col-md-6">
-            <label for="co_professor_ids" class="form-label">Profesores asociados</label>
-            <select id="co_professor_ids" name="co_professor_ids[]" class="form-select @error('co_professor_ids') is-invalid @enderror" multiple size="6">
-                @php
-                    $fullUser = \App\Helpers\AuthUserHelper::fullUser();
-                    $currentProfessorId = optional($fullUser?->professor)->id;
-                    $selectedProfessors = collect(old('co_professor_ids', $projectModel?->professors?->pluck('id')->reject(fn ($id) => $id === $currentProfessorId)->all() ?? []));
-                @endphp
-                @foreach ($availableProfessors as $professorOption)
-                    <option value="{{ $professorOption->id }}" {{ $selectedProfessors->contains($professorOption->id) ? 'selected' : '' }}>
-                        {{ $professorOption->name }} {{ $professorOption->last_name }}
-                    </option>
-                @endforeach
-            </select>
-            <small class="form-hint">Selecciona colegas que acompañarán la propuesta.</small>
-            @error('co_professor_ids')
-                <div class="invalid-feedback">{{ $message }}</div>
+            <label class="form-label">Profesores asociados</label>
+            @php
+                // Gather the authenticated professor to exclude them from the dynamic chips component.
+                $fullUser = \App\Helpers\AuthUserHelper::fullUser();
+                $currentProfessorId = optional($fullUser?->professor)->id;
+                $initialProfessorIds = collect(old('associated_professors', $projectModel?->professors?->pluck('id')->reject(fn ($id) => $id === $currentProfessorId)->all() ?? []))
+                    ->filter(static fn ($id) => $id !== null)
+                    ->unique()
+                    ->values();
+                $initialProfessorData = $projectModel?->professors
+                    ? $projectModel->professors
+                        ->whereIn('id', $initialProfessorIds)
+                        ->map(static function ($professorItem) {
+                            return [
+                                'id' => $professorItem->id,
+                                'name' => trim($professorItem->name . ' ' . $professorItem->last_name),
+                                'document' => $professorItem->card_id,
+                            ];
+                        })
+                        ->values()
+                    : collect();
+            @endphp
+
+            {{-- ⬇️ Picker compacto de profesores (mismo JS/funcionalidad, UI en un recuadro pequeño con scroll) --}}
+            <div class="mb-2" data-professor-search
+                 data-search-endpoint="{{ route('projects.participants.index') }}"
+                 data-initial-ids='@json($initialProfessorIds)'
+                 data-initial-professors='@json($initialProfessorData)'
+                 data-initial-options='@json($initialProfessorOptions)'>
+                
+                <div class="card border">
+                    <div class="card-header py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="card-title mb-0">Docentes disponibles</span>
+                            <span class="badge bg-secondary" data-professor-available-count>{{ $availableProfessors->count() }}</span>
+
+                            {{-- buscador dentro del recuadro (compacto) --}}
+                            <div class="ms-auto w-50 position-relative">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-transparent">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <circle cx="10" cy="10" r="7" />
+                                            <line x1="21" y1="21" x2="15" y2="15" />
+                                        </svg>
+                                    </span>
+                                    <input id="associate-search" type="search" class="form-control" placeholder="Buscar por nombre, apellido, documento o correo" autocomplete="off" data-professor-search-input>
+                                    <button type="button" class="btn btn-primary" data-professor-search-submit>Buscar</button>
+                                </div>
+
+                                {{-- resultados desplegables dentro del mismo recuadro --}}
+                                <div class="list-group shadow position-absolute start-0 end-0 d-none"
+                                     style="z-index:1050; max-height:220px; overflow-y:auto; top:110%;"
+                                     data-professor-search-results></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- listado compacto con scroll interno --}}
+                    <div class="list-group list-group-flush" data-professor-initial-list
+                         style="max-height:260px; overflow-y:auto;">
+                        @forelse ($availableProfessors as $option)
+                            <button type="button"
+                                    class="list-group-item list-group-item-action text-start"
+                                    data-professor-option="{{ $option['id'] }}"
+                                    data-professor-option-name="{{ $option['name'] }}"
+                                    data-professor-option-document="{{ $option['document'] }}"
+                                    data-professor-option-email="{{ $option['email'] }}">
+                                <span class="fw-semibold d-block">{{ $option['name'] }}</span>
+                                <span class="text-secondary small d-block">{{ $option['document'] ?? 'Sin documento' }}</span>
+                                @if(!empty($option['email']))
+                                    <span class="text-secondary small d-block">{{ $option['email'] }}</span>
+                                @endif
+                            </button>
+                        @empty
+                            <div class="text-secondary small px-3 py-2">No hay participantes disponibles.</div>
+                        @endforelse
+                    </div>
+
+                    <div class="card-footer text-center d-none" data-professor-load-more-wrapper>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-professor-load-more>Ver más</button>
+                    </div>
+                </div>
+
+                {{-- chips de seleccionados --}}
+                <div class="d-flex flex-wrap gap-2 mt-2" data-professor-selected>
+                    <span class="text-secondary small" data-professor-empty-hint>Sin profesores asociados todavía.</span>
+                </div>
+            </div>
+            <small class="form-hint">Busca dentro del recuadro, añade con un clic y retira desde la ficha ×.</small>
+
+            @error('associated_professors')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
-            @error('co_professor_ids.*')
-                <div class="invalid-feedback">{{ $message }}</div>
+            @error('associated_professors.*')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
     </div>
@@ -140,6 +219,371 @@
     </div>
 </div>
 
+
+@once
+    @push('js')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('[data-professor-search]').forEach(container => {
+                    const endpoint = container.dataset.searchEndpoint;
+
+                    if (!endpoint) {
+                        return; // Abort when the endpoint is unavailable to prevent runtime errors in older views.
+                    }
+
+                    const searchInput = container.querySelector('[data-professor-search-input]');
+                    const searchButton = container.querySelector('[data-professor-search-submit]');
+                    const resultsList = container.querySelector('[data-professor-search-results]');
+                    const initialList = container.querySelector('[data-professor-initial-list]');
+                    const loadMoreWrapper = container.querySelector('[data-professor-load-more-wrapper]');
+                    const countBadge = container.querySelector('[data-professor-available-count]');
+                    const selectedWrapper = container.querySelector('[data-professor-selected]');
+                    const emptyHint = container.querySelector('[data-professor-empty-hint]');
+                    const selectedMap = new Map(); // Track selected participants to keep chips and payloads in sync.
+
+                    loadMoreWrapper?.classList.add('d-none'); // Hide legacy pagination controls now that the full catalog loads at once.
+
+                    let initialOptions = [];
+                    try {
+                        initialOptions = JSON.parse(container.dataset.initialOptions || '[]');
+                    } catch (error) {
+                        console.warn('Failed to parse initial participant options', error); // Log instead of breaking the picker.
+                        initialOptions = [];
+                    }
+
+                    const normalizeProfessor = raw => ({
+                        id: Number.parseInt(raw?.id ?? raw, 10),
+                        name: raw?.name ?? '',
+                        document: raw?.document ?? '',
+                        email: raw?.email ?? '',
+                    });
+
+                    const updateCountBadge = () => {
+                        if (!countBadge || !initialList) {
+                            return;
+                        }
+
+                        const options = initialList.querySelectorAll('[data-professor-option]').length;
+                        countBadge.textContent = options.toString();
+                    };
+
+                    const toggleEmptyHint = () => {
+                        if (!emptyHint) {
+                            return;
+                        }
+
+                        emptyHint.classList.toggle('d-none', selectedMap.size > 0);
+                    };
+
+                    const removeOptionButton = id => {
+                        [initialList, resultsList].forEach(list => {
+                            const option = list?.querySelector(`[data-professor-option="${id}"]`);
+
+                            if (option) {
+                                option.remove();
+                            }
+                        });
+
+                        updateCountBadge();
+                    };
+
+                    const removeProfessor = id => {
+                        const chip = selectedWrapper?.querySelector(`[data-professor-chip="${id}"]`);
+
+                        if (chip) {
+                            chip.remove();
+                        }
+
+                        selectedMap.delete(id);
+                        toggleEmptyHint();
+                    };
+
+                    const createChip = professor => {
+                        const chip = document.createElement('span');
+                        chip.className = 'badge bg-primary text-white d-inline-flex align-items-center gap-2';
+                        chip.dataset.professorChip = professor.id;
+
+                        const nameSegment = document.createElement('span');
+                        nameSegment.className = 'fw-semibold';
+                        nameSegment.textContent = professor.name;
+                        chip.appendChild(nameSegment);
+
+                        const documentBadge = document.createElement('span');
+                        documentBadge.className = 'badge bg-white text-primary';
+                        documentBadge.textContent = professor.document || 'Sin documento';
+                        chip.appendChild(documentBadge);
+
+                        const removeButton = document.createElement('button');
+                        removeButton.type = 'button';
+                        removeButton.className = 'btn-close btn-close-white';
+                        removeButton.setAttribute('aria-label', 'Eliminar profesor asociado');
+                        removeButton.addEventListener('click', () => removeProfessor(professor.id));
+                        chip.appendChild(removeButton);
+
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'associated_professors[]';
+                        hiddenInput.value = professor.id;
+                        chip.appendChild(hiddenInput);
+
+                        return chip;
+                    };
+
+                    const closeResults = () => {
+                        if (!resultsList) {
+                            return;
+                        }
+
+                        resultsList.classList.add('d-none');
+                        resultsList.innerHTML = '';
+                    };
+
+                    const openResults = () => {
+                        if (!resultsList || resultsList.children.length === 0) {
+                            return;
+                        }
+
+                        resultsList.classList.remove('d-none');
+                    };
+
+                    const addProfessor = professor => {
+                        if (!professor || !Number.isInteger(professor.id) || selectedMap.has(professor.id)) {
+                            return; // Skip invalid data or repeated selections.
+                        }
+
+                        selectedMap.set(professor.id, professor);
+                        selectedWrapper?.appendChild(createChip(professor));
+                        removeOptionButton(professor.id);
+                        toggleEmptyHint();
+
+                        closeResults();
+                    };
+
+                    const renderProfessorList = (listElement, professors, { replace = false, showActionBadge = false } = {}) => {
+                        if (!listElement) {
+                            return;
+                        }
+
+                        if (replace) {
+                            listElement.innerHTML = '';
+                        }
+
+                        const source = Array.isArray(professors) ? professors : []; // Normalize non-array payloads to keep the renderer resilient against API changes.
+
+                        let rendered = 0;
+
+                        source
+                            .map(normalizeProfessor)
+                            .forEach(professor => {
+                                if (!Number.isInteger(professor.id) || selectedMap.has(professor.id)) {
+                                    return; // Ignore invalid entries and already selected participants.
+                                }
+
+                                const item = document.createElement(showActionBadge ? 'div' : 'button');
+                                item.className = 'list-group-item d-flex align-items-start gap-3 text-start';
+                                if (!showActionBadge) {
+                                    item.classList.add('list-group-item-action');
+                                    item.type = 'button';
+                                }
+                                item.dataset.professorOption = professor.id;
+                                item.dataset.professorOptionName = professor.name;
+                                item.dataset.professorOptionDocument = professor.document ?? '';
+                                item.dataset.professorOptionEmail = professor.email ?? '';
+
+                                const infoWrapper = document.createElement('div');
+                                infoWrapper.className = 'flex-grow-1 overflow-hidden';
+                                infoWrapper.style.minWidth = '0';
+                                item.appendChild(infoWrapper);
+
+                                const nameLine = document.createElement('span');
+                                nameLine.className = 'fw-semibold d-block text-truncate';
+                                nameLine.textContent = professor.name || 'Sin nombre';
+                                nameLine.title = professor.name || 'Sin nombre';
+                                infoWrapper.appendChild(nameLine);
+
+                                const documentLine = document.createElement('span');
+                                documentLine.className = 'text-secondary small d-block text-truncate';
+                                documentLine.textContent = professor.document || 'Sin documento';
+                                documentLine.title = professor.document || 'Sin documento';
+                                infoWrapper.appendChild(documentLine);
+
+                                if (professor.email) {
+                                    const emailLine = document.createElement('span');
+                                    emailLine.className = 'text-secondary small d-block text-truncate';
+                                    emailLine.textContent = professor.email;
+                                    emailLine.title = professor.email;
+                                    infoWrapper.appendChild(emailLine);
+                                }
+
+                                if (showActionBadge) {
+                                    const actionWrapper = document.createElement('div');
+                                    actionWrapper.className = 'flex-shrink-0 ms-auto';
+
+                                    const actionButton = document.createElement('button');
+                                    actionButton.type = 'button';
+                                    actionButton.className = 'btn btn-primary btn-sm';
+                                    actionButton.textContent = 'Agregar';
+                                    actionButton.dataset.professorAddButton = professor.id;
+                                    actionWrapper.appendChild(actionButton);
+
+                                    item.appendChild(actionWrapper);
+                                }
+
+                                listElement.appendChild(item);
+                                rendered += 1;
+                            });
+
+                        if (listElement === resultsList && rendered === 0) {
+                            const emptyItem = document.createElement('div');
+                            emptyItem.className = 'list-group-item text-secondary small';
+                            emptyItem.textContent = 'No se encontraron coincidencias.';
+                            listElement.appendChild(emptyItem);
+                        }
+
+                        if (listElement === resultsList) {
+                            if (listElement.children.length === 0) {
+                                closeResults();
+                            } else {
+                                openResults();
+                            }
+                        }
+
+                        updateCountBadge();
+                    };
+
+                    const runFetch = configureParams => {
+                        const url = new URL(endpoint, window.location.origin);
+
+                        if (typeof configureParams === 'function') {
+                            configureParams(url.searchParams);
+                        }
+
+                        return fetch(url.toString(), {
+                            headers: {
+                                Accept: 'application/json',
+                            },
+                        })
+                            .then(response => (response.ok ? response.json() : { data: [] }))
+                            .then(payload => (Array.isArray(payload) ? { data: payload, meta: null } : payload))
+                            .catch(() => ({ data: [], meta: null })); // Swallow network errors to keep the UI responsive offline.
+                    };
+
+                    const searchByTerm = term => runFetch(params => {
+                        params.set('q', term);
+                    }).then(({ data }) => {
+                        renderProfessorList(resultsList, data, { replace: true, showActionBadge: true });
+                    });
+
+                    const preloadByIds = ids => {
+                        if (!ids.length) {
+                            return Promise.resolve();
+                        }
+
+                        return runFetch(params => {
+                            ids.forEach(id => params.append('ids[]', id));
+                        }).then(({ data }) => {
+                            data.forEach(item => addProfessor(normalizeProfessor(item)));
+                        });
+                    };
+
+                    const triggerSearch = () => {
+                        if (!searchInput) {
+                            return;
+                        }
+
+                        const term = searchInput.value.trim();
+
+                        if (term === '') {
+                            closeResults();
+                            return;
+                        }
+
+                        searchByTerm(term);
+                    };
+
+                    if (searchButton) {
+                        searchButton.addEventListener('click', event => {
+                            event.preventDefault();
+                            triggerSearch();
+                        });
+                    }
+
+                    if (searchInput) {
+                        searchInput.addEventListener('keydown', event => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                triggerSearch();
+                            }
+
+                            if (event.key === 'Escape') {
+                                closeResults();
+                            }
+                        });
+                    }
+
+                    const handleOptionClick = event => {
+                        const addTrigger = event.target.closest('[data-professor-add-button]');
+                        const target = event.target.closest('[data-professor-option]');
+
+                        if (!target) {
+                            return;
+                        }
+
+                        if (event.currentTarget === resultsList && !addTrigger) {
+                            return;
+                        }
+
+                        const professor = normalizeProfessor({
+                            id: target.dataset.professorOption,
+                            name: target.dataset.professorOptionName,
+                            document: target.dataset.professorOptionDocument,
+                            email: target.dataset.professorOptionEmail,
+                        });
+
+                        addProfessor(professor);
+                    };
+
+                    initialList?.addEventListener('click', handleOptionClick);
+                    resultsList?.addEventListener('click', handleOptionClick);
+
+                    document.addEventListener('click', event => {
+                        if (!container.contains(event.target)) {
+                            closeResults();
+                        }
+                    });
+
+                    renderProfessorList(initialList, initialOptions, { replace: true });
+
+                    let initialProfessors = [];
+                    let initialIds = [];
+
+                    try {
+                        initialProfessors = JSON.parse(container.dataset.initialProfessors || '[]');
+                    } catch (error) {
+                        console.warn('Failed to parse initial professor data', error); // Keep going so the form remains usable.
+                        initialProfessors = [];
+                    }
+
+                    try {
+                        initialIds = JSON.parse(container.dataset.initialIds || '[]');
+                    } catch (error) {
+                        console.warn('Failed to parse initial professor ids', error);
+                        initialIds = [];
+                    }
+
+                    initialProfessors.forEach(professor => addProfessor(normalizeProfessor(professor)));
+
+                    const missingIds = initialIds
+                        .map(id => Number.parseInt(id, 10))
+                        .filter(id => Number.isInteger(id) && !selectedMap.has(id));
+
+                    preloadByIds(missingIds).finally(toggleEmptyHint);
+                    toggleEmptyHint();
+                });
+            });
+        </script>
+    @endpush
+@endonce
 
 <div class="mb-3 mt-3">
     <label for="title" class="form-label required">Título del proyecto</label>
@@ -405,6 +849,11 @@
 document.addEventListener('DOMContentLoaded', function () {
     const lineSelect = document.getElementById('investigation_line_id');
     const areaSelect = document.getElementById('thematic_area_id');
+
+    if (!lineSelect || !areaSelect) {
+        return;
+    }
+
     const allAreas = [...areaSelect.options];
 
     function filterAreas() {
@@ -434,11 +883,14 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-
     const searchInput = document.getElementById('student-search');
     const studentList = document.getElementById('student-list');
     const selectedContainer = document.getElementById('selected-students');
     const hiddenInputsContainer = document.getElementById('selected-students-inputs');
+
+    if (!searchInput || !studentList || !selectedContainer || !hiddenInputsContainer) {
+        return;
+    }
 
     let selected = [];
 

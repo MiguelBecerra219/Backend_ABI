@@ -162,6 +162,12 @@ return [
         'icon' => 'ti ti-book',
         'route' => 'projects.index',
     ],
+    [
+        'text' => 'Evaluar proyectos',
+        'icon' => 'ti ti-check',
+        'route' => 'projects.evaluation.index',
+        'hasRole' => 'committee_leader',
+    ],
 
     [
         'header' => 'Gestion Academica',

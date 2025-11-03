@@ -118,7 +118,7 @@
                             </p>
                             
                             {{-- Controles de paginación (Bootstrap 5) --}}
-                            {{ $projects->withQueryString()->links('vendor.pagination.bootstrap-5') }}
+                            {{ $projects->withQueryString()->links('vendor.pagination.bootstrap-5-numeric') }}
                         </div>
                     </div>
                 @endif

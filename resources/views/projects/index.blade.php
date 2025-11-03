@@ -76,6 +76,21 @@
                                 <input type="search" id="search" name="search" value="{{ $search }}" class="form-control" placeholder="Título del proyecto">
                             </div>
                         </div>
+                        {{-- Added program selector so committee leaders can narrow the listing by academic program. --}}
+                        @if ($isCommitteeLeader)
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <label for="program_id" class="form-label">Programa académico</label>
+                                <select id="program_id" name="program_id" class="form-select">
+                                    <option value="">Todos los programas</option>
+                                    @foreach ($programCatalog as $program)
+                                        <option value="{{ $program->id }}" {{ (string) ($selectedProgram ?? '') === (string) $program->id ? 'selected' : '' }}>
+                                            {{ $program->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                
+                            </div>
+                        @endif
                         <div class="col-12 col-md-4 col-lg-2">
                             <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                         </div>
@@ -112,7 +127,19 @@
                                     <td>{{ $project->id }}</td>
                                     <td class="text-break">{{ $project->title }}</td>
                                     <td>{{ $project->thematicArea->name ?? 'Sin área' }}</td>
-                                    <td><span class="badge bg-indigo">{{ $project->projectStatus->name ?? 'Sin estado' }}</span></td>
+                                    @php
+                                        // Map each status to a high-contrast badge class to meet accessibility requirements.
+                                        $statusName = $project->projectStatus->name ?? 'Sin estado';
+                                        $normalizedStatus = \Illuminate\Support\Str::lower($statusName);
+                                        $statusClasses = [
+                                            'pendiente de aprobación' => 'bg-warning text-dark',
+                                            'devuelto para corrección' => 'bg-danger text-white',
+                                            'aprobado' => 'bg-success text-white',
+                                            'waiting evaluation' => 'bg-primary text-white',
+                                        ];
+                                        $badgeClass = $statusClasses[$normalizedStatus] ?? 'bg-secondary text-white';
+                                    @endphp
+                                    <td><span class="badge {{ $badgeClass }}">{{ $statusName }}</span></td>
                                     <td>
                                         @forelse ($project->professors as $professor)
                                             <div>{{ $professor->name }} {{ $professor->last_name }}</div>
@@ -146,9 +173,11 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="card-footer d-flex justify-content-between align-items-center">
-                    <div class="text-secondary">Mostrando {{ $projects->firstItem() ?? 0 }} a {{ $projects->lastItem() ?? 0 }} de {{ $projects->total() }} registros</div>
-                    {{ $projects->links() }}
+                <div class="card-footer d-flex flex-column flex-lg-row align-items-center justify-content-between gap-2">
+                    <div class="text-secondary mb-2 mb-lg-0">Mostrando {{ $projects->firstItem() ?? 0 }} a {{ $projects->lastItem() ?? 0 }} de {{ $projects->total() }} registros</div>
+                    @if ($projects->hasPages())
+                        {{ $projects->links('vendor.pagination.bootstrap-5-numeric') }}
+                    @endif
                 </div>
             </div>
         </div>
