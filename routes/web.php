@@ -106,7 +106,7 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('projects/participants', [ProjectController::class, 'participants'])
         ->middleware('role:professor,committee_leader') // Keep the catalog restricted to professors and committee leaders.
-        ->name('projects.participants.index');
+        ->name('projects.participants');
 
     Route::resource('projects', ProjectController::class)->except(['destroy']);
 });

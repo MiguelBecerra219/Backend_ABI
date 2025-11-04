@@ -28,6 +28,14 @@ return [
     */
 
     'logo' => '<b>Tab</b>LAR',
+    'logo_img' => [
+        'path' => 'assets/tablar-logo.png',
+        'alt' => 'ABI Logo',
+        'class' => 'logo-no-invert', // Clase personalizada para evitar inversión
+        'style' => 'filter: none !important;',
+        'width' => 110,
+        'height' => 32,
+    ],
     'logo_img_alt' => 'Admin Logo',
 
     /*
@@ -41,13 +49,14 @@ return [
     */
 
     'auth_logo' => [
-        'enabled' => false,
+        'enabled' => true,
         'img' => [
             'path' => 'assets/tablar-logo.png',
             'alt' => 'Auth Logo',
-            'class' => '',
-            'width' => 50,
-            'height' => 50,
+            'class' => 'logo-no-invert', // Evitar inversión en modo oscuro
+            'style' => 'filter: none !important;',
+            'width' => 110,
+            'height' => 32,
         ],
     ],
 
@@ -137,12 +146,21 @@ return [
     | Menu Items
     |--------------------------------------------------------------------------
     |
-    | Here we can modify the sidebar/top navigation of the admin panel.
+    | Menú organizado por roles:
+    | - research_staff: Acceso total (admin)
+    | - committee_leader: Evaluación de proyectos
+    | - professor: Gestión de proyectos y consulta
+    | - student: Proyectos y banco de ideas
     |
-    | For detailed instructions you can look here:
+    | Atributos disponibles:
+    | - hasRole: 'student' | 'professor' | 'committee_leader' | 'research_staff'
+    | - hasAnyRole: ['professor', 'committee_leader']
     |
     */
 'menu' => [
+    // =================================================================
+    // SECCIÓN: INICIO (Todos los roles)
+    // =================================================================
     [
         'header' => 'Inicio',
     ],
@@ -157,24 +175,70 @@ return [
         'route' => 'perfil.edit',
     ],
 
+    // =================================================================
+    // SECCIÓN: PROYECTOS
+    // =================================================================
     [
-        'text' => 'Proyectos',
-        'icon' => 'ti ti-book',
-        'route' => 'projects.index',
+        'header' => 'Proyectos',
+        // Visible para todos excepto research_staff (opcional)
     ],
     [
-        'text' => 'Evaluar proyectos',
+        'text' => 'Mis Proyectos',
+        'icon' => 'ti ti-book',
+        'route' => 'projects.index',
+        // Visible para: student, professor, committee_leader
+        'hasAnyRole' => ['student', 'professor', 'committee_leader'],
+    ],
+    [
+        'text' => 'Crear Proyecto',
+        'icon' => 'ti ti-book-2',
+        'route' => 'projects.create',
+        // Solo student y professor pueden crear
+        'hasAnyRole' => ['student', 'professor'],
+    ],
+    [
+        'text' => 'Evaluar Proyectos',
         'icon' => 'ti ti-check',
         'route' => 'projects.evaluation.index',
         'hasRole' => 'committee_leader',
     ],
-
     [
-        'header' => 'Gestion Academica',
+        'text' => 'Banco de Ideas Aprobadas',
+        'icon' => 'ti ti-bulb',
+        'submenu' => [
+            [
+                'text' => 'Ver Ideas (Estudiante)',
+                'icon' => 'ti ti-eye',
+                'route' => 'students.projects.approved.index',
+                'hasRole' => 'student',
+            ],
+            [
+                'text' => 'Ver Ideas (Profesor)',
+                'icon' => 'ti ti-eye',
+                'route' => 'professor.projects.approved.index',
+                'hasRole' => 'professor',
+            ],
+        ],
+        'hasAnyRole' => ['student', 'professor'],
+    ],
+
+    // =================================================================
+    // SECCIÓN: GESTIÓN ACADÉMICA (Research Staff)
+    // =================================================================
+    [
+        'header' => 'Gestión Académica',
+        'hasRole' => 'research_staff',
     ],
     [
-        'text' => 'Estructura academica',
+        'text' => 'Todos los Proyectos',
+        'icon' => 'ti ti-books',
+        'route' => 'projects.index',
+        'hasRole' => 'research_staff',
+    ],
+    [
+        'text' => 'Estructura Académica',
         'icon' => 'ti ti-school',
+        'hasRole' => 'research_staff',
         'submenu' => [
             [
                 'text' => 'Departamentos',
@@ -187,7 +251,7 @@ return [
                 'route' => 'cities.index',
             ],
             [
-                'text' => 'Asignacion Ciudad y Programa',
+                'text' => 'Asignación Ciudad y Programa',
                 'icon' => 'ti ti-map-search',
                 'route' => 'city-program.index',
             ],
@@ -197,17 +261,17 @@ return [
                 'route' => 'programs.index',
             ],
             [
-                'text' => 'Grupos de investigacion',
+                'text' => 'Grupos de Investigación',
                 'icon' => 'ti ti-flask',
                 'route' => 'research-groups.index',
             ],
             [
-                'text' => 'Lineas de investigacion',
+                'text' => 'Líneas de Investigación',
                 'icon' => 'ti ti-git-branch',
                 'route' => 'investigation-lines.index',
             ],
             [
-                'text' => 'Areas tematicas',
+                'text' => 'Áreas Temáticas',
                 'icon' => 'ti ti-stack-2',
                 'route' => 'thematic-areas.index',
             ],
@@ -216,6 +280,7 @@ return [
     [
         'text' => 'Frameworks',
         'icon' => 'ti ti-hierarchy-3',
+        'hasRole' => 'research_staff',
         'submenu' => [
             [
                 'text' => 'Frameworks',
@@ -223,20 +288,21 @@ return [
                 'route' => 'frameworks.index',
             ],
             [
-                'text' => 'Contenidos de framework',
+                'text' => 'Contenidos de Framework',
                 'icon' => 'ti ti-folders',
                 'route' => 'content-frameworks.index',
             ],
             [
-                'text' => 'Asignacion de contenidos',
+                'text' => 'Asignación de Contenidos',
                 'icon' => 'ti ti-circle-dashed',
                 'route' => 'content-framework-project.index',
             ],
         ],
     ],
     [
-        'text' => 'Catalogo de contenidos',
+        'text' => 'Catálogo de Contenidos',
         'icon' => 'ti ti-books',
+        'hasRole' => 'research_staff',
         'submenu' => [
             [
                 'text' => 'Contenidos',
@@ -249,15 +315,19 @@ return [
                 'route' => 'versions.index',
             ],
             [
-                'text' => 'Contenido por version',
+                'text' => 'Contenido por Versión',
                 'icon' => 'ti ti-link',
                 'route' => 'content-versions.index',
             ],
         ],
     ],
 
+    // =================================================================
+    // SECCIÓN: USUARIOS Y FORMULARIOS (Research Staff)
+    // =================================================================
     [
-        'header' => 'Usuarios y formularios',
+        'header' => 'Administración',
+        'hasRole' => 'research_staff',
     ],
     [
         'text' => 'Usuarios',
@@ -269,6 +339,38 @@ return [
         'text' => 'Formularios',
         'icon' => 'ti ti-file-pencil',
         'route' => 'formulario.index',
+        'hasRole' => 'research_staff',
+    ],
+
+    // =================================================================
+    // SECCIÓN: CONSULTAS (Professor y Committee Leader)
+    // =================================================================
+    [
+        'header' => 'Consultas',
+        'hasAnyRole' => ['professor', 'committee_leader'],
+    ],
+    [
+        'text' => 'Participantes',
+        'icon' => 'ti ti-users-group',
+        'route' => 'projects.participants',
+        'hasAnyRole' => ['professor', 'committee_leader'],
+    ],
+    [
+        'text' => 'Recursos',
+        'icon' => 'ti ti-files',
+        'hasAnyRole' => ['professor', 'committee_leader'],
+        'submenu' => [
+            [
+                'text' => 'Frameworks Disponibles',
+                'icon' => 'ti ti-square-rotated',
+                'url' => '#', // O ruta específica si existe
+            ],
+            [
+                'text' => 'Guías y Documentación',
+                'icon' => 'ti ti-file-text',
+                'url' => '#', // O ruta específica si existe
+            ],
+        ],
     ],
 ],
 
@@ -296,7 +398,7 @@ return [
         \App\Filters\RolePermissionMenuFilter::class
     ],
 
-    
+
 
     /*
     |--------------------------------------------------------------------------

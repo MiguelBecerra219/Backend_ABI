@@ -94,7 +94,7 @@
 
             {{-- ⬇️ Picker compacto de profesores (mismo JS/funcionalidad, UI en un recuadro pequeño con scroll) --}}
             <div class="mb-2" data-professor-search
-                 data-search-endpoint="{{ route('projects.participants.index') }}"
+                 data-search-endpoint="{{ route('projects.participants') }}"
                  data-initial-ids='@json($initialProfessorIds)'
                  data-initial-professors='@json($initialProfessorData)'
                  data-initial-options='@json($initialProfessorOptions)'>

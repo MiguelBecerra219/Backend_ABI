@@ -4,7 +4,12 @@
     <div class="container container-tight py-4">
         <div class="text-center mb-1 mt-5">
             <a href="" class="navbar-brand navbar-brand-autodark">
-                <img src="{{ asset(config('tablar.auth_logo.img.path', 'assets/logo.svg')) }}" height="110" alt="">
+                <img src="{{ asset(config('tablar.auth_logo.img.path', 'assets/logo.svg')) }}"
+                     width="{{ config('tablar.auth_logo.img.width', 110) }}"
+                     height="{{ config('tablar.auth_logo.img.height', 110) }}"
+                     alt="{{ config('tablar.auth_logo.img.alt', 'Auth Logo') }}"
+                     class="{{ trim('navbar-brand-image ' . config('tablar.auth_logo.img.class', '')) }}"
+                     @if(config('tablar.auth_logo.img.style')) style="{{ config('tablar.auth_logo.img.style') }}" @endif>
             </a>
         </div>
 
