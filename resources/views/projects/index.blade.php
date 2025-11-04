@@ -76,21 +76,34 @@
                                 <input type="search" id="search" name="search" value="{{ $search }}" class="form-control" placeholder="Título del proyecto">
                             </div>
                         </div>
-                        {{-- Added program selector so committee leaders can narrow the listing by academic program. --}}
-                        @if ($isCommitteeLeader)
+                        {{-- Filtro de programa para el personal de investigacion --}}
+                        @if ($isResearchStaff)
                             <div class="col-12 col-md-6 col-lg-4">
-                                <label for="program_id" class="form-label">Programa académico</label>
-                                <select id="program_id" name="program_id" class="form-select">
-                                    <option value="">Todos los programas</option>
-                                    @foreach ($programCatalog as $program)
-                                        <option value="{{ $program->id }}" {{ (string) ($selectedProgram ?? '') === (string) $program->id ? 'selected' : '' }}>
-                                            {{ $program->name }}
+                                <label for="city_program_id" class="form-label">Programa - Ciudad</label>
+                                <select name="city_program_id" id="city_program_id" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Todos</option>
+                                    @foreach ($cityPrograms as $cp)
+                                        <option value="{{ $cp->id }}" 
+                                            {{ (string)$selectedCityProgram === (string)$cp->id ? 'selected' : '' }}>
+                                            {{ $cp->program->name }} - {{ $cp->city->name }}
                                         </option>
                                     @endforeach
                                 </select>
-                                
                             </div>
                         @endif
+                        {{-- Filtro por estado --}}
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label for="status_id" class="form-label">Estado</label>
+                            <select name="status_id" id="status_id" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos los estados</option>
+                                @foreach($projectStatuses as $status)
+                                    <option value="{{ $status->id }}" 
+                                        {{ (string)$selectedStatus === (string)$status->id ? 'selected' : '' }}>
+                                        {{ $status->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="col-12 col-md-4 col-lg-2">
                             <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                         </div>
@@ -157,7 +170,7 @@
                                     <td>
                                         <div class="btn-list flex-nowrap">
                                             <a href="{{ route('projects.show', $project) }}" class="btn btn-outline-secondary btn-sm">Ver</a>
-                                            @if($project->projectStatus?->name === 'Devuelto para corrección')
+                                            @if($project->projectStatus?->name === 'Devuelto para corrección' && !$isCommitteeLeader && !$isResearchStaff)
                                                 <a href="{{ route('projects.edit', $project) }}" class="btn btn-outline-primary btn-sm">
                                                     Editar
                                                 </a>

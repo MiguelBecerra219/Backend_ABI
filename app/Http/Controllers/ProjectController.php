@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
+use App\Models\CityProgram;
 use App\Models\Content;
 use App\Models\ContentVersion;
 use App\Models\InvestigationLine;
@@ -53,6 +54,7 @@ class ProjectController extends Controller
     public function index(Request $request): View
     {
         $user = AuthUserHelper::fullUser();
+
         $query = Project::query()
             ->with([
                 'thematicArea.investigationLine',
@@ -72,15 +74,19 @@ class ProjectController extends Controller
             $query->where('title', 'like', "%{$search}%");
         }
 
-        $programFilter = null;
+        // NUEVO: Filtro por estado del proyecto
+        $statusFilter = $request->input('status_id');
+        if ($statusFilter) {
+            $query->where('project_status_id', $statusFilter);
+        }
 
-        if ($user?->role === 'committee_leader') {
-            $programFilter = $request->integer('program_id');
-            if ($programFilter) {
-                $query->whereHas('professors.cityProgram', static function (Builder $builder) use ($programFilter) {
-                    $builder->where('program_id', $programFilter);
-                });
-            }
+        $cityPrograms = CityProgram::with(['program', 'city'])->get();
+        $selectedCityProgram = $request->integer('city_program_id');
+
+        if ($user?->role === 'research_staff' && $selectedCityProgram) {
+            $query->whereHas('professors', function ($q) use ($selectedCityProgram) {
+                $q->where('city_program_id', $selectedCityProgram);
+            });
         }
 
         if ($user?->role === 'professor' && $user->professor) {
@@ -93,6 +99,14 @@ class ProjectController extends Controller
             $query->whereHas('students', static function ($relation) use ($studentId) {
                 $relation->where('students.id', $studentId);
             });
+        } elseif ($user?->role === 'committee_leader') {
+            // Committee leaders solo ven proyectos de su mismo programa
+            if ($user->professor && $user->professor->cityProgram) {
+                $programId = $user->professor->cityProgram->program_id;
+                $query->whereHas('professors.cityProgram', static function ($relation) use ($programId) {
+                    $relation->where('program_id', $programId);
+                });
+            }
         }
 
         /** @var LengthAwarePaginator $projects */
@@ -102,6 +116,9 @@ class ProjectController extends Controller
         if ($user?->role === 'committee_leader') {
             $programCatalog = Program::query()->orderBy('name')->get();
         }
+
+        // NUEVO: Obtener todos los estados para el filtro
+        $projectStatuses = \App\Models\ProjectStatus::orderBy('name')->get();
 
         /**
          * ✅ Determine if student can create/select a new idea
@@ -129,8 +146,11 @@ class ProjectController extends Controller
             'isCommitteeLeader' => $user?->role === 'committee_leader',
             'isResearchStaff' => $user?->role === 'research_staff',
             'programCatalog' => $programCatalog,
-            'selectedProgram' => $programFilter,
             'enableButtonStudent' => $enableButtonStudent,
+            'projectStatuses' => $projectStatuses,
+            'selectedStatus' => $statusFilter,
+            'cityPrograms' => $cityPrograms,
+            'selectedCityProgram' => $selectedCityProgram,
         ]);
     }
 
@@ -291,7 +311,7 @@ class ProjectController extends Controller
             'isStudent' => $isStudent,
             'isCommitteeLeader' => $isCommitteeLeader, // Expose the new role so the Blade template can adjust the UI consistently.
             'availableStudents' => $availableStudents,
-            'availableProfessors' => $availableProfessors,
+            'availableProfessors' => $availableProfessors
         ]);
     }
 
@@ -343,20 +363,6 @@ class ProjectController extends Controller
                 ->withInput()
                 ->with('error', 'Unexpected error. Please try again later.');
         }
-
-        return view('projects.edit', [
-            'project' => $project,
-            'cities' => $cities,
-            'programs' => $programs,
-            'investigationLines' => $investigationLines,
-            'thematicAreas' => $thematicAreas,
-            'prefill' => $prefill,
-            'contentValues' => $contentValues,
-            'isProfessor' => $isProfessor,
-            'isStudent' => $isStudent,
-            'availableStudents' => $availableStudents,
-            'availableProfessors' => $availableProfessors,
-        ]);
     }
 
     /**
@@ -404,6 +410,7 @@ class ProjectController extends Controller
             'isProfessor' => in_array($user?->role, ['professor', 'committee_leader'], true), // Allow committee leaders to reuse the professor-specific UI controls.
             'isStudent' => $user?->role === 'student',
             'isCommitteeLeader' => $user?->role === 'committee_leader', // Expose the role explicitly so the Blade can toggle actions if needed.
+            'isResearchStaff' =>  $user?->role === 'research_staff',
             'reviewComment' => $reviewComment,
             'canEdit' => $canEdit,
             'statusName' => $statusName
@@ -541,6 +548,9 @@ class ProjectController extends Controller
         $activeProfessor = $this->resolveProfessorProfile($user); // Resolve the shared professor profile so committee leaders can reuse the same datasets without additional queries.
         $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
 
+        if ($isResearchStaff) {
+            abort(403, 'El personal de investigaciones no puede editar proyectos.');
+        }
         if ($isProfessor) {
             $researchGroupId = $activeProfessor?->cityProgram?->program?->research_group_id;
         } else {
@@ -720,19 +730,7 @@ class ProjectController extends Controller
             }
 
             if ($isResearchStaff) {
-                $primaryProfessor = $project->professors->first();
-                if ($primaryProfessor) {
-                    return $this->persistProfessorProject($request, $primaryProfessor, $project);
-                }
-
-                $primaryStudent = $project->students->first();
-                if ($primaryStudent) {
-                    return $this->persistStudentProject($request, $primaryStudent, $project);
-                }
-
-                return back()
-                    ->withInput()
-                    ->with('error', 'The project has no participants to edit.');
+                abort(403, 'Pidele al creador del proyecto que lo edite y envie a revision de nuevo');
             }
         } catch (\Throwable $exception) {
             Log::error('Failed to update project idea.', [

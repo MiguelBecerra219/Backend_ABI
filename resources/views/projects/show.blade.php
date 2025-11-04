@@ -30,7 +30,7 @@
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
-                    @if($canEdit)
+                    @if($canEdit && !$isResearchStaff)
                         <a href="{{ route('projects.edit', $project) }}" class="btn btn-primary">Editar</a>
                     @endif
                 </div>
