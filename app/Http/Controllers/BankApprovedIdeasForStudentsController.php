@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\Project;
+use App\Models\ThematicArea;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
@@ -23,38 +24,46 @@ class BankApprovedIdeasForStudentsController extends Controller
         }
 
         $perPage = $request->input('per_page', 10);
-        $cityProgramId = $student->city_program_id;
         $thematicAreaId = $request->input('thematic_area_id');
 
-        // Obtener grupo de investigación del estudiante
-        $cityProgram = \App\Models\CityProgram::find($cityProgramId);
-        $program = $cityProgram?->program;
-        $researchGroup = $program?->researchGroup;
+        // Obtener grupo de investigación a través del programa del estudiante
+        $program = $student->cityProgram?->program;
+        $researchGroupId = $program?->research_group_id;
 
-        $thematicAreas = collect();
-
-        if ($researchGroup) {
-            $thematicAreas = \App\Models\ThematicArea::whereHas('investigationLine', function ($q) use ($researchGroup) {
-                    $q->where('research_group_id', $researchGroup->id);
-                })
-                ->whereNull('deleted_at')
-                ->orderBy('name')
-                ->get();
+        if (!$researchGroupId) {
+            abort(403, 'Tu programa académico no tiene un grupo de investigación asociado.');
         }
 
-        // SOLO PROYECTOS APROBADOS CREADOS POR PROFESORES DEL MISMO CITY_PROGRAM
-        $projects = Project::whereHas('projectStatus', fn($q) => $q->where('name', 'Aprobado'))
-            ->whereHas('professors', function ($q) use ($cityProgramId) {
-                $q->where('city_program_id', $cityProgramId);
+        // Obtener TODAS las áreas temáticas del grupo del estudiante
+        $thematicAreas = ThematicArea::whereHas('investigationLine', function ($q) use ($researchGroupId) {
+                $q->where('research_group_id', $researchGroupId);
             })
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get();
+
+        // --- QUERY PROYECTOS APROBADOS ---
+        $projectsQuery = Project::whereHas('projectStatus', fn($q) => $q->where('name', 'Aprobado'))
+            ->whereHas('professors', function ($q) use ($student) {
+                $q->where('city_program_id', $student->city_program_id);
+            });
+
+        // Aplicar filtro dinámico
+        if (!empty($thematicAreaId)) {
+            $projectsQuery->where('thematic_area_id', $thematicAreaId);
+        }
+
+        $projects = $projectsQuery
             ->with([
                 'projectStatus',
                 'thematicArea.investigationLine',
                 'versions.contentVersions.content',
                 'contentFrameworkProjects.contentFramework.framework',
-                'professors' // ❗ quitamos students porque ya no se mostrarán proyectos de estudiantes
+                'professors',
+                'students'
             ])
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString(); // mantiene filtros entre páginas
 
         return view('projects.student.approved', [
             'projects' => $projects,
@@ -63,6 +72,7 @@ class BankApprovedIdeasForStudentsController extends Controller
             'perPage' => $perPage
         ]);
     }
+
 
     public function show(Project $project)
     {
