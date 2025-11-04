@@ -30,7 +30,9 @@
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('students.projects.approved.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
-                    <a href="{{ route('projects.student.select', $project) }}" class="btn btn-success">Seleccionar proyecto</a>
+                    @if($canSelectProject)
+                        <a href="{{ route('projects.student.select', $project) }}" class="btn btn-success">Seleccionar proyecto</a>
+                    @endif
                 </div>
             </div>
         </div>

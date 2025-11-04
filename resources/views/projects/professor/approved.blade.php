@@ -67,7 +67,7 @@
                         @forelse($projects as $index => $project)
                             <tr>
                                 <td class="text-muted">{{ $index + 1 }}</td>
-                                <td class="fw-medium">{{ $project->title }}</td>
+                                <td class="fw-medium text-wrap">{{ $project->title }}</td>
                                 <td>{{ $project->thematicArea->name ?? 'N/A' }}</td>
                                 <td>
                                     <span class="badge bg-success-lt">{{ $project->projectStatus->name }}</span>

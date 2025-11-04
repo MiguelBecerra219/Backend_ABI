@@ -13,6 +13,7 @@
     $availableStudents = $availableStudents ?? collect();
     $availableProfessors = collect($availableProfessors ?? []); // Coerce the initial participants into a collection so helper methods like ->values() are available consistently.
     $initialProfessorOptions = $availableProfessors->values(); // Cache a zero-indexed copy to feed the data attribute used by JavaScript.
+    $isEdit = $isEdit ?? false;
 @endphp
 
 @if (!empty($versionComment))
@@ -672,36 +673,44 @@
 
 @if ($isStudent)
 <div class="mb-3">
-    <label class="form-label">Compañeros (máximo 2 adicionales)</label>
+    <label class="form-label">Compañeros asignados</label>
 
-    {{-- Campo de búsqueda --}}
-    <input type="text" id="student-search" class="form-control mb-2" placeholder="Buscar por nombre o cédula...">
+    @if($isEdit)
+        {{-- Mostrar seleccionados solamente --}}
+        <div id="selected-students">
+            @foreach ($availableStudents as $s)
+                <div class="d-flex align-items-center justify-content-between p-2 mb-2 border rounded bg-body-secondary text-body">
+                    <span>{{ $s->name }} {{ $s->last_name }} - {{ $s->card_id }}</span>
+                </div>
+                <input type="hidden" name="teammate_ids[]" value="{{ $s->id }}">
+            @endforeach
+        </div>
 
-    {{-- Lista filtrable --}}
-    <div id="student-list" class="list-group" style="max-height: 180px; overflow-y: auto;">
-        @foreach ($availableStudents as $s)
-            <button type="button"
-                class="list-group-item list-group-item-action student-option"
-                data-id="{{ $s->id }}"
-                data-name="{{ $s->name }} {{ $s->last_name }}"
-                data-card="{{ $s->card_id }}">
-                {{ $s->name }} {{ $s->last_name }} - {{ $s->card_id }}
-            </button>
-        @endforeach
-    </div>
+        <small class="form-hint text-muted">No puedes modificar tus compañeros en esta etapa.</small>
 
-    {{-- Seleccionados --}}
-    <div id="selected-students" class="mt-3"></div>
+    @else
+        {{-- CREACIÓN: buscador + lista + selección --}}
+        <input type="text" id="student-search" class="form-control mb-2" placeholder="Buscar por nombre o cédula...">
 
-    {{-- Inputs hidden serán insertados aquí --}}
-    <div id="selected-students-inputs"></div>
+        <div id="student-list" class="list-group" style="max-height: 180px; overflow-y: auto;">
+            @foreach ($availableStudents as $s)
+                <button type="button"
+                    class="list-group-item list-group-item-action student-option"
+                    data-id="{{ $s->id }}"
+                    data-name="{{ $s->name }} {{ $s->last_name }}"
+                    data-card="{{ $s->card_id }}">
+                    {{ $s->name }} {{ $s->last_name }} - {{ $s->card_id }}
+                </button>
+            @endforeach
+        </div>
 
-    <small class="form-hint">Busca y selecciona estudiantes del mismo programa. Máximo 2.</small>
-    @error('teammate_ids')
-        <div class="invalid-feedback">{{ $message }}</div>
-    @enderror
+        <div id="selected-students" class="mt-3"></div>
+        <div id="selected-students-inputs"></div>
+        <small class="form-hint">Busca y selecciona estudiantes del mismo programa. Máximo 2.</small>
+    @endif
 </div>
 @endif
+
 
 
 <hr class="mt-4 mb-3">

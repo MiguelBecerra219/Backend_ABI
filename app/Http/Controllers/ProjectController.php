@@ -256,10 +256,25 @@ class ProjectController extends Controller
                 'research_group' => $researchGroup?->name,
             ]);
 
+            // Obtener compañeros elegibles (solo mismo city_program)
             $availableStudents = Student::query()
                 ->where('city_program_id', $student->city_program_id)
                 ->where('id', '!=', $student->id)
-                ->whereDoesntHave('projects')
+                ->where(function ($q) {
+                    $q->whereDoesntHave('projects') // sin proyectos
+                    ->orWhere(function ($q2) {
+                        $q2->whereHas('projects', fn($p) =>
+                                $p->whereHas('projectStatus', fn($s) =>
+                                    $s->where('name', 'Rechazado')
+                                )
+                            )
+                            ->whereDoesntHave('projects', fn($p) =>
+                                $p->whereHas('projectStatus', fn($s) =>
+                                    $s->whereNot('name', 'Rechazado')
+                                )
+                            );
+                    });
+                })
                 ->orderBy('last_name')
                 ->orderBy('name')
                 ->get();
@@ -378,6 +393,9 @@ class ProjectController extends Controller
 
         $user = AuthUserHelper::fullUser();
 
+        $statusName = $project->projectStatus->name ?? 'Sin estado';
+        $canEdit = Str::lower($statusName) === 'devuelto para corrección';
+
         return view('projects.show', [
             'project' => $project,
             'latestVersion' => $latestVersion,
@@ -387,7 +405,9 @@ class ProjectController extends Controller
             'isStudent' => $user?->role === 'student',
             'isCommitteeLeader' => $user?->role === 'committee_leader', // Expose the role explicitly so the Blade can toggle actions if needed.
             'reviewComment' => $reviewComment,
-        ]);
+            'canEdit' => $canEdit,
+            'statusName' => $statusName
+        ]); 
     }
 
     /**
@@ -587,6 +607,17 @@ class ProjectController extends Controller
                 'program_id' => optional($contextProfessor->cityProgram)->program_id,
             ]);
 
+            $frameworks = Framework::with('contentFrameworks')
+                ->where('end_year', '>=', now()->year)
+                ->orderBy('name')
+                ->get();
+
+            // Content frameworks seleccionados del proyecto
+            $selectedContentFrameworkIds = $project
+                ->contentFrameworkProjects()
+                ->pluck('content_framework_id')
+                ->toArray();
+
             $availableProfessors = $this->participantQuery(optional($contextProfessor)->id)
                 ->get()
                 ->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Share the full catalog so editing uses the same dataset as creation.
@@ -624,9 +655,10 @@ class ProjectController extends Controller
             ]);
 
             $availableStudents = Student::query()
-                ->where('city_program_id', $contextStudent->city_program_id)
+                ->whereHas('projects', function ($query) use ($project) {
+                    $query->where('project_id', $project->id);
+                })
                 ->where('id', '!=', $contextStudent->id)
-                ->whereDoesntHave('projects')
                 ->orderBy('last_name')
                 ->orderBy('name')
                 ->get();
@@ -654,6 +686,7 @@ class ProjectController extends Controller
             'selectedInvestigationLineId' => $selectedInvestigationLineId,
             'selectedThematicAreaId' => $selectedThematicAreaId,
             'versionComment' => $versionComment,
+            'isEdit' => true,
         ]);
     }
 
@@ -997,7 +1030,10 @@ class ProjectController extends Controller
             $hasOtherProjects = Student::query()
                 ->whereIn('id', $validated['teammate_ids'])
                 ->whereHas('projects', function ($query) use ($project) {
-                    $query->where('project_id', '!=', $project?->id); // distinto del que está editando
+                    $query->where('project_id', '!=', $project?->id)
+                        ->whereHas('projectStatus', function ($statusQuery) {
+                            $statusQuery->whereNotIn('name', ['Rechazado']);
+                        });
                 })
                 ->exists();
 

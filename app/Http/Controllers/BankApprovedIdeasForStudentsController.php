@@ -42,7 +42,7 @@ class BankApprovedIdeasForStudentsController extends Controller
                 ->get();
         }
 
-        // 🔥 SOLO PROYECTOS APROBADOS CREADOS POR PROFESORES DEL MISMO CITY_PROGRAM
+        // SOLO PROYECTOS APROBADOS CREADOS POR PROFESORES DEL MISMO CITY_PROGRAM
         $projects = Project::whereHas('projectStatus', fn($q) => $q->where('name', 'Aprobado'))
             ->whereHas('professors', function ($q) use ($cityProgramId) {
                 $q->where('city_program_id', $cityProgramId);
@@ -67,7 +67,7 @@ class BankApprovedIdeasForStudentsController extends Controller
     public function show(Project $project)
     {
         // Obtener el estudiante autenticado
-        $student = \App\Models\Student::where('user_id', Auth::id())
+        $student = Student::where('user_id', Auth::id())
             ->whereNull('deleted_at')
             ->firstOrFail();
 
@@ -96,13 +96,11 @@ class BankApprovedIdeasForStudentsController extends Controller
         // Última versión
         $latestVersion = $project->versions()->latest('created_at')->first();
 
-        // Mapear contenidos para que la vista los muestre como label => valor
+        // Mapear contenidos para mostrar como label => valor
         $contentValues = [];
         if ($latestVersion) {
             $contentValues = $latestVersion->contentVersions
-                ->mapWithKeys(function ($cv) {
-                    return [$cv->content->name => $cv->value];
-                })
+                ->mapWithKeys(fn($cv) => [$cv->content->name => $cv->value])
                 ->toArray();
         }
 
@@ -110,15 +108,24 @@ class BankApprovedIdeasForStudentsController extends Controller
         $frameworksSelected = $project->contentFrameworkProjects()
             ->with('contentFramework.framework')
             ->get()
-            ->map(function ($item) {
-                return $item->contentFramework;
-            });
+            ->map(fn($item) => $item->contentFramework);
+
+        /**
+         * El estudiante NO podrá seleccionar un proyecto si ya tiene uno en estado "Asignado".
+         */
+        $hasAssignedProject = $student->projects()
+            ->whereHas('projectStatus', fn($q) => $q->where('name', 'Asignado'))
+            ->exists();
+
+        // Si NO tiene proyecto asignado => puede ver botón (true)
+        $canSelectProject = ! $hasAssignedProject;
 
         return view('projects.student.show', compact(
             'project',
             'latestVersion',
             'contentValues',
-            'frameworksSelected'
+            'frameworksSelected',
+            'canSelectProject'
         ));
     }
 

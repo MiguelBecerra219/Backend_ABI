@@ -46,10 +46,19 @@ class BankApprovedIdeasAssignController extends Controller
             ->where('city_program_id', $student->city_program_id)
             ->where('id', '!=', $student->id)
             ->where(function ($q) {
-                $q->whereDoesntHave('projects') // nunca ha tenido proyecto
-                  ->orWhereHas('projects.projectStatus', fn($s) =>
-                        $s->whereIn('name', ['Rechazado', 'Devuelto para corrección'])
-                    );
+                $q->whereDoesntHave('projects') // sin proyectos
+                ->orWhere(function ($q2) {
+                    $q2->whereHas('projects', fn($p) =>
+                            $p->whereHas('projectStatus', fn($s) =>
+                                $s->where('name', 'Rechazado')
+                            )
+                        )
+                        ->whereDoesntHave('projects', fn($p) =>
+                            $p->whereHas('projectStatus', fn($s) =>
+                                $s->whereNot('name', 'Rechazado')
+                            )
+                        );
+                });
             })
             ->orderBy('last_name')
             ->orderBy('name')
@@ -76,21 +85,55 @@ class BankApprovedIdeasAssignController extends Controller
             ],
         ]);
 
-        // Validar nuevamente que el proyecto esté disponible
+        // Validar que el proyecto esté disponible
         if ($project->projectStatus?->name !== 'Aprobado') {
             abort(403, 'Este proyecto ya no está disponible para asignación.');
+        }
+
+        // Estados permitidos para tomar otro proyecto
+        $allowedStatuses = ['Rechazado', 'Devuelto para corrección'];
+
+        // 1️⃣ Validar que el estudiante NO tenga otro proyecto activo
+        $hasActiveUser = $student->projects()
+            ->where('projects.id', '!=', $project->id)
+            ->whereHas('projectStatus', fn($status) =>
+                $status->whereNotIn('name', $allowedStatuses)
+            )
+            ->exists();
+
+        if ($hasActiveUser) {
+            return back()
+                ->with('error', 'No puedes asignarte a este proyecto porque ya tienes un proyecto activo.');
+        }
+
+        // 2️⃣ Validar compañeros seleccionados
+        if (!empty($validated['teammate_ids'])) {
+            $hasActiveTeammates = Student::query()
+                ->whereIn('id', $validated['teammate_ids'])
+                ->whereHas('projects', fn($query) =>
+                    $query->where('projects.id', '!=', $project->id)
+                        ->whereHas('projectStatus', fn($status) =>
+                            $status->whereNotIn('name', $allowedStatuses)
+                        )
+                )
+                ->exists();
+
+            if ($hasActiveTeammates) {
+                return back()
+                    ->with('error', 'Uno o más compañeros seleccionados ya tienen un proyecto activo.');
+            }
         }
 
         DB::beginTransaction();
 
         try {
-            // Cambiar el estado del proyecto a “Asignado”
+            // Cambiar estado del proyecto a “Asignado”
             $assignedStatusId = ProjectStatus::where('name', 'Asignado')->first()->id;
             $project->update(['project_status_id' => $assignedStatusId]);
 
             // Vincular estudiantes
             $studentIds = collect($validated['teammate_ids'] ?? [])
-                ->push($student->id) // siempre incluir al creador
+                ->push($student->id)
                 ->unique()
                 ->values()
                 ->all();

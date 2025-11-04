@@ -131,7 +131,15 @@ Route::middleware(['auth', 'role:student'])->prefix('students/projects')->group(
         ->name('projects.student.assign');
 });
 
-Route::middleware(['auth', 'role:professor, committee_leader'])->group(function () {
+Route::middleware(['auth', 'role:professor'])->group(function () {
+    Route::get('professor/projects/approved', [BankApprovedIdeasForProfessorsController::class, 'index'])
+        ->name('professor.projects.approved.index');
+
+    Route::get('professor/projects/approved/{project}', [BankApprovedIdeasForProfessorsController::class, 'show'])
+        ->name('professor.projects.approved.show');
+});
+
+Route::middleware(['auth', 'role:committee_leader'])->group(function () {
     Route::get('professor/projects/approved', [BankApprovedIdeasForProfessorsController::class, 'index'])
         ->name('professor.projects.approved.index');
 
