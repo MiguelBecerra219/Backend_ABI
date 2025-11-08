@@ -7,6 +7,19 @@
 @section('title', 'Dashboard')
 
 @section('content')
+    @php
+        $user = Auth::user();
+        $profileNames = collect([
+            $user?->name,
+            optional($user?->professor)->name . ' ' . optional($user?->professor)->last_name,
+            optional($user?->student)->name . ' ' . optional($user?->student)->last_name,
+            optional($user?->researchstaff)->name . ' ' . optional($user?->researchstaff)->last_name,
+        ])
+            ->map(fn ($value) => trim((string) $value))
+            ->filter(fn ($value) => filled($value));
+        $displayName = $profileNames->first() ?? $user?->email;
+    @endphp
+
     {{-- Header section introducing the dashboard and greeting the user. --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
@@ -14,7 +27,7 @@
                 <div class="col">
                     {{-- Subheading gives context to the title below. --}}
                     <div class="page-pretitle">
-                        Bienvenid@ {{ Auth::user()->name }}
+                        Bienvenid@ {{ $displayName }}
                     </div>
                     <h2 class="page-title">
                         ABI - Sistema de Gestión
@@ -33,7 +46,7 @@
                     <span class="avatar avatar-xl rounded-circle bg-white shadow-sm mb-4 p-3">
                         <img src="{{ asset('udi-logo.png') }}" alt="Logo UDI" class="img-fluid">
                     </span>
-                    <h1 class="card-title mb-3">Hola, {{ Auth::user()->name }}</h1>
+                    <h1 class="card-title mb-3">Hola, {{ $displayName }}</h1>
                     <p class="text-muted mb-4">Último acceso: <strong>{{ now()->format('d/m/Y H:i') }}</strong></p>
                     <div class="text-muted fs-5 mb-4">
                         ABI es un sistema web integral para la gestión de contenidos y proyectos de grado. Facilita la administración de frameworks de investigación, recursos académicos, estudiantes, docentes y procesos educativos bilingües apoyados por la UDI.
