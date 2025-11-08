@@ -105,7 +105,7 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-4 col-lg-2">
-                            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                            <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
                         </div>
                         <div class="col-12 col-md-4 col-lg-2">
                             <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary w-100">Limpiar</a>
