@@ -7,6 +7,19 @@
 @section('title', 'Dashboard')
 
 @section('content')
+    @php
+        $user = Auth::user();
+        $nameFromAccount = trim((string) ($user?->name ?? ''));
+
+        if ($nameFromAccount === '') {
+            $emailPrefix = explode('@', (string) ($user?->email ?? ''))[0];
+            $formattedFromEmail = ucwords(str_replace(['.', '_', '-'], ' ', $emailPrefix));
+            $nameFromAccount = trim($formattedFromEmail);
+        }
+
+        $displayName = $nameFromAccount !== '' ? $nameFromAccount : __('Usuario');
+    @endphp
+
     {{-- Header section introducing the dashboard and greeting the user. --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
@@ -14,7 +27,7 @@
                 <div class="col">
                     {{-- Subheading gives context to the title below. --}}
                     <div class="page-pretitle">
-                        Bienvenid@
+                        Bienvenid@ {{ $displayName }}
                     </div>
                     <h2 class="page-title">
                         ABI - Sistema de Gestión
@@ -26,78 +39,44 @@
     </div>
 
     {{-- Welcome card summarizing the system purpose and current user details. --}}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h1 class="card-title">¡Bienvenido a ABI!</h1>
-                    <p class="card-text">
-                        Sistema de gestión de proyectos de grado.
-                    </p>
-                    <div class="mt-4">
-                        <p class="text-muted">
-                            Usuario conectado: <strong>{{ Auth::user()->name }}</strong>
-                        </p>
-                        <p class="text-muted">
-                            Fecha: <strong>{{ date('d/m/Y H:i') }}</strong>
-                        </p>
+    <div class="row mt-4 justify-content-center">
+        <div class="col-lg-8">
+            <div class="card card-md">
+                <div class="card-body text-center py-5">
+                    <span class="avatar avatar-xl rounded-circle bg-white shadow-sm mb-4 p-3">
+                        <img src="{{ asset('udi-logo.png') }}" alt="Logo UDI" class="img-fluid">
+                    </span>
+                    <h1 class="card-title mb-3">Hola, {{ $displayName }}</h1>
+                    <p class="text-muted mb-4">Último acceso: <strong>{{ now()->format('d/m/Y H:i') }}</strong></p>
+                    <div class="text-muted fs-5 mb-4">
+                        ABI es un sistema web integral para la gestión de contenidos y proyectos de grado. Facilita la
+                        administración de frameworks de investigación, recursos académicos, estudiantes, docentes y procesos
+                        educativos bilingües apoyados por la UDI.
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Quick access cards highlighting key areas of the application. --}}
-    <div class="row mt-4">
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    {{-- Icon visually reinforces the dashboard navigation item. --}}
-                    <div class="mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-dashboard" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <circle cx="12" cy="13" r="2"/>
-                            <line x1="13.45" y1="11.55" x2="15.5" y2="9.5"/>
-                            <path d="M6.4 20a9 9 0 1 1 11.2 0Z"/>
-                        </svg>
+                    <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+                        <a href="{{ route('home') }}" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-layout-dashboard" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M4 4h6v8h-6z" />
+                                <path d="M14 4h6v4h-6z" />
+                                <path d="M14 12h6v8h-6z" />
+                                <path d="M4 16h6v4h-6z" />
+                            </svg>
+                            Ir al panel principal
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-logout" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+                                    <path d="M7 12h14l-3 -3" />
+                                    <path d="M18 15l3 -3" />
+                                </svg>
+                                Cerrar sesión
+                            </button>
+                        </form>
                     </div>
-                    <h5 class="card-title">Dashboard</h5>
-                    <p class="card-text">Accede a tu panel de control principal</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    {{-- Each card follows the same structure but describes a different area. --}}
-                    <div class="mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-users" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
-                        </svg>
-                    </div>
-                    <h5 class="card-title">Gestión</h5>
-                    <p class="card-text">Administra tus recursos y procesos</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-settings" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                    </div>
-                    <h5 class="card-title">Configuración</h5>
-                    <p class="card-text">Personaliza tu experiencia</p>
                 </div>
             </div>
         </div>
