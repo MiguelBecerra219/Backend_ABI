@@ -9,15 +9,15 @@
 @section('content')
     @php
         $user = Auth::user();
-        $profileNames = collect([
-            $user?->name,
-            optional($user?->professor)->name . ' ' . optional($user?->professor)->last_name,
-            optional($user?->student)->name . ' ' . optional($user?->student)->last_name,
-            optional($user?->researchstaff)->name . ' ' . optional($user?->researchstaff)->last_name,
-        ])
-            ->map(fn ($value) => trim((string) $value))
-            ->filter(fn ($value) => filled($value));
-        $displayName = $profileNames->first() ?? $user?->email;
+        $nameFromAccount = trim((string) ($user?->name ?? ''));
+
+        if ($nameFromAccount === '') {
+            $emailPrefix = explode('@', (string) ($user?->email ?? ''))[0];
+            $formattedFromEmail = ucwords(str_replace(['.', '_', '-'], ' ', $emailPrefix));
+            $nameFromAccount = trim($formattedFromEmail);
+        }
+
+        $displayName = $nameFromAccount !== '' ? $nameFromAccount : __('Usuario');
     @endphp
 
     {{-- Header section introducing the dashboard and greeting the user. --}}
@@ -49,7 +49,9 @@
                     <h1 class="card-title mb-3">Hola, {{ $displayName }}</h1>
                     <p class="text-muted mb-4">Último acceso: <strong>{{ now()->format('d/m/Y H:i') }}</strong></p>
                     <div class="text-muted fs-5 mb-4">
-                        ABI es un sistema web integral para la gestión de contenidos y proyectos de grado. Facilita la administración de frameworks de investigación, recursos académicos, estudiantes, docentes y procesos educativos bilingües apoyados por la UDI.
+                        ABI es un sistema web integral para la gestión de contenidos y proyectos de grado. Facilita la
+                        administración de frameworks de investigación, recursos académicos, estudiantes, docentes y procesos
+                        educativos bilingües apoyados por la UDI.
                     </div>
                     <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
                         <a href="{{ route('home') }}" class="btn btn-primary">
