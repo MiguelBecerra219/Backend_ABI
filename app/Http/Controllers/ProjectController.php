@@ -452,6 +452,14 @@ class ProjectController extends Controller
 
         $query = $this->participantQuery($excludeId);
 
+        $programFilter = $request->input('program_id');
+        if ($programFilter !== null && $programFilter !== '') {
+            $programId = (int) $programFilter;
+            $query->whereHas('cityProgram', static function (Builder $builder) use ($programId) {
+                $builder->where('program_id', $programId);
+            });
+        }
+
         if ($term !== '') {
             $normalizedTerm = mb_strtolower($term);
 
@@ -506,6 +514,7 @@ class ProjectController extends Controller
             'document' => $professor->card_id,
             'email' => $professor->mail ?? $professor->user?->email,
             'program' => optional($professor->cityProgram?->program)->name,
+            'program_id' => $professor->cityProgram?->program_id,
         ]; // Include the email and program so the interface can display richer context while selecting collaborators.
     }
 

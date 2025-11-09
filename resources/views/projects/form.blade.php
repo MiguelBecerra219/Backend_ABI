@@ -91,16 +91,55 @@
                         })
                         ->values()
                     : collect();
+
+                $professorPrograms = $availableProfessors
+                    ->map(static function ($option) {
+                        return [
+                            'id' => $option['program_id'] ?? null,
+                            'name' => $option['program'] ?? null,
+                        ];
+                    })
+                    ->filter(static fn ($option) => ! empty($option['name']) && ! empty($option['id']))
+                    ->unique(static fn ($option) => $option['id'])
+                    ->sortBy('name')
+                    ->values();
             @endphp
 
             {{-- Picker simplificado de profesores --}}
             <div class="mb-2" data-professor-search data-initial-professors='@json($initialProfessorData)'>
-                
-                <div class="card border">
+
+                <div class="card border shadow-sm">
                     <div class="card-header py-2">
                         <div class="d-flex align-items-center gap-2">
                             <span class="card-title mb-0">Docentes disponibles</span>
                             <span class="badge bg-secondary" data-professor-available-count>{{ $availableProfessors->count() }}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body border-bottom py-3">
+                        <div class="row g-2">
+                            <div class="col-12 col-md">
+                                <label for="professor-search-input" class="form-label text-secondary mb-1">Buscar docente</label>
+                                <div class="input-icon">
+                                    <span class="input-icon-addon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <circle cx="10" cy="10" r="7" />
+                                            <line x1="21" y1="21" x2="15" y2="15" />
+                                        </svg>
+                                    </span>
+                                    <input type="text" id="professor-search-input" class="form-control" placeholder="Nombre, documento o correo" data-professor-search-input>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-auto">
+                                <label for="professor-program-filter" class="form-label text-secondary mb-1">Programa académico</label>
+                                <select id="professor-program-filter" class="form-select" data-professor-program-filter>
+                                    <option value="">Todos los programas</option>
+                                    @foreach ($professorPrograms as $programOption)
+                                        <option value="{{ $programOption['id'] }}">{{ $programOption['name'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -113,17 +152,24 @@
                                     data-professor-option="{{ $option['id'] }}"
                                     data-professor-option-name="{{ $option['name'] }}"
                                     data-professor-option-document="{{ $option['document'] }}"
-                                    data-professor-option-email="{{ $option['email'] }}">
+                                    data-professor-option-email="{{ $option['email'] }}"
+                                    data-professor-option-program="{{ $option['program_id'] ?? '' }}"
+                                    data-professor-option-program-name="{{ $option['program'] ?? '' }}">
                                 <span class="fw-semibold d-block">{{ $option['name'] }}</span>
                                 <span class="text-secondary small d-block">{{ $option['document'] ?? 'Sin documento' }}</span>
                                 @if(!empty($option['email']))
                                     <span class="text-secondary small d-block">{{ $option['email'] }}</span>
+                                @endif
+                                @if(!empty($option['program']))
+                                    <span class="text-secondary small d-block">Programa: {{ $option['program'] }}</span>
                                 @endif
                             </button>
                         @empty
                             <div class="text-secondary small px-3 py-2">No hay participantes disponibles.</div>
                         @endforelse
                     </div>
+
+                    <div class="px-3 py-2 text-secondary small d-none" data-professor-empty-list data-empty-default="No hay docentes disponibles." data-empty-filter="No hay docentes que coincidan con la búsqueda."></div>
                 </div>
 
                 {{-- chips de seleccionados --}}
@@ -203,7 +249,10 @@
                         initialList: container.querySelector('[data-professor-initial-list]'),
                         selectedWrapper: container.querySelector('[data-professor-selected]'),
                         emptyHint: container.querySelector('[data-professor-empty-hint]'),
-                        countBadge: container.querySelector('[data-professor-available-count]')
+                        countBadge: container.querySelector('[data-professor-available-count]'),
+                        searchInput: container.querySelector('[data-professor-search-input]'),
+                        programFilter: container.querySelector('[data-professor-program-filter]'),
+                        emptyList: container.querySelector('[data-professor-empty-list]'),
                     };
 
                     const selectedMap = new Map();
@@ -220,10 +269,53 @@
                         elements.emptyHint?.classList.toggle('d-none', selectedMap.size > 0);
                     };
 
+                    const applyFilters = () => {
+                        const searchValue = elements.searchInput?.value ?? '';
+                        const term = searchValue.toLowerCase().trim();
+                        const programId = elements.programFilter?.value ?? '';
+                        let visibleCount = 0;
+
+                        const options = elements.initialList?.querySelectorAll('[data-professor-option]') ?? [];
+
+                        options.forEach(option => {
+                            const optionName = option.dataset.professorOptionName?.toLowerCase() ?? '';
+                            const optionDocument = option.dataset.professorOptionDocument?.toLowerCase() ?? '';
+                            const optionEmail = option.dataset.professorOptionEmail?.toLowerCase() ?? '';
+                            const optionProgram = option.dataset.professorOptionProgram ?? '';
+
+                            const matchesTerm = term === '' || optionName.includes(term) || optionDocument.includes(term) || optionEmail.includes(term);
+                            const matchesProgram = programId === '' || optionProgram === programId;
+                            const shouldShow = matchesTerm && matchesProgram;
+
+                            option.classList.toggle('d-none', !shouldShow);
+                            option.tabIndex = shouldShow ? 0 : -1;
+
+                            if (shouldShow) {
+                                visibleCount += 1;
+                            }
+                        });
+
+                        if (elements.countBadge) {
+                            elements.countBadge.textContent = String(visibleCount);
+                        }
+
+                        if (elements.emptyList) {
+                            const hasOptions = (elements.initialList?.querySelector('[data-professor-option]') ?? null) !== null;
+                            if (!hasOptions) {
+                                elements.emptyList.textContent = elements.emptyList.dataset.emptyDefault ?? '';
+                                elements.emptyList.classList.remove('d-none');
+                            } else if (visibleCount === 0) {
+                                elements.emptyList.textContent = elements.emptyList.dataset.emptyFilter ?? '';
+                                elements.emptyList.classList.remove('d-none');
+                            } else {
+                                elements.emptyList.classList.add('d-none');
+                            }
+                        }
+                    };
+
                     const removeOptionFromList = (id) => {
                         elements.initialList?.querySelector(`[data-professor-option="${id}"]`)?.remove();
-                        elements.countBadge && (elements.countBadge.textContent = 
-                            elements.initialList?.querySelectorAll('[data-professor-option]').length || 0);
+                        applyFilters();
                     };
 
                     // Crear chip de profesor seleccionado
@@ -275,6 +367,8 @@
 
                     // Inicialización de event listeners
                     elements.initialList?.addEventListener('click', handleOptionClick);
+                    elements.searchInput?.addEventListener('input', applyFilters);
+                    elements.programFilter?.addEventListener('change', applyFilters);
 
                     // Cargar datos iniciales
                     try {
@@ -285,6 +379,7 @@
                     }
 
                     toggleEmptyHint();
+                    applyFilters();
                 });
             });
         </script>
