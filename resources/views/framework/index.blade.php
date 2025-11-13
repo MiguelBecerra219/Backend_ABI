@@ -97,7 +97,7 @@
                                     <path d="M7 10h10" />
                                     <path d="M10 15h4" />
                                 </svg>
-                                Aplicar
+                                Aplicar Filtros
                             </button>
                         </div>
                         <div class="col-12 col-md-6 col-xl-2">
