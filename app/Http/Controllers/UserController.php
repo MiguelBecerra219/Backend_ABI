@@ -268,14 +268,7 @@ class UserController extends Controller
         $newRole = $request->role;
         $oldRole = $user->role;
         
-        // If there is a role change, we validate the fields of the new role
-        if ($newRole !== $oldRole) {
-            $additional = $this->validateRoleFields($request, $newRole);
-        } 
-        // If the role does not change, we validate the fields of the current role
-        else {
-            $additional = $this->validateRoleFields($request, $newRole);
-        }
+        $additional = $this->validateRoleFields($request, $newRole);
 
         // Update the user
         $user->update([
