@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use function PHPSTORM_META\map;
+
 /**
  * professors table model, manages communication with the database using the root user, 
  * should not be used by any end user, 
@@ -16,14 +18,21 @@ class Professor extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $fillable = [
+        'name',
+        'last_name',
+        'phone',
+        'city_program_id',
+        'user_id',
+        'committee_leader',
+    ];
+
+
     /**
      * The attributes that are guarded from mass assignment.
      *
      * @var array<int, string>
      */
-    protected $guarded = [
-        'committee_leader',
-    ];
 
     /**
      * Resolve the model class used for the projects relationship.

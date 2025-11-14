@@ -285,8 +285,14 @@ class UserController extends Controller
             'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
         ]);
 
+
+        $isTeacherRoleChange = 
+            ($oldRole === 'professor' && $newRole === 'committee_leader') ||
+            ($oldRole === 'committee_leader' && $newRole === 'professor');
+
         // If there is a role change, we need to manage the information from the role tables
-        if ($newRole !== $oldRole) {
+    
+        if ($newRole !== $oldRole && !$isTeacherRoleChange) {
             // Delete (soft delete) the record from the previous table
             $this->deleteOldRoleRecord($user, $oldRole);
             
@@ -327,6 +333,7 @@ class UserController extends Controller
                     'last_name' => 'required|string|max:255',
                     'phone' => 'required|string|max:20',
                     'city_program_id' => 'required|exists:city_program,id',
+                    'committee_leader' => 'required|in:0,1',
                 ]);
                 
                 // We ignore what the client sent and set based on the role
@@ -438,7 +445,7 @@ class UserController extends Controller
                             'name' => $data['name'],
                             'last_name' => $data['last_name'],
                             'phone' => $data['phone'],
-                            'committee_leader' => $data['committee_leader'] ?? ($role === 'committee_leader' ? 1 : 0),
+                            'committee_leader' => ($role === 'committee_leader') ? 1 : 0,
                             'city_program_id' => $data['city_program_id'],
                             'user_id' => $user->id
                         ]);
@@ -532,7 +539,6 @@ class UserController extends Controller
                 $student = ResearchStaffStudent::where('user_id', $user->id)->first();
                 if ($student) {
                     $student->update([
-                        'card_id' => $data['card_id'],
                         'name' => $data['name'],
                         'last_name' => $data['last_name'],
                         'phone' => $data['phone'],
@@ -547,11 +553,10 @@ class UserController extends Controller
                 $professor = ResearchStaffProfessor::where('user_id', $user->id)->first();
                 if ($professor) {
                     $professor->update([
-                        'card_id' => $data['card_id'],
                         'name' => $data['name'],
                         'last_name' => $data['last_name'],
                         'phone' => $data['phone'],
-                        'committee_leader' => $data['committee_leader'] ?? ($role === 'committee_leader' ? 1 : 0),
+                        'committee_leader' => ($role === 'committee_leader') ? 1 : 0,
                         'city_program_id' => $data['city_program_id'],
                     ]);
                 }
@@ -561,7 +566,6 @@ class UserController extends Controller
                 $researchStaff = ResearchStaffResearchStaff::where('user_id', $user->id)->first();
                 if ($researchStaff) {
                     $researchStaff->update([
-                        'card_id' => $data['card_id'],
                         'name' => $data['name'],
                         'last_name' => $data['last_name'],
                         'phone' => $data['phone'],

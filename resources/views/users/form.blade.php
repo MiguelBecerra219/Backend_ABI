@@ -178,17 +178,11 @@
         @enderror
         <small class="form-hint">Disponible solo para estudiantes.</small>
     </div>
-    <div class="col-12 col-lg-6" data-role-visible="professor,committee_leader">
-        <label for="committee_leader" class="form-label">Líder de comité</label>
-        <select id="committee_leader" name="committee_leader" class="form-select @error('committee_leader') is-invalid @enderror">
-            <option value="0" {{ old('committee_leader', $detailsModel->committee_leader ?? 0) ? '' : 'selected' }}>No</option>
-            <option value="1" {{ old('committee_leader', $detailsModel->committee_leader ?? 0) ? 'selected' : '' }}>Sí</option>
-        </select>
-        @error('committee_leader')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-        <small class="form-hint">Selecciona "Sí" si el profesor lidera un comité.</small>
-    </div>
+    @if(in_array($selectedRole, ['professor', 'committee_leader']))
+        <input type="hidden" name="committee_leader" value="{{ $selectedRole === 'committee_leader' ? 1 : 0 }}">
+    @endif
+
+
 </div>
 
 @once

@@ -39,6 +39,15 @@ class LoginController extends Controller
     {
         $this->validateLogin($request);
 
+        // Check if the user is inactive
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        if ($user && $user->state == 0) {
+            return back()->withErrors([
+                'email' => 'Tu usuario está inactivo. Contacta al administrador.'
+            ]);
+        }
+
         if (method_exists($this, 'hasTooManyLoginAttempts') &&
             $this->hasTooManyLoginAttempts($request)) {
             $this->fireLockoutEvent($request);
