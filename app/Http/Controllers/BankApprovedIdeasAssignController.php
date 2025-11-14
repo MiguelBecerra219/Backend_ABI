@@ -30,15 +30,8 @@ class BankApprovedIdeasAssignController extends Controller
         // Verificar que el estudiante no esté bloqueado por otro proyecto
         $currentStatus = $student->projects()->latest()->first()?->projectStatus?->name;
 
-        if (in_array($currentStatus, ['Asignado', 'Aprobado'])) {
+        if (in_array($currentStatus, ['Asignado', 'Aprobado', 'Devuelto para corrección', 'Pendiente de aprobación'])) {
             abort(403, 'Ya tienes un proyecto activo. No puedes seleccionar uno nuevo.');
-        }
-
-        // Si tenía proyectos en “Devuelto para corrección” → moverlos a Rechazado
-        if ($currentStatus === 'Devuelto para corrección') {
-            $student->projects()->update(['project_status_id' =>
-                ProjectStatus::where('name', 'Rechazado')->first()->id
-            ]);
         }
 
         // Obtener compañeros elegibles (solo mismo city_program)
