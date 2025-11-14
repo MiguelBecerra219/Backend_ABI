@@ -128,16 +128,19 @@
                 <div class="mb-3">
                     <label class="form-label">Contraseña</label>
                     <div class="input-group input-group-flat">
-                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                               placeholder="Contraseña" autocomplete="off" required>
-                        <span class="input-group-text">
-                            <a href="#" class="link-secondary" title="Show password" data-bs-toggle="tooltip">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
-                                     stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
-                                     stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <input type="password" id="password" name="password"
+                            class="form-control @error('password') is-invalid @enderror"
+                            placeholder="Contraseña" autocomplete="off" required>
+
+                        <span class="input-group-text cursor-pointer pe-auto">
+                            <a id="toggle-password" class="link-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z"/>
                                     <circle cx="12" cy="12" r="2"/>
-                                    <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/>
+                                    <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7
+                                            c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/>
                                 </svg>
                             </a>
                         </span>
@@ -150,16 +153,19 @@
                 <div class="mb-3">
                     <label class="form-label">Confirmar contraseña</label>
                     <div class="input-group input-group-flat">
-                        <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror"
-                               placeholder="Confirmar contraseña" autocomplete="off" required>
-                        <span class="input-group-text">
-                            <a href="#" class="link-secondary" title="Show password" data-bs-toggle="tooltip">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
-                                     stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
-                                     stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <input type="password" id="password_confirmation" name="password_confirmation"
+                            class="form-control @error('password_confirmation') is-invalid @enderror"
+                            placeholder="Confirmar contraseña" autocomplete="off" required>
+
+                        <span class="input-group-text cursor-pointer pe-auto">
+                            <a id="toggle-password-confirmation" class="link-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z"/>
                                     <circle cx="12" cy="12" r="2"/>
-                                    <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/>
+                                    <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7
+                                            c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/>
                                 </svg>
                             </a>
                         </span>
@@ -216,6 +222,22 @@
 
             // Listen to changes
             roleSelect.addEventListener('change', toggleFields);
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            function togglePassword(inputId, toggleId) {
+                const input = document.getElementById(inputId);
+                const toggle = document.getElementById(toggleId);
+
+                toggle.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    input.type = input.type === 'password' ? 'text' : 'password';
+                });
+            }
+
+            togglePassword('password', 'toggle-password');
+            togglePassword('password_confirmation', 'toggle-password-confirmation');
         });
     </script>
 @endsection

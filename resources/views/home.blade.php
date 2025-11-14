@@ -7,19 +7,6 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    @php
-        $user = Auth::user();
-        $nameFromAccount = trim((string) ($user?->name ?? ''));
-
-        if ($nameFromAccount === '') {
-            $emailPrefix = explode('@', (string) ($user?->email ?? ''))[0];
-            $formattedFromEmail = ucwords(str_replace(['.', '_', '-'], ' ', $emailPrefix));
-            $nameFromAccount = trim($formattedFromEmail);
-        }
-
-        $displayName = $nameFromAccount !== '' ? $nameFromAccount : __('Usuario');
-    @endphp
-
     {{-- Header section introducing the dashboard and greeting the user. --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
@@ -47,6 +34,7 @@
                         <img src="{{ asset('udi-logo.png') }}" alt="Logo UDI" class="img-fluid">
                     </span>
                     <h1 class="card-title mb-3">Hola, {{ $displayName }}</h1>
+                    <p>{{$userProgram}}</p>
                     <p class="text-muted mb-4">Último acceso: <strong>{{ now()->format('d/m/Y H:i') }}</strong></p>
                     <div class="text-muted fs-5 mb-4">
                         ABI es un sistema web integral para la gestión de contenidos y proyectos de grado. Facilita la
@@ -54,16 +42,6 @@
                         educativos bilingües apoyados por la UDI.
                     </div>
                     <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
-                        <a href="{{ route('home') }}" class="btn btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-layout-dashboard" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M4 4h6v8h-6z" />
-                                <path d="M14 4h6v4h-6z" />
-                                <path d="M14 12h6v8h-6z" />
-                                <path d="M4 16h6v4h-6z" />
-                            </svg>
-                            Ir al panel principal
-                        </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="btn btn-outline-danger">

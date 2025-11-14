@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\AuthUserHelper;
 
 class HomeController extends Controller
 {
@@ -16,6 +17,41 @@ class HomeController extends Controller
 
     public function index()
     {
-        return view('home');
+        $user = AuthUserHelper::fullUser();
+        $nameFromAccount = trim((string) ($user?->name ?? ''));
+
+        if ($nameFromAccount === '') {
+            $emailPrefix = explode('@', (string) ($user?->email ?? ''))[0];
+            $formattedFromEmail = ucwords(str_replace(['.', '_', '-'], ' ', $emailPrefix));
+            $nameFromAccount = trim($formattedFromEmail);
+        }
+        
+        $userRole = $user?->role ?? '';
+
+        if ($userRole == 'student') {
+            $cp = $user?->student?->cityProgram;
+            $name = $user?->student?->name ?? $nameFromAccount;
+            $surname = $user?->student?->last_name ?? '';
+            $nameFromAccount = trim($name . ' ' . $surname);
+        } elseif ($userRole == 'professor' || $userRole == 'committee_leader') {
+            $cp = $user?->professor?->cityProgram;
+            $name = $user?->professor?->name ?? $nameFromAccount;
+            $surname = $user?->professor?->last_name ?? '';
+            $nameFromAccount = trim($name . ' ' . $surname);
+        } else {
+            $cp = null;
+            $name = $user?->researchStaff?->name ?? $nameFromAccount;
+            $surname = $user?->researchStaff?->last_name ?? '';
+            $nameFromAccount = trim($name . ' ' . $surname);
+        };
+
+        $userProgram = $cp ? $cp->program->name . ' - ' . $cp->city->name : 'Personal de investigación';
+
+        $displayName = $nameFromAccount !== '' ? $nameFromAccount : __('Usuario');
+        return view('home', compact(
+            'displayName',
+            'userProgram',
+            'userRole'
+        ));
     }
 }
