@@ -18,13 +18,6 @@ class HomeController extends Controller
     public function index()
     {
         $user = AuthUserHelper::fullUser();
-        $nameFromAccount = trim((string) ($user?->name ?? ''));
-
-        if ($nameFromAccount === '') {
-            $emailPrefix = explode('@', (string) ($user?->email ?? ''))[0];
-            $formattedFromEmail = ucwords(str_replace(['.', '_', '-'], ' ', $emailPrefix));
-            $nameFromAccount = trim($formattedFromEmail);
-        }
         
         $userRole = $user?->role ?? '';
 
