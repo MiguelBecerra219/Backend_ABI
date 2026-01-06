@@ -278,17 +278,17 @@ return [
         ],
     ],
     [
-        'text' => 'Frameworks',
+        'text' => 'Marcos',
         'icon' => 'ti ti-hierarchy-3',
         'hasRole' => 'research_staff',
         'submenu' => [
             [
-                'text' => 'Frameworks',
+                'text' => 'Marcos',
                 'icon' => 'ti ti-square-rotated',
                 'route' => 'frameworks.index',
             ],
             [
-                'text' => 'Contenidos de Framework',
+                'text' => 'Contenidos de marcos',
                 'icon' => 'ti ti-folders',
                 'route' => 'content-frameworks.index',
             ],

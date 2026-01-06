@@ -164,7 +164,7 @@
                                     </select>
                                 </div>
 
-                                <div class="mb-3" id="comments-field" style="display:none;">
+                                <div class="mb-3" id="comments-field">
                                     <label for="comments" class="form-label">Comentarios</label>
                                     <textarea name="comments" id="comments" class="form-control" rows="3" placeholder="Indica las observaciones..."></textarea>
                                 </div>
@@ -239,13 +239,6 @@
             </div>
         </div>
     </div>
-
-<script>
-    document.getElementById('status').addEventListener('change', function() {
-        const commentsField = document.getElementById('comments-field');
-        commentsField.style.display = this.value === 'Devuelto para corrección' ? 'block' : 'none';
-    });
-</script>
 @endsection
 
 @push('css')
