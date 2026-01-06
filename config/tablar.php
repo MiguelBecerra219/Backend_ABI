@@ -330,12 +330,6 @@ return [
         'route' => 'users.index',
         'hasRole' => 'research_staff',
     ],
-    [
-        'text' => 'Formularios',
-        'icon' => 'ti ti-file-pencil',
-        'route' => 'formulario.index',
-        'hasRole' => 'research_staff',
-    ],
 
     // =================================================================
     // SECCIÓN: CONSULTAS (Professor y Committee Leader)
